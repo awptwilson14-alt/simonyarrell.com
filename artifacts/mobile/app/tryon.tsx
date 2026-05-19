@@ -22,11 +22,19 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { LOOKS } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 
-const { height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-type BlendMode = "sheer" | "blend" | "vivid";
-const BLEND_LEVELS: Record<BlendMode, number> = { sheer: 0.3, blend: 0.6, vivid: 0.88 };
-const BLEND_LABELS: Record<BlendMode, string> = { sheer: "SHEER", blend: "BLEND", vivid: "VIVID" };
+// How much of the top of the screen is reserved for the user's face (camera shows through)
+const FACE_ZONE = height * 0.26;
+// How far down from the outfit photo top to crop (removes model's head from photo)
+const PHOTO_FACE_CROP = height * 0.18;
+// Position step per tap
+const POSITION_STEP = 28;
+const POSITION_MIN = -120;
+const POSITION_MAX = 120;
+
+type OpacityLevel = "sheer" | "blend" | "vivid";
+const OPACITY_VALUES: Record<OpacityLevel, number> = { sheer: 0.35, blend: 0.65, vivid: 0.92 };
 
 export default function TryOnScreen() {
   const colors = useColors();
@@ -36,7 +44,8 @@ export default function TryOnScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<"front" | "back">("front");
-  const [blend, setBlend] = useState<BlendMode>("blend");
+  const [opacityLevel, setOpacityLevel] = useState<OpacityLevel>("vivid");
+  const [verticalOffset, setVerticalOffset] = useState(0); // px: negative = up, positive = down
 
   const [activeLookIdx, setActiveLookIdx] = useState(() => {
     if (lookId) {
@@ -46,12 +55,11 @@ export default function TryOnScreen() {
     return 0;
   });
 
+  const isNative = Platform.OS !== "web";
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const panelSlide = useRef(new Animated.Value(60)).current;
   const lookFade = useRef(new Animated.Value(1)).current;
-  const overlayOpacity = useRef(new Animated.Value(BLEND_LEVELS.blend)).current;
-
-  const isNative = Platform.OS !== "web";
+  const overlayOpacity = useRef(new Animated.Value(OPACITY_VALUES.vivid)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -63,20 +71,24 @@ export default function TryOnScreen() {
   const switchLook = (dir: "prev" | "next") => {
     Haptics.selectionAsync();
     Animated.sequence([
-      Animated.timing(lookFade, { toValue: 0, duration: 120, useNativeDriver: isNative }),
-      Animated.timing(lookFade, { toValue: 1, duration: 220, useNativeDriver: isNative }),
+      Animated.timing(lookFade, { toValue: 0, duration: 110, useNativeDriver: isNative }),
+      Animated.timing(lookFade, { toValue: 1, duration: 200, useNativeDriver: isNative }),
     ]).start();
     setActiveLookIdx((i) => (dir === "next" ? (i + 1) % LOOKS.length : (i - 1 + LOOKS.length) % LOOKS.length));
   };
 
-  const setBlendLevel = (mode: BlendMode) => {
+  const changeOpacity = (level: OpacityLevel) => {
     Haptics.selectionAsync();
-    setBlend(mode);
-    Animated.timing(overlayOpacity, {
-      toValue: BLEND_LEVELS[mode],
-      duration: 220,
-      useNativeDriver: isNative,
-    }).start();
+    setOpacityLevel(level);
+    Animated.timing(overlayOpacity, { toValue: OPACITY_VALUES[level], duration: 220, useNativeDriver: isNative }).start();
+  };
+
+  const nudge = (dir: "up" | "down") => {
+    Haptics.selectionAsync();
+    setVerticalOffset((v) => {
+      const next = dir === "up" ? v - POSITION_STEP : v + POSITION_STEP;
+      return Math.max(POSITION_MIN, Math.min(POSITION_MAX, next));
+    });
   };
 
   const flipCamera = () => {
@@ -98,15 +110,11 @@ export default function TryOnScreen() {
   const activeLook = LOOKS[activeLookIdx];
   const topPad = Platform.OS === "web" ? 56 : insets.top;
 
-  // ── PERMISSION SCREEN ──────────────────────────────────────────────────
+  // ── PERMISSION SCREEN ─────────────────────────────────────────────────
   if (permission && !permission.granted) {
     return (
       <View style={[s.screen, { backgroundColor: colors.background }]}>
-        <LinearGradient
-          colors={["rgba(198,167,94,0.08)", "transparent"]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
+        <LinearGradient colors={["rgba(198,167,94,0.08)", "transparent"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
         <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
           <BrandWordmark />
           <Pressable onPress={() => router.back()} hitSlop={12} style={[s.iconBtn, { borderColor: colors.border }]}>
@@ -119,7 +127,7 @@ export default function TryOnScreen() {
           </View>
           <Text style={[s.permTitle, { color: colors.foreground }]}>Camera Access Needed</Text>
           <Text style={[s.permSub, { color: colors.mutedForeground }]}>
-            Maison Simon uses your camera to overlay outfits in real time — nothing is recorded or stored.
+            Maison Simon uses your camera to show outfits on your body in real time — nothing is recorded or stored.
           </Text>
           <Pressable onPress={requestPermission} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
             <Feather name="camera" size={15} color="#0B0B0C" />
@@ -133,50 +141,77 @@ export default function TryOnScreen() {
     );
   }
 
-  // ── LIVE AR TRY-ON ─────────────────────────────────────────────────────
+  // ── LIVE AR TRY-ON ────────────────────────────────────────────────────
   return (
     <View style={s.screen}>
 
-      {/* ── LAYER 1: Live camera ── */}
-      {Platform.OS !== "web" ? (
-        <CameraView
-          style={StyleSheet.absoluteFill}
-          facing={facing}
-        />
+      {/* ── LAYER 1: Live camera — full screen ── */}
+      {isNative ? (
+        <CameraView style={StyleSheet.absoluteFill} facing={facing} />
       ) : (
         <View style={[StyleSheet.absoluteFill, s.webFallback]}>
           <Feather name="camera" size={48} color="rgba(198,167,94,0.3)" />
-          <Text style={s.webFallbackText}>Live camera on device</Text>
+          <Text style={s.webFallbackText}>Live camera preview on device</Text>
         </View>
       )}
 
-      {/* ── LAYER 2: Outfit overlay — the look image blended over camera ── */}
+      {/*
+       * ── LAYER 2: Outfit overlay ──
+       *
+       * The outfit photo is a full-body shot (face + clothes + shoes).
+       * We clip to a window that starts below the user's face zone so only
+       * the CLOTHING portion of the photo is visible — the user sees their
+       * own face through the live camera at the top.
+       *
+       * Inside the clip container the image is shifted up by PHOTO_FACE_CROP
+       * so the model's face (top of the photo) is scrolled out of view and
+       * only the shirt / pants / shoes portion is rendered.
+       *
+       * verticalOffset lets the user slide the clothes up/down to align
+       * with their own body.
+       */}
       <Animated.View
-        style={[StyleSheet.absoluteFill, { opacity: Animated.multiply(lookFade, overlayOpacity) }]}
+        style={[
+          s.outfitClipWindow,
+          { top: FACE_ZONE + verticalOffset, opacity: Animated.multiply(lookFade, overlayOpacity) },
+        ]}
         pointerEvents="none"
       >
         <Image
           source={activeLook.image}
-          style={s.outfitOverlay}
+          style={[
+            s.outfitImage,
+            {
+              top: -(PHOTO_FACE_CROP + verticalOffset * 0.4),
+              height: height + PHOTO_FACE_CROP,
+            },
+          ]}
           resizeMode="cover"
         />
       </Animated.View>
 
-      {/* ── LAYER 3: Gradient scrims ── */}
+      {/* ── LAYER 3: Subtle gradient scrim at face/clothes boundary ── */}
       <LinearGradient
-        colors={["rgba(5,5,6,0.72)", "rgba(5,5,6,0.1)", "transparent"]}
-        locations={[0, 0.25, 1]}
+        colors={["rgba(5,5,6,0.0)", "rgba(5,5,6,0.0)", "rgba(5,5,6,0.0)"]}
+        style={[s.boundaryFade, { top: FACE_ZONE - 24 + verticalOffset }]}
+        pointerEvents="none"
+      />
+
+      {/* ── LAYER 4: Top & bottom scrims ── */}
+      <LinearGradient
+        colors={["rgba(5,5,6,0.75)", "rgba(5,5,6,0.15)", "transparent"]}
+        locations={[0, 0.3, 1]}
         style={s.topScrim}
         pointerEvents="none"
       />
       <LinearGradient
-        colors={["transparent", "rgba(5,5,6,0.55)", "rgba(5,5,6,0.97)"]}
-        locations={[0, 0.28, 1]}
+        colors={["transparent", "rgba(5,5,6,0.6)", "rgba(5,5,6,0.97)"]}
+        locations={[0, 0.3, 1]}
         style={s.bottomScrim}
         pointerEvents="none"
       />
 
-      {/* ── LAYER 4: UI chrome ── */}
+      {/* ── LAYER 5: UI chrome ── */}
 
       {/* Top bar */}
       <Animated.View style={[s.topBar, { paddingTop: topPad + 8, opacity: fadeAnim }]}>
@@ -191,31 +226,57 @@ export default function TryOnScreen() {
         </View>
       </Animated.View>
 
-      {/* LIVE badge */}
+      {/* LIVE badge — bottom left of face zone */}
       <Animated.View style={[s.liveBadge, { top: topPad + 62 }, { opacity: fadeAnim }]}>
         <View style={s.liveDot} />
         <Text style={s.liveBadgeText}>LIVE</Text>
       </Animated.View>
 
-      {/* Blend mode switcher — top right */}
-      <Animated.View style={[s.blendRow, { top: topPad + 55 }, { opacity: fadeAnim }]}>
-        {(["sheer", "blend", "vivid"] as BlendMode[]).map((mode) => (
-          <Pressable
-            key={mode}
-            onPress={() => setBlendLevel(mode)}
-            style={[
-              s.blendBtn,
-              blend === mode && s.blendBtnActive,
-            ]}
-          >
-            <Text style={[s.blendBtnText, blend === mode && s.blendBtnTextActive]}>
-              {BLEND_LABELS[mode]}
-            </Text>
+      {/* Right-side controls: opacity + position nudge */}
+      <Animated.View style={[s.sideControls, { top: topPad + 55 }, { opacity: fadeAnim }]}>
+        {/* Opacity levels */}
+        <View style={s.sideGroup}>
+          {(["vivid", "blend", "sheer"] as OpacityLevel[]).map((lvl) => (
+            <Pressable
+              key={lvl}
+              onPress={() => changeOpacity(lvl)}
+              style={[s.sideBtn, opacityLevel === lvl && s.sideBtnActive]}
+            >
+              <Text style={[s.sideBtnText, opacityLevel === lvl && s.sideBtnTextActive]}>
+                {lvl === "vivid" ? "100%" : lvl === "blend" ? "65%" : "35%"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Spacer */}
+        <View style={{ height: 12 }} />
+
+        {/* Position nudge — move outfit up/down */}
+        <View style={s.sideGroup}>
+          <Pressable onPress={() => nudge("up")} style={s.sideBtn} hitSlop={6}>
+            <Feather name="chevron-up" size={13} color="rgba(245,245,240,0.7)" />
           </Pressable>
-        ))}
+          <View style={s.sideDivider} />
+          <Pressable onPress={() => nudge("down")} style={s.sideBtn} hitSlop={6}>
+            <Feather name="chevron-down" size={13} color="rgba(245,245,240,0.7)" />
+          </Pressable>
+        </View>
       </Animated.View>
 
-      {/* Bottom panel */}
+      {/* Alignment hint — shows when user hasn't nudged yet */}
+      {verticalOffset === 0 && (
+        <Animated.View
+          style={[s.alignHint, { top: FACE_ZONE - 2 }, { opacity: fadeAnim }]}
+          pointerEvents="none"
+        >
+          <View style={s.alignLine} />
+          <Text style={s.alignHintText}>Align clothes to your body using ↑ ↓</Text>
+          <View style={s.alignLine} />
+        </Animated.View>
+      )}
+
+      {/* ── Bottom panel ── */}
       <Animated.View style={[s.panel, { opacity: fadeAnim, transform: [{ translateY: panelSlide }] }]}>
 
         {/* Look navigator */}
@@ -249,11 +310,7 @@ export default function TryOnScreen() {
 
         {/* Pieces strip */}
         <Animated.View style={{ opacity: lookFade }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.pieces}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pieces}>
             {activeLook.pieces.map((piece) => (
               <View key={piece.id} style={s.piece}>
                 <View style={s.pieceThumb}>
@@ -278,7 +335,7 @@ export default function TryOnScreen() {
           </Animated.Text>
         </View>
 
-        {/* Action buttons */}
+        {/* Actions */}
         <View style={[s.actions, { paddingBottom: insets.bottom + 16 }]}>
           <Pressable onPress={flipCamera} style={s.outlineBtn}>
             <Feather name="refresh-cw" size={14} color="rgba(245,245,240,0.7)" />
@@ -309,35 +366,50 @@ const s = StyleSheet.create({
     color: "rgba(245,245,240,0.35)",
   },
 
-  // Outfit overlay — sits directly on top of camera
-  outfitOverlay: {
+  // ── Outfit overlay ─────────────────────────────────────────────────
+  // Clipping window — only the clothing zone is visible, face zone stays clear
+  outfitClipWindow: {
     position: "absolute",
-    top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    overflow: "hidden",
+  },
+  // The actual outfit photo — shifted up inside the clip window to crop model's face
+  outfitImage: {
+    position: "absolute",
+    left: 0,
     width: "100%",
-    height: "100%",
   },
 
+  // Thin gradient at the face/clothes boundary to smooth the transition
+  boundaryFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 48,
+    zIndex: 3,
+  },
+
+  // Scrims
   topScrim: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     height: 180,
-    zIndex: 2,
+    zIndex: 4,
   },
   bottomScrim: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: height * 0.65,
-    zIndex: 2,
+    height: height * 0.62,
+    zIndex: 4,
   },
 
-  // Top bar
+  // ── Top bar ────────────────────────────────────────────────────────
   topBar: {
     position: "absolute",
     top: 0,
@@ -362,7 +434,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // LIVE badge
+  // ── LIVE badge ─────────────────────────────────────────────────────
   liveBadge: {
     position: "absolute",
     left: 20,
@@ -378,42 +450,72 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#C6A75E" },
-  liveBadgeText: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
-    color: "#C6A75E",
-  },
+  liveBadgeText: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#C6A75E" },
 
-  // Blend controls
-  blendRow: {
+  // ── Side controls (right rail) ─────────────────────────────────────
+  sideControls: {
     position: "absolute",
-    right: 20,
+    right: 14,
     zIndex: 10,
-    flexDirection: "row",
-    gap: 5,
+    gap: 0,
+    alignItems: "center",
   },
-  blendBtn: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 20,
+  sideGroup: {
+    backgroundColor: "rgba(5,5,6,0.55)",
     borderWidth: 0.5,
     borderColor: "rgba(245,245,240,0.15)",
-    backgroundColor: "rgba(5,5,6,0.45)",
+    borderRadius: 20,
+    overflow: "hidden",
+    alignItems: "center",
   },
-  blendBtnActive: {
-    backgroundColor: "rgba(198,167,94,0.18)",
-    borderColor: "rgba(198,167,94,0.5)",
+  sideBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 44,
   },
-  blendBtnText: {
-    fontSize: 8,
+  sideBtnActive: {
+    backgroundColor: "rgba(198,167,94,0.2)",
+  },
+  sideBtnText: {
+    fontSize: 9,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 1.2,
+    letterSpacing: 0.5,
     color: "rgba(245,245,240,0.45)",
   },
-  blendBtnTextActive: { color: "#C6A75E" },
+  sideBtnTextActive: { color: "#C6A75E" },
+  sideDivider: {
+    height: 0.5,
+    width: 28,
+    backgroundColor: "rgba(245,245,240,0.12)",
+  },
 
-  // Panel
+  // ── Alignment hint ─────────────────────────────────────────────────
+  alignHint: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  alignLine: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: "rgba(198,167,94,0.4)",
+  },
+  alignHintText: {
+    fontSize: 9,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(198,167,94,0.7)",
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+
+  // ── Bottom panel ───────────────────────────────────────────────────
   panel: {
     position: "absolute",
     bottom: 0,
@@ -476,17 +578,8 @@ const s = StyleSheet.create({
     borderColor: "rgba(245,245,240,0.12)",
   },
   pieceImg: { width: "100%", height: "100%" },
-  pieceName: {
-    fontSize: 9,
-    fontFamily: "Inter_500Medium",
-    color: "#F5F5F0",
-    lineHeight: 13,
-  },
-  pieceBrand: {
-    fontSize: 8,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(245,245,240,0.45)",
-  },
+  pieceName: { fontSize: 9, fontFamily: "Inter_500Medium", color: "#F5F5F0", lineHeight: 13 },
+  pieceBrand: { fontSize: 8, fontFamily: "Inter_400Regular", color: "rgba(245,245,240,0.45)" },
   priceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -496,17 +589,8 @@ const s = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(245,245,240,0.1)",
   },
-  priceLabel: {
-    fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
-    color: "rgba(245,245,240,0.4)",
-    letterSpacing: 2,
-  },
-  priceValue: {
-    fontSize: 20,
-    fontFamily: "PlayfairDisplay_700Bold",
-    color: "#C6A75E",
-  },
+  priceLabel: { fontSize: 9, fontFamily: "Inter_600SemiBold", color: "rgba(245,245,240,0.4)", letterSpacing: 2 },
+  priceValue: { fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", color: "#C6A75E" },
   actions: { flexDirection: "row", gap: 10, paddingHorizontal: 16 },
   outlineBtn: {
     flex: 1,
@@ -519,12 +603,7 @@ const s = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(245,245,240,0.2)",
   },
-  outlineBtnText: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    color: "rgba(245,245,240,0.7)",
-    letterSpacing: 1.5,
-  },
+  outlineBtnText: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "rgba(245,245,240,0.7)", letterSpacing: 1.5 },
   goldBtn2: {
     flex: 2.5,
     flexDirection: "row",
@@ -535,14 +614,9 @@ const s = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: "#C6A75E",
   },
-  goldBtnText2: {
-    fontSize: 11,
-    fontFamily: "Inter_700Bold",
-    color: "#0B0B0C",
-    letterSpacing: 1.5,
-  },
+  goldBtnText2: { fontSize: 11, fontFamily: "Inter_700Bold", color: "#0B0B0C", letterSpacing: 1.5 },
 
-  // Permission screen
+  // ── Permission screen ──────────────────────────────────────────────
   permBody: {
     flex: 1,
     paddingHorizontal: 32,
@@ -559,17 +633,8 @@ const s = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  permTitle: {
-    fontSize: 24,
-    fontFamily: "PlayfairDisplay_700Bold",
-    textAlign: "center",
-  },
-  permSub: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 22,
-  },
+  permTitle: { fontSize: 24, fontFamily: "PlayfairDisplay_700Bold", textAlign: "center" },
+  permSub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 22 },
   goldBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -581,12 +646,7 @@ const s = StyleSheet.create({
     width: "100%",
     marginTop: 8,
   },
-  goldBtnText: {
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
-    color: "#0B0B0C",
-  },
+  goldBtnText: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#0B0B0C" },
   ghostBtn: { paddingVertical: 12 },
   ghostBtnText: { fontSize: 13, fontFamily: "Inter_400Regular" },
 });
