@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { useSubscription } from "@/lib/revenuecat";
 import {
   Alert,
   Platform,
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { savedLooks, savedProducts, closetItems, userProfile, updateProfile } = useApp();
+  const { isSubscribed } = useSubscription();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [activeSection, setActiveSection] = useState<Section>("looks");
@@ -110,6 +112,37 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
+
+        {/* Membership Banner */}
+        {isSubscribed ? (
+          <Pressable
+            onPress={() => router.push("/membership")}
+            style={[styles.memberBanner, { backgroundColor: `${colors.gold}12`, borderColor: `${colors.gold}40` }]}
+          >
+            <Feather name="check-circle" size={16} color={colors.gold} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.memberBannerTitle, { color: colors.gold }]}>Member Active</Text>
+              <Text style={[styles.memberBannerSub, { color: colors.mutedForeground }]}>Full access unlocked</Text>
+            </View>
+            <Feather name="chevron-right" size={14} color={colors.gold} />
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push("/membership"); }}
+            style={[styles.memberBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <View style={[styles.memberIconBox, { backgroundColor: `${colors.gold}15` }]}>
+              <Feather name="star" size={15} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.memberBannerTitle, { color: colors.foreground }]}>Maison Simon Membership</Text>
+              <Text style={[styles.memberBannerSub, { color: colors.mutedForeground }]}>From $2.99/mo · Unlock everything</Text>
+            </View>
+            <View style={[styles.memberCta, { backgroundColor: colors.gold }]}>
+              <Text style={styles.memberCtaText}>JOIN</Text>
+            </View>
+          </Pressable>
+        )}
 
         {/* Edit Form */}
         {editing && (
@@ -282,5 +315,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     letterSpacing: 0.3,
+  },
+  memberBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 0.5,
+    borderRadius: 2,
+    padding: 14,
+  },
+  memberIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  memberBannerTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
+  },
+  memberBannerSub: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 1,
+  },
+  memberCta: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 2,
+  },
+  memberCtaText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.5,
+    color: "#0B0B0C",
   },
 });
