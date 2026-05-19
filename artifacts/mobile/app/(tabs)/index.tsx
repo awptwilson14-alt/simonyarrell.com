@@ -62,6 +62,13 @@ export default function HomeScreen() {
                 onPress={() => router.push("/(tabs)/style")}
                 style={{ alignSelf: "flex-start" }}
               />
+              <Pressable
+                onPress={() => { router.push("/tryon"); }}
+                style={styles.tryOnHeroBtn}
+              >
+                <Feather name="camera" size={13} color="#C6A75E" />
+                <Text style={styles.tryOnHeroBtnText}>TRY ON</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -210,7 +217,9 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_400Regular",
     letterSpacing: 0.3,
   },
-  heroActions: { marginTop: 8 },
+  heroActions: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 12 },
+  tryOnHeroBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 2, borderWidth: 0.5, borderColor: "rgba(198,167,94,0.5)", backgroundColor: "rgba(198,167,94,0.08)" },
+  tryOnHeroBtnText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#C6A75E" },
   section: { marginBottom: 36 },
   hList: { paddingHorizontal: 20, paddingRight: 8 },
   featurePills: {

@@ -31,6 +31,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false, animation: "fade" }} />
       <Stack.Screen name="look/[id]" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="tryon" options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }} />
     </Stack>
   );
 }

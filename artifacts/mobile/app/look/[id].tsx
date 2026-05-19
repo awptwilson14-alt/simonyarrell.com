@@ -266,6 +266,13 @@ export default function LookDetailScreen() {
         {/* ── CTAs ── */}
         <View style={styles.cta}>
           <GoldButton label="SHOP THE LOOK" onPress={() => setPanel("shop")} />
+          <Pressable
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push({ pathname: "/tryon", params: { lookId: look.id } }); }}
+            style={[styles.tryOnBtn, { borderColor: colors.gold, backgroundColor: "rgba(198,167,94,0.08)" }]}
+          >
+            <Feather name="camera" size={14} color={colors.gold} />
+            <Text style={[styles.tryOnText, { color: colors.gold }]}>VIRTUAL TRY-ON</Text>
+          </Pressable>
           <GoldButton label={saved ? "SAVED ✓" : "SAVE LOOK"} onPress={toggleSave} variant="outline" />
         </View>
 
@@ -361,6 +368,8 @@ const styles = StyleSheet.create({
   shopAllBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 2 },
   shopAllText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.5, color: "#0B0B0C" },
   cta: { padding: 24, gap: 12 },
+  tryOnBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 2, borderWidth: 1 },
+  tryOnText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   thumbStrip: { paddingHorizontal: 24, gap: 10, paddingBottom: 20 },
   stripThumb: { width: 60, height: 60, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   stripImg: { width: "100%", height: "100%" },
