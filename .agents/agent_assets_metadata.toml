@@ -1,0 +1,44 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "i9NsmC_TxX3EEQwdXYDvw"
+uri = "file://artifacts/mobile/assets/images/icon.png"
+type = "image"
+title = "maison simon app icon"
+
+[[generated]]
+id = "oD_ZLMWEuae2rfoT4FjP7"
+uri = "file://artifacts/mobile/assets/images/hero_banner.png"
+type = "image"
+title = "hero fashion banner"
+
+[[generated]]
+id = "FCIsvyUM2C3kMTycV6ffs"
+uri = "file://artifacts/mobile/assets/images/look_old_money.png"
+type = "image"
+title = "old money look"
+
+[[generated]]
+id = "4gPh5W66uZKZ4XHn3I5qs"
+uri = "file://artifacts/mobile/assets/images/look_streetwear.png"
+type = "image"
+title = "luxury streetwear look"
+
+[[generated]]
+id = "EwU77xRER14eNP4PKb2Ta"
+uri = "file://artifacts/mobile/assets/images/look_vacation.png"
+type = "image"
+title = "vacation luxe look"
+
+[[generated]]
+id = "KNLQ-59kWg8UF1-PkWoPX"
+uri = "file://artifacts/mobile/assets/images/look_techwear.png"
+type = "image"
+title = "techwear look"
+
+[[generated]]
+id = "365vYaOSlhwhRqrF30L62"
+uri = "file://artifacts/mobile/assets/images/splash_bg.png"
+type = "image"
+title = "luxury splash background"
