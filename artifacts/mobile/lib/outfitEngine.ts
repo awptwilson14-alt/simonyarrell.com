@@ -198,6 +198,20 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string }>> = {
     { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
     { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },
   ],
+  "Formal": [
+    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
+    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1566174053879-31528523f8ae", 600, 900) },
+    { uri: uns("1549068106-b024baf0f72a", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
+    { uri: uns("1591047139829-d91aecb6caea", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
+  ],
   "default": [
     { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
     { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
@@ -304,6 +318,7 @@ const LOOK_NAMES: Record<string, string[]> = {
   Streetwear: ["Block-to-Runway", "The Drop", "Street Archives", "Urban Blueprint", "Concrete Luxe", "The Flex", "City Uniform", "Street Level", "The Culture", "Downtown Edit"],
   Evening: ["Midnight Garden", "Noir Elegance", "The Gown", "Evening Ritual", "Black Tie Reborn", "The Velvet Hour", "Soirée Supreme", "Starlit Glamour", "Opulent Evening", "The Grand Look"],
   Party: ["Main Character", "The Afterparty", "Disco Heaven", "Glitter & Gold", "Night Frequency", "Party Season", "Euphoric Edit", "Club Luxe", "Electric Night", "The Entrance"],
+  Formal: ["The Black Tie", "White Tie & Tails", "Grande Ceremony", "The Tuxedo Edit", "Gala Royale", "The Floor-Length Moment", "Couture Formality", "The Dress Code", "Champagne & Silk", "The Invitation"],
 };
 
 const LOOK_DESCRIPTIONS: Record<string, string[]> = {
@@ -355,6 +370,13 @@ const LOOK_DESCRIPTIONS: Record<string, string[]> = {
     "Dressed for an evening that should never end.",
     "Opulence, restraint, and the perfect amount of drama.",
     "Black tie or not — this is the standard.",
+  ],
+  Formal: [
+    "Black tie is a promise. This look keeps it.",
+    "When the dress code demands everything, bring more.",
+    "Precision-cut, floor-length, and impossible to ignore.",
+    "Heritage tailoring meets modern grandeur.",
+    "Dressed for history — yours and theirs.",
   ],
   Party: [
     "Arrive like an event. Leave like a memory.",
@@ -512,6 +534,20 @@ const CATALOG: CatalogItem[] = [
   { id: "d012", name: "Feather-Trim Gown", brand: "Giambattista Valli", price: 4800, category: "dress", styles: ["Evening", "Avant-garde"], occasions: ["Event", "Party"], genders: ["women"], colors: ["Ivory", "Blush", "Red"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.giambattistavalli.com" },
   { id: "d013", name: "Shirtdress Midi", brand: "Arket", price: 145, category: "dress", styles: ["Clean Minimal", "Business"], occasions: ["Work", "Casual"], genders: ["women"], colors: ["White", "Blue Stripe", "Beige"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.arket.com" },
 
+  // ── FORMAL GOWNS — Women ──────────────────────────────────────────────────
+  { id: "fg01", name: "Strapless Ball Gown", brand: "Vera Wang", price: 3800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Ivory", "Blush", "Black", "White"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.verawang.com" },
+  { id: "fg02", name: "Column Crepe Gown", brand: "Roland Mouret", price: 2400, category: "dress", styles: ["Evening", "Clean Minimal"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Black", "Midnight Blue", "Ivory", "Red"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.rolandmouret.com" },
+  { id: "fg03", name: "Duchess Satin Ball Gown", brand: "Oscar de la Renta", price: 5200, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Champagne", "Blush", "Crimson", "Ivory"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.oscardelarenta.com" },
+  { id: "fg04", name: "Mermaid Silk Gown", brand: "Alexandre Vauthier", price: 4100, category: "dress", styles: ["Evening", "Y2K Revival"], occasions: ["Formal", "Event", "Party"], genders: ["women"], colors: ["Black", "Gold", "Silver", "Nude"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.alexandrevauthier.com" },
+  { id: "fg05", name: "Tulle A-Line Gown", brand: "Giambattista Valli", price: 4800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Blush", "White", "Lilac", "Mint"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.giambattistavalli.com" },
+  { id: "fg06", name: "Halter Neck Pleated Gown", brand: "Valentino", price: 5600, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Ivory", "Black", "Red", "Blush"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.valentino.com" },
+  { id: "fg07", name: "One-Shoulder Velvet Gown", brand: "Tom Ford", price: 3900, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event", "Date Night"], genders: ["women"], colors: ["Black", "Burgundy", "Forest Green", "Navy"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.tomford.com" },
+  { id: "fg08", name: "Empire Waist Chiffon Gown", brand: "Monique Lhuillier", price: 3200, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Champagne", "Sage", "Dusty Blue", "Ivory"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.moniquelhuillier.com" },
+  { id: "fg09", name: "Draped Georgette Gown", brand: "Elie Saab", price: 6200, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Gold", "Blush", "Silver", "Ivory"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.eliesaab.com" },
+  { id: "fg10", name: "Floral Appliqué Ball Gown", brand: "Zuhair Murad", price: 7400, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["White", "Blush", "Champagne", "Black"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.zuhairmurad.com" },
+  { id: "fg11", name: "Tuxedo Power Gown", brand: "Saint Laurent", price: 4500, category: "dress", styles: ["Evening", "Clean Minimal"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Black", "White", "Ivory"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.ysl.com" },
+  { id: "fg12", name: "Cape-Back Duchess Gown", brand: "Reem Acra", price: 5100, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Ivory", "Blush", "Champagne", "Gold"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.reemacra.com" },
+
   // ── OUTERWEAR ─────────────────────────────────────────────────────────────
   { id: "o001", name: "Heritage Trench Coat", brand: "Burberry", price: 2490, category: "outerwear", styles: ["Old Money", "Business", "Clean Minimal"], occasions: ["Work", "Casual", "Date Night", "Event"], genders: ["women", "men"], colors: ["Honey", "Black", "Stone"], imageUrl: uns("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.burberry.com" },
   { id: "o002", name: "GORE-TEX Shell Jacket", brand: "Acronym", price: 1990, category: "outerwear", styles: ["Techwear"], occasions: ["Casual", "Streetwear"], genders: ["men", "women"], colors: ["Black", "Graphite"], imageUrl: uns("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.acrnm.com" },
@@ -527,6 +563,28 @@ const CATALOG: CatalogItem[] = [
   { id: "o012", name: "Logo Windbreaker", brand: "Off-White", price: 1290, category: "outerwear", styles: ["Luxury Streetwear", "Techwear"], occasions: ["Casual", "Streetwear"], genders: ["men", "women"], colors: ["Black", "Yellow"], imageUrl: uns("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.off---white.com" },
   { id: "o013", name: "Perfect Blazer", brand: "Zara", price: 149, category: "outerwear", styles: ["Business", "Clean Minimal"], occasions: ["Work", "Date Night", "Casual"], genders: ["women", "men"], colors: ["Black", "Ecru", "Plaid"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.zara.com" },
   { id: "o014", name: "Cashmere Overcoat", brand: "Kiton", price: 8900, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["men"], colors: ["Charcoal", "Camel", "Navy"], imageUrl: uns("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.kiton.com" },
+
+  // ── FORMAL SUITS & TUXEDOS — Men ─────────────────────────────────────────
+  { id: "fs01", name: "Classic Black Tuxedo Jacket", brand: "Tom Ford", price: 4800, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.tomford.com" },
+  { id: "fs02", name: "Peak-Lapel Tuxedo Jacket", brand: "Brioni", price: 6200, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "Midnight Blue"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.brioni.com" },
+  { id: "fs03", name: "Shawl-Lapel Dinner Jacket", brand: "Ralph Lauren Purple Label", price: 3900, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "White", "Ivory"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.ralphlauren.com" },
+  { id: "fs04", name: "Single-Breasted Suit Jacket", brand: "Canali", price: 2800, category: "outerwear", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Black", "Mid Grey"], imageUrl: uns("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.canali.com" },
+  { id: "fs05", name: "Double-Breasted Suit Jacket", brand: "Ermenegildo Zegna", price: 3400, category: "outerwear", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Dark Brown", "Slate"], imageUrl: uns("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.zegna.com" },
+  { id: "fs06", name: "Velvet Smoking Jacket", brand: "Gucci", price: 3600, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event", "Party"], genders: ["men"], colors: ["Black", "Burgundy", "Forest Green", "Navy"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.gucci.com" },
+  { id: "fs07", name: "Three-Piece Suit Jacket", brand: "Huntsman Savile Row", price: 5500, category: "outerwear", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy Pin Stripe", "Black", "Mid Grey"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.huntsmansavilerow.com" },
+  { id: "fs08", name: "Midnight Blue Tuxedo", brand: "Dolce & Gabbana", price: 4200, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Midnight Blue", "Black"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.dolcegabbana.com" },
+
+  // ── FORMAL SHIRTS — Men ───────────────────────────────────────────────────
+  { id: "fsh01", name: "Wing-Collar Tuxedo Shirt", brand: "Turnbull & Asser", price: 480, category: "top", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["White", "Ivory"], imageUrl: uns("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.turnbullandasser.com" },
+  { id: "fsh02", name: "Pleated-Front Dress Shirt", brand: "Charvet", price: 620, category: "top", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["White", "Ivory", "Pale Blue"], imageUrl: uns("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.charvet.com" },
+  { id: "fsh03", name: "French Cuff Formal Shirt", brand: "Brioni", price: 540, category: "top", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["White", "Pale Blue", "Ivory", "Light Pink"], imageUrl: uns("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.brioni.com" },
+  { id: "fsh04", name: "Marcella Bib Dress Shirt", brand: "Turnbull & Asser", price: 510, category: "top", styles: ["Evening", "Old Money"], occasions: ["Formal"], genders: ["men"], colors: ["White", "Ivory"], imageUrl: uns("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.turnbullandasser.com" },
+
+  // ── FORMAL TROUSERS — Men ─────────────────────────────────────────────────
+  { id: "ftr01", name: "Satin-Stripe Tuxedo Trousers", brand: "Tom Ford", price: 1200, category: "bottom", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "Midnight Blue"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.tomford.com" },
+  { id: "ftr02", name: "Flat-Front Dress Trousers", brand: "Canali", price: 680, category: "bottom", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Black", "Mid Grey"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.canali.com" },
+  { id: "ftr03", name: "Pleated Formal Trousers", brand: "Brioni", price: 980, category: "bottom", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "Charcoal", "Midnight Blue"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.brioni.com" },
+  { id: "ftr04", name: "Wide-Leg Formal Trouser", brand: "Ermenegildo Zegna", price: 790, category: "bottom", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Slate", "Black"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.zegna.com" },
 
   // ── SHOES — Women ─────────────────────────────────────────────────────────
   { id: "s001", name: "Slingback Kitten Heel", brand: "Miu Miu", price: 780, category: "shoes", styles: ["Old Money", "Business", "Y2K Revival"], occasions: ["Work", "Date Night", "Event", "Casual"], genders: ["women"], colors: ["Nude", "Black", "Red"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.miumiu.com" },
@@ -555,6 +613,19 @@ const CATALOG: CatalogItem[] = [
   { id: "s022", name: "Trainer Sneaker", brand: "Veja", price: 195, category: "shoes", styles: ["Clean Minimal", "Casual"], occasions: ["Casual", "Streetwear"], genders: ["men", "women"], colors: ["White/Green", "White/Red", "All White"], imageUrl: uns("1542291026-7eec264c27ff"), purchaseUrl: "https://www.veja-store.com" },
   { id: "s023", name: "Sneaker Low Top", brand: "Golden Goose", price: 595, category: "shoes", styles: ["Luxury Streetwear", "Casual"], occasions: ["Casual", "Date Night", "Streetwear"], genders: ["men", "women"], colors: ["White Distressed", "Silver Star", "Black"], imageUrl: uns("1542291026-7eec264c27ff"), purchaseUrl: "https://www.goldengoose.com" },
   { id: "s024", name: "Woven Leather Sandal", brand: "Tod's", price: 420, category: "shoes", styles: ["Old Money", "Vacation Luxe"], occasions: ["Vacation", "Casual"], genders: ["men"], colors: ["Tan", "Dark Brown"], imageUrl: uns("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.tods.com" },
+
+  // ── FORMAL SHOES — Women ──────────────────────────────────────────────────
+  { id: "fsw01", name: "Strappy Satin Stiletto", brand: "Jimmy Choo", price: 1250, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event", "Date Night"], genders: ["women"], colors: ["Silver", "Gold", "Black", "Nude"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.jimmychoo.com" },
+  { id: "fsw02", name: "Duchess Satin Heeled Mule", brand: "Manolo Blahnik", price: 1190, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event", "Date Night"], genders: ["women"], colors: ["Ivory", "Blush", "Black", "Red"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.manoloblahnik.com" },
+  { id: "fsw03", name: "Crystal-Bow Pump", brand: "Roger Vivier", price: 1480, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Silver", "Gold", "Black", "Nude"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.rogervivier.com" },
+  { id: "fsw04", name: "Pointed-Toe Evening Heel", brand: "Gianvito Rossi", price: 980, category: "shoes", styles: ["Evening", "Clean Minimal"], occasions: ["Formal", "Event", "Date Night"], genders: ["women"], colors: ["Nude", "Black", "Ivory", "Silver"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.gianvitorossi.com" },
+  { id: "fsw05", name: "Embellished Sandal Heel", brand: "René Caovilla", price: 1350, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["women"], colors: ["Gold", "Silver", "Champagne", "Black"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.renecaovilla.com" },
+
+  // ── FORMAL SHOES — Men ────────────────────────────────────────────────────
+  { id: "fsm01", name: "Patent Leather Oxford", brand: "John Lobb", price: 1850, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event", "Work"], genders: ["men"], colors: ["Black", "Midnight Blue"], imageUrl: uns("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.johnlobb.com" },
+  { id: "fsm02", name: "Captoe Derby Dress Shoe", brand: "Edward Green", price: 1620, category: "shoes", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Black", "Dark Brown", "Oxblood"], imageUrl: uns("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.edwardgreen.com" },
+  { id: "fsm03", name: "Velvet Evening Slipper", brand: "Crockett & Jones", price: 890, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "Burgundy", "Navy", "Forest Green"], imageUrl: uns("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.crockettandjones.com" },
+  { id: "fsm04", name: "Whole-Cut Leather Oxford", brand: "Berluti", price: 2100, category: "shoes", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event", "Work"], genders: ["men"], colors: ["Black", "Cognac", "Dark Brown"], imageUrl: uns("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.berluti.com" },
 
   // ── BAGS ──────────────────────────────────────────────────────────────────
   { id: "g001", name: "Cassette Mini Bag", brand: "Bottega Veneta", price: 2990, category: "bag", styles: ["Clean Minimal", "Old Money", "Evening"], occasions: ["Work", "Date Night", "Event", "Casual"], genders: ["women"], colors: ["Black", "Cognac", "Ivory"], imageUrl: uns("1548036328-c9fa89d128fa"), purchaseUrl: "https://www.bottegaveneta.com" },
@@ -599,6 +670,7 @@ const OCCASION_MAP: Record<string, string[]> = {
   "Streetwear": ["Streetwear", "Casual"],
   "Evening": ["Evening", "Event", "Party", "Date Night"],
   "Party": ["Party", "Evening", "Date Night"],
+  "Formal": ["Formal", "Event", "Evening"],
   "Resort": ["Vacation", "Casual"],
   "Street": ["Streetwear", "Casual"],
   "Cultural": ["Event", "Casual"],
@@ -615,6 +687,7 @@ const OCCASION_STYLES: Record<string, string[]> = {
   "Streetwear": ["Luxury Streetwear", "Techwear", "Y2K Revival"],
   "Evening": ["Evening", "Old Money", "Y2K Revival"],
   "Party": ["Y2K Revival", "Evening", "Luxury Streetwear"],
+  "Formal": ["Evening", "Old Money", "Business"],
 };
 
 // ─── Look name style tags ─────────────────────────────────────────────────────
@@ -627,6 +700,7 @@ const STYLE_TAGS: Record<string, string[]> = {
   "Business": ["power dressing", "tailored", "professional", "structured", "polished"],
   "Y2K Revival": ["y2k", "metallic", "low-rise", "bodycon", "2000s"],
   "Vacation Luxe": ["resort", "silk", "effortless", "sun-kissed", "luxe vacation"],
+  "Formal": ["black tie", "tuxedo", "gown", "white tie", "couture", "ceremony"],
   "Techwear": ["technical", "utility", "functional", "GORE-TEX", "futuristic"],
 };
 
