@@ -167,8 +167,11 @@ export default function HomeScreen() {
       <View style={[styles.header, { paddingTop: topPad }]} pointerEvents="box-none">
         <View style={styles.headerInner} pointerEvents="box-none">
           <View style={styles.logoRow}>
-            <Text style={[styles.logoMark, { color: colors.gold }]}>MS</Text>
-            <Text style={[styles.logoText, { color: colors.foreground }]}>MAISON SIMON</Text>
+            <Image
+              source={require("../../assets/images/logo_ms.png")}
+              style={styles.logoImg}
+              resizeMode="contain"
+            />
           </View>
           <View style={styles.headerRight}>
             <Pressable onPress={() => {}} style={styles.headerIcon}>
@@ -273,17 +276,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: HEADER_HEIGHT,
   },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  logoMark: {
-    fontSize: 18,
-    fontFamily: "PlayfairDisplay_700Bold",
-    letterSpacing: 1,
-  },
-  logoText: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 3,
-  },
+  logoRow: { flexDirection: "row", alignItems: "center" },
+  logoImg: { height: 32, width: 59 },
   headerRight: { flexDirection: "row", gap: 16, alignItems: "center" },
   headerIcon: { padding: 4 },
 });

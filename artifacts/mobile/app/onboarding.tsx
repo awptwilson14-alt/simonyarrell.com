@@ -72,19 +72,13 @@ export default function OnboardingScreen() {
         />
 
         <View style={[splash.content, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 48 }]}>
-          {/* Monogram */}
-          <View style={splash.top}>
-            <View style={[splash.monogram, { borderColor: colors.gold }]}>
-              <Text style={[splash.monogramText, { color: colors.gold }]}>MS</Text>
-            </View>
-          </View>
-
           {/* Brand lockup */}
           <View style={splash.brandSection}>
-            <Text style={[splash.brandName, { color: colors.foreground }]}>MAISON SIMON</Text>
-            <Text style={[splash.tagline, { color: colors.mutedForeground }]}>
-              Luxury Styling, Powered by Intelligence.
-            </Text>
+            <Image
+              source={require("../assets/images/logo_ms.png")}
+              style={splash.logoImg}
+              resizeMode="contain"
+            />
           </View>
 
           {/* CTA */}
@@ -236,33 +230,8 @@ const splash = StyleSheet.create({
   container: { flex: 1 },
   heroImage: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
   content: { flex: 1, paddingHorizontal: 28, justifyContent: "space-between" },
-  top: { alignItems: "center" },
-  monogram: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  monogramText: {
-    fontSize: 26,
-    fontFamily: "PlayfairDisplay_700Bold",
-    letterSpacing: 2,
-  },
-  brandSection: { alignItems: "center", gap: 10 },
-  brandName: {
-    fontSize: 28,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 6,
-  },
-  tagline: {
-    fontSize: 15,
-    fontFamily: "PlayfairDisplay_400Regular",
-    textAlign: "center",
-    letterSpacing: 0.3,
-    lineHeight: 22,
-  },
+  brandSection: { flex: 1, alignItems: "center", justifyContent: "center" },
+  logoImg: { width: 280, height: 153 },
   footer: { gap: 16 },
   guestBtn: { alignItems: "center", paddingVertical: 8 },
   guestText: { fontSize: 13, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
