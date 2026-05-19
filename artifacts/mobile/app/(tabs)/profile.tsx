@@ -255,14 +255,35 @@ export default function ProfileScreen() {
             </View>
           )
         )}
-        {/* Privacy footer */}
+        {/* Affiliate Partners Banner */}
         <Pressable
-          onPress={() => router.push("/privacy")}
-          style={styles.privacyLink}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/partners"); }}
+          style={[styles.affiliateBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <Feather name="lock" size={12} color={colors.mutedForeground} />
-          <Text style={[styles.privacyLinkText, { color: colors.mutedForeground }]}>Privacy Policy</Text>
+          <View style={[styles.affiliateIconBox, { backgroundColor: "rgba(198,167,94,0.12)" }]}>
+            <Feather name="link" size={15} color={colors.gold} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.affiliateTitle, { color: colors.foreground }]}>Affiliate Partners</Text>
+            <Text style={[styles.affiliateSub, { color: colors.mutedForeground }]}>
+              List your brand · mail@maisonsimon.app
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
         </Pressable>
+
+        {/* Footer links */}
+        <View style={styles.footerLinks}>
+          <Pressable onPress={() => router.push("/privacy")} style={styles.footerLink}>
+            <Feather name="lock" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Privacy Policy</Text>
+          </Pressable>
+          <View style={[styles.footerDot, { backgroundColor: colors.border }]} />
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/partners"); }} style={styles.footerLink}>
+            <Feather name="briefcase" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Partner with Us</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -304,17 +325,54 @@ const styles = StyleSheet.create({
   productsGrid: { gap: 12 },
   emptySection: { alignItems: "center", paddingVertical: 40, gap: 12 },
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular" },
-  privacyLink: {
+  affiliateBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 0.5,
+    borderRadius: 2,
+    padding: 14,
+  },
+  affiliateIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  affiliateTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
+  },
+  affiliateSub: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 1,
+  },
+  footerLinks: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingVertical: 20,
+    gap: 12,
+    paddingVertical: 8,
   },
-  privacyLinkText: {
+  footerLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 8,
+  },
+  footerLinkText: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     letterSpacing: 0.3,
+  },
+  footerDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
   },
   memberBanner: {
     flexDirection: "row",

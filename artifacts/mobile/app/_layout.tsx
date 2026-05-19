@@ -42,6 +42,7 @@ function RootLayoutNav() {
       <Stack.Screen name="tryon" options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="membership" options={{ headerShown: false, presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="privacy" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="partners" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
 }
