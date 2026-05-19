@@ -17,7 +17,7 @@ function NativeTabLayout() {
         <Label>Home</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="explore">
-        <Icon sf={{ default: "compass", selected: "compass.fill" }} />
+        <Icon sf={{ default: "magnifyingglass", selected: "magnifyingglass" }} />
         <Label>Explore</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="style">
@@ -96,7 +96,7 @@ function ClassicTabLayout() {
           title: "Explore",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="compass" tintColor={color} size={22} />
+              <SymbolView name="magnifyingglass" tintColor={color} size={22} />
             ) : (
               <Feather name="compass" size={20} color={color} />
             ),
