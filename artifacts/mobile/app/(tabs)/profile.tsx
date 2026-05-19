@@ -222,6 +222,14 @@ export default function ProfileScreen() {
             </View>
           )
         )}
+        {/* Privacy footer */}
+        <Pressable
+          onPress={() => router.push("/privacy")}
+          style={styles.privacyLink}
+        >
+          <Feather name="lock" size={12} color={colors.mutedForeground} />
+          <Text style={[styles.privacyLinkText, { color: colors.mutedForeground }]}>Privacy Policy</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -263,4 +271,16 @@ const styles = StyleSheet.create({
   productsGrid: { gap: 12 },
   emptySection: { alignItems: "center", paddingVertical: 40, gap: 12 },
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  privacyLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 20,
+  },
+  privacyLinkText: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.3,
+  },
 });
