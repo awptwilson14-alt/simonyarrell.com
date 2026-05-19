@@ -2,7 +2,7 @@
 const PHOTOS = {
   drake:       require("../assets/images/celebrities/drake.jpeg"),
   rihanna:     require("../assets/images/celebrities/rihanna.jpeg"),
-  kanye:       { uri: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=480&h=560&fit=crop&auto=format&q=80" },
+  kanye:       require("../assets/images/celebrities/kanye.jpeg"),
   travis:      { uri: "https://images.unsplash.com/photo-1553514029-1318de880eea?w=480&h=560&fit=crop&auto=format&q=80" },
   fabolous:    require("../assets/images/celebrities/fabolous.jpeg"),
   denzel:      require("../assets/images/celebrities/denzel.jpeg"),
