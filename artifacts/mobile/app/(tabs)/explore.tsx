@@ -19,6 +19,7 @@ import { TrendCard } from "@/components/TrendCard";
 import { TRENDS } from "@/constants/data";
 import { CELEBS } from "@/constants/celebrities";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const { width } = Dimensions.get("window");
 const CELEB_CARD_W = 130;
@@ -37,6 +38,7 @@ export default function ExploreScreen() {
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.headerContent}>
+          <BrandWordmark style={{ marginBottom: 6 }} />
           <Text style={[styles.screenTitle, { color: colors.foreground }]}>Explore</Text>
           <View style={[styles.tabBar, { borderColor: colors.border }]}>
             {(["trends", "celebrities"] as Tab[]).map((tab) => (

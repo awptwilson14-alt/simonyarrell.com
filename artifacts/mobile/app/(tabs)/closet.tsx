@@ -17,6 +17,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useRouter } from "expo-router";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Bags", "Accessories", "Jewelry"];
 const COLORS_LIST = ["Black", "White", "Navy", "Camel", "Beige", "Ivory", "Grey", "Brown", "Gold", "Silver", "Red", "Green", "Blue"];
@@ -66,6 +67,7 @@ export default function ClosetScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad }]}>
+        <BrandWordmark style={{ marginBottom: 6 }} />
         <View style={styles.headerContent}>
           <Text style={[styles.screenTitle, { color: colors.foreground }]}>My Closet</Text>
           <Pressable

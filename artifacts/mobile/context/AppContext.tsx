@@ -21,6 +21,7 @@ export interface ClosetItem {
 export interface UserProfile {
   name: string;
   gender: string;
+  size: string;
   budget: string;
   favoriteStyles: string[];
   onboardingComplete: boolean;
@@ -49,6 +50,7 @@ interface AppContextType {
 const DEFAULT_PROFILE: UserProfile = {
   name: "",
   gender: "Women",
+  size: "M",
   budget: "$500–$1500",
   favoriteStyles: [],
   onboardingComplete: false,

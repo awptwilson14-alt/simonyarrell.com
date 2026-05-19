@@ -16,6 +16,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { CELEBS } from "@/constants/celebrities";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 52) / 2;
@@ -42,6 +43,7 @@ export default function CelebrityPickerScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: topPad }]}>
+        <BrandWordmark style={{ marginBottom: 10 }} />
         <View style={styles.headerRow}>
           <Pressable
             onPress={() => router.back()}

@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { CELEBS } from "@/constants/celebrities";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const { width, height } = Dimensions.get("window");
 
@@ -71,6 +72,7 @@ export default function CelebrityDetailScreen() {
             >
               <Feather name="arrow-left" size={18} color="#F5F5F0" />
             </Pressable>
+            <BrandWordmark style={{ opacity: 0.9 }} />
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

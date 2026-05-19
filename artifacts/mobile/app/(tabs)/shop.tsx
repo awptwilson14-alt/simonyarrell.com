@@ -22,6 +22,7 @@ import {
   getBrandsByTier,
 } from "@/constants/brands";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48) / 2;
@@ -61,6 +62,7 @@ export default function ShopScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: topPad }]}>
+        <BrandWordmark style={{ marginBottom: 6 }} />
         <View style={styles.headerRow}>
           <Text style={[styles.screenTitle, { color: colors.foreground }]}>Shop</Text>
           <Text style={[styles.brandCount, { color: colors.mutedForeground }]}>

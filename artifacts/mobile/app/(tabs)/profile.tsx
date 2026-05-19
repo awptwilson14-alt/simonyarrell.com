@@ -21,6 +21,7 @@ import { MultiFilterChips } from "@/components/FilterChips";
 import { STYLE_CATEGORIES, BUDGETS, GENDERS } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 type Section = "looks" | "products";
 
@@ -35,8 +36,10 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(userProfile.name);
   const [editGender, setEditGender] = useState(userProfile.gender);
+  const [editSize, setEditSize] = useState(userProfile.size ?? "M");
   const [editBudget, setEditBudget] = useState(userProfile.budget);
   const [editStyles, setEditStyles] = useState<string[]>(userProfile.favoriteStyles);
+  const SIZES = ["S", "M", "L", "XL", "XXX", "XXXX"];
 
   const toggleStyle = (s: string) => {
     setEditStyles((prev) =>
@@ -45,7 +48,7 @@ export default function ProfileScreen() {
   };
 
   const saveEdits = () => {
-    updateProfile({ name: editName, gender: editGender, budget: editBudget, favoriteStyles: editStyles });
+    updateProfile({ name: editName, gender: editGender, size: editSize, budget: editBudget, favoriteStyles: editStyles });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setEditing(false);
   };
@@ -70,6 +73,7 @@ export default function ProfileScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
+        <BrandWordmark style={{ marginBottom: 20 }} />
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={[styles.avatar, { backgroundColor: colors.card, borderColor: colors.gold }]}>
@@ -80,7 +84,7 @@ export default function ProfileScreen() {
               {userProfile.name || "Your Profile"}
             </Text>
             <Text style={[styles.styleTag, { color: colors.gold }]}>
-              {userProfile.gender} · {userProfile.budget}
+              {userProfile.gender} · Size {userProfile.size ?? "M"} · {userProfile.budget}
             </Text>
             {userProfile.favoriteStyles.length > 0 && (
               <Text style={[styles.styleList, { color: colors.mutedForeground }]} numberOfLines={2}>
@@ -130,6 +134,19 @@ export default function ProfileScreen() {
                   style={[styles.genderBtn, { borderColor: editGender === g ? colors.gold : colors.border, backgroundColor: editGender === g ? "rgba(201,168,76,0.1)" : "transparent" }]}
                 >
                   <Text style={[styles.genderText, { color: editGender === g ? colors.gold : colors.mutedForeground }]}>{g}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>SIZE</Text>
+            <View style={styles.sizeGrid}>
+              {SIZES.map((s) => (
+                <Pressable
+                  key={s}
+                  onPress={() => { Haptics.selectionAsync(); setEditSize(s); }}
+                  style={[styles.sizeBtn, { borderColor: editSize === s ? colors.gold : colors.border, backgroundColor: editSize === s ? "rgba(201,168,76,0.1)" : "transparent" }]}
+                >
+                  <Text style={[styles.sizeBtnText, { color: editSize === s ? colors.gold : colors.mutedForeground }]}>{s}</Text>
                 </Pressable>
               ))}
             </View>
@@ -232,6 +249,9 @@ const styles = StyleSheet.create({
   genderRow: { flexDirection: "row", gap: 10 },
   genderBtn: { flex: 1, borderWidth: 0.5, borderRadius: 2, paddingVertical: 12, alignItems: "center" },
   genderText: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.5 },
+  sizeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  sizeBtn: { width: "30%", borderWidth: 0.5, borderRadius: 2, paddingVertical: 14, alignItems: "center" },
+  sizeBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold", letterSpacing: 1 },
   budgetRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderWidth: 0.5, borderRadius: 2 },
   radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   radioFill: { width: 9, height: 9, borderRadius: 4.5 },

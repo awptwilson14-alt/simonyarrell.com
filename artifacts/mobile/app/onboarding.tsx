@@ -21,7 +21,8 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 const { width, height } = Dimensions.get("window");
-const STEPS = 4;
+const STEPS = 5;
+const SIZES = ["S", "M", "L", "XL", "XXX", "XXXX"];
 
 export default function OnboardingScreen() {
   const colors = useColors();
@@ -32,6 +33,7 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [gender, setGender] = useState("Women");
+  const [size, setSize] = useState("M");
   const [budget, setBudget] = useState("$500–$1500");
   const [styles_, setStyles] = useState<string[]>([]);
 
@@ -45,13 +47,13 @@ export default function OnboardingScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step < STEPS - 1) setStep(step + 1);
     else {
-      completeOnboarding({ name: name || "Guest", gender, budget, favoriteStyles: styles_ });
+      completeOnboarding({ name: name || "Guest", gender, size, budget, favoriteStyles: styles_ });
       router.replace("/(tabs)");
     }
   };
 
   const skip = () => {
-    completeOnboarding({ name: "Guest", gender, budget, favoriteStyles: styles_ });
+    completeOnboarding({ name: "Guest", gender, size, budget, favoriteStyles: styles_ });
     router.replace("/(tabs)");
   };
 
@@ -139,6 +141,33 @@ export default function OnboardingScreen() {
       content: (
         <View style={setup.formSection}>
           <MultiFilterChips options={STYLE_CATEGORIES} selected={styles_} onToggle={toggleStyle} />
+        </View>
+      ),
+    },
+    {
+      title: "What's your\nsize?",
+      subtitle: "For perfectly fitted recommendations",
+      content: (
+        <View style={setup.formSection}>
+          <View style={setup.sizeGrid}>
+            {SIZES.map((s) => (
+              <Pressable
+                key={s}
+                onPress={() => { Haptics.selectionAsync(); setSize(s); }}
+                style={[
+                  setup.sizeBtn,
+                  {
+                    backgroundColor: size === s ? colors.gold : "transparent",
+                    borderColor: size === s ? colors.gold : colors.border,
+                  },
+                ]}
+              >
+                <Text style={[setup.sizeBtnText, { color: size === s ? "#0B0B0C" : colors.mutedForeground }]}>
+                  {s}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       ),
     },
@@ -247,6 +276,9 @@ const setup = StyleSheet.create({
   genderRow: { flexDirection: "row", gap: 10 },
   genderBtn: { flex: 1, borderWidth: 0.5, borderRadius: 4, paddingVertical: 14, alignItems: "center" },
   genderText: { fontSize: 13, fontFamily: "Inter_500Medium", letterSpacing: 1 },
+  sizeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  sizeBtn: { width: "30%", borderWidth: 0.5, borderRadius: 4, paddingVertical: 18, alignItems: "center" },
+  sizeBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", letterSpacing: 1 },
   budgetRow: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderWidth: 0.5, borderRadius: 4 },
   radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   radioInner: { width: 10, height: 10, borderRadius: 5 },

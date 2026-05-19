@@ -20,6 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { LOOKS } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48 - 12) / 2;
@@ -93,6 +94,7 @@ export default function StyleScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Header ── */}
+        <BrandWordmark style={{ marginBottom: 2 }} />
         <View style={styles.header}>
           <View style={styles.headerTop}>
             {step !== "occasion" && (

@@ -21,6 +21,7 @@ import { LookCard } from "@/components/LookCard";
 import { LOOKS } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const { width, height } = Dimensions.get("window");
 
@@ -84,6 +85,7 @@ export default function LookDetailScreen() {
             <Pressable onPress={() => router.back()} style={[styles.circleBtn, { backgroundColor: "rgba(11,11,12,0.6)" }]} hitSlop={12}>
               <Feather name="arrow-left" size={18} color="#F5F5F0" />
             </Pressable>
+            <BrandWordmark style={{ opacity: 0.9 }} />
             <View style={styles.topRight}>
               <Pressable onPress={toggleSave} style={[styles.circleBtn, { backgroundColor: saved ? colors.gold : "rgba(11,11,12,0.6)" }]} hitSlop={12}>
                 <Feather name="heart" size={16} color={saved ? "#0B0B0C" : "#F5F5F0"} />
