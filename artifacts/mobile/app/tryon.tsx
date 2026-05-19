@@ -1,11 +1,10 @@
 import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   Image,
@@ -26,22 +25,17 @@ import { useColors } from "@/hooks/useColors";
 
 const { width, height } = Dimensions.get("window");
 
-type Stage = "landing" | "capturing" | "studio";
-
-const HOW_IT_WORKS = [
-  { icon: "camera", label: "Take a photo", desc: "Full-length selfie works best" },
-  { icon: "layers", label: "Pick your look", desc: "Browse curated Maison Simon looks" },
-  { icon: "share-2", label: "Style & share", desc: "Save your editorial style card" },
-];
-
 export default function TryOnScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { lookId } = useLocalSearchParams<{ lookId?: string }>();
 
-  const [stage, setStage] = useState<Stage>("landing");
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<"front" | "back">("front");
+  const [capturing, setCapturing] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
+
   const [activeLookIdx, setActiveLookIdx] = useState(() => {
     if (lookId) {
       const idx = LOOKS.findIndex((l) => l.id === lookId);
@@ -49,286 +43,174 @@ export default function TryOnScreen() {
     }
     return 0;
   });
-  const [loading, setLoading] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
+  const panelSlide = useRef(new Animated.Value(60)).current;
+  const lookFade = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const native = Platform.OS !== "web";
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: native }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: native }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: native }),
+      Animated.timing(panelSlide, { toValue: 0, duration: 500, delay: 200, useNativeDriver: native }),
     ]).start();
-  }, [stage]);
-
-  const activeLook = LOOKS[activeLookIdx];
-
-  const requestPermission = async (source: "camera" | "library"): Promise<boolean> => {
-    if (source === "camera") {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Camera Access",
-          "Please allow camera access in your device settings to use Virtual Try-On.",
-          [{ text: "OK" }]
-        );
-        return false;
-      }
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Photo Library Access",
-          "Please allow photo library access to choose a photo.",
-          [{ text: "OK" }]
-        );
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const openCamera = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const ok = await requestPermission("camera");
-    if (!ok) return;
-
-    setLoading(true);
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.9,
-        cameraType: ImagePicker.CameraType.front,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setPhotoUri(result.assets[0].uri);
-        fadeAnim.setValue(0);
-        slideAnim.setValue(40);
-        setStage("studio");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openGallery = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const ok = await requestPermission("library");
-    if (!ok) return;
-
-    setLoading(true);
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setPhotoUri(result.assets[0].uri);
-        fadeAnim.setValue(0);
-        slideAnim.setValue(40);
-        setStage("studio");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const retake = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    fadeAnim.setValue(0);
-    slideAnim.setValue(40);
-    setStage("landing");
-    setPhotoUri(null);
-  };
-
-  const shareStyleCard = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    try {
-      await Share.share({
-        message: `✨ Just tried on the "${activeLook.name}" look on Maison Simon!\n\nPieces: ${activeLook.pieces.map((p) => `${p.name} by ${p.brand}`).join(", ")}\n\nTotal: $${activeLook.estimatedPrice?.toLocaleString() ?? "—"}\n\n#MaisonSimon #VirtualTryOn #LuxuryFashion`,
-        title: `Maison Simon — ${activeLook.name}`,
-      });
-    } catch {
-      // dismissed
-    }
-  };
+  }, []);
 
   const switchLook = (dir: "prev" | "next") => {
     Haptics.selectionAsync();
+    const native = Platform.OS !== "web";
+    Animated.sequence([
+      Animated.timing(lookFade, { toValue: 0, duration: 120, useNativeDriver: native }),
+      Animated.timing(lookFade, { toValue: 1, duration: 200, useNativeDriver: native }),
+    ]).start();
     setActiveLookIdx((i) => {
       if (dir === "next") return (i + 1) % LOOKS.length;
       return (i - 1 + LOOKS.length) % LOOKS.length;
     });
   };
 
+  const flipCamera = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFacing((f) => (f === "front" ? "back" : "front"));
+  };
+
+  const shareStyleCard = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const look = LOOKS[activeLookIdx];
+    try {
+      await Share.share({
+        message: `✨ Just tried on the "${look.name}" look on Maison Simon!\n\nPieces: ${look.pieces.map((p) => `${p.name} by ${p.brand}`).join(", ")}\n\nTotal: $${look.estimatedPrice?.toLocaleString() ?? "—"}\n\n#MaisonSimon #VirtualTryOn #LuxuryFashion`,
+        title: `Maison Simon — ${look.name}`,
+      });
+    } catch {
+      // dismissed
+    }
+  };
+
+  const activeLook = LOOKS[activeLookIdx];
   const topPad = Platform.OS === "web" ? 56 : insets.top;
 
-  // ── LANDING ──────────────────────────────────────────────────────────
-  if (stage === "landing") {
+  // ── PERMISSION DENIED ──────────────────────────────────────────────────
+  if (permission && !permission.granted) {
     return (
       <View style={[s.screen, { backgroundColor: colors.background }]}>
-        {/* Ambient gradient */}
         <LinearGradient
-          colors={["rgba(198,167,94,0.08)", "transparent", "rgba(198,167,94,0.04)"]}
-          locations={[0, 0.5, 1]}
+          colors={["rgba(198,167,94,0.08)", "transparent"]}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
-
-        {/* Header */}
         <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
           <BrandWordmark />
           <Pressable onPress={() => router.back()} hitSlop={12} style={[s.closeBtn, { borderColor: colors.border }]}>
             <Feather name="x" size={16} color={colors.foreground} />
           </Pressable>
         </View>
-
-        <ScrollView
-          contentContainerStyle={[s.landingContent, { paddingBottom: insets.bottom + 40 }]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Hero icon */}
-          <Animated.View style={[s.heroIcon, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <View style={[s.cameraCircle, { backgroundColor: colors.card, borderColor: colors.gold }]}>
-              <Feather name="camera" size={44} color={colors.gold} />
-            </View>
-            <View style={[s.sparkle, { top: 0, right: 16 }]}>
-              <Feather name="star" size={12} color={colors.gold} />
-            </View>
-            <View style={[s.sparkle, { bottom: 8, left: 24 }]}>
-              <Feather name="star" size={8} color={colors.gold} />
-            </View>
-          </Animated.View>
-
-          {/* Copy */}
-          <Animated.View style={[s.heroText, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <Text style={[s.eyebrow, { color: colors.gold }]}>AI STYLE STUDIO</Text>
-            <Text style={[s.headline, { color: colors.foreground }]}>
-              Virtual{"\n"}Try-On
-            </Text>
-            <Text style={[s.sub, { color: colors.mutedForeground }]}>
-              Step into any look. See curated Maison Simon outfits styled against your photo — no filter needed.
-            </Text>
-          </Animated.View>
-
-          {/* How it works */}
-          <View style={[s.howSection, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
-            {HOW_IT_WORKS.map((step, i) => (
-              <View key={step.icon} style={s.howRow}>
-                <View style={[s.howNum, { backgroundColor: colors.card, borderColor: colors.gold }]}>
-                  <Text style={[s.howNumText, { color: colors.gold }]}>{i + 1}</Text>
-                </View>
-                <View style={s.howInfo}>
-                  <Text style={[s.howLabel, { color: colors.foreground }]}>{step.label}</Text>
-                  <Text style={[s.howDesc, { color: colors.mutedForeground }]}>{step.desc}</Text>
-                </View>
-                <Feather name={step.icon as any} size={18} color={colors.border} />
-              </View>
-            ))}
+        <View style={s.permissionBody}>
+          <View style={[s.permCircle, { backgroundColor: colors.card, borderColor: colors.gold }]}>
+            <Feather name="camera" size={40} color={colors.gold} />
           </View>
-
-          {/* CTAs */}
-          <View style={s.ctas}>
-            <Pressable
-              onPress={openCamera}
-              disabled={loading}
-              style={[s.primaryBtn, { backgroundColor: colors.gold }]}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#0B0B0C" />
-              ) : (
-                <>
-                  <Feather name="camera" size={16} color="#0B0B0C" />
-                  <Text style={s.primaryBtnText}>OPEN CAMERA</Text>
-                </>
-              )}
-            </Pressable>
-
-            <Pressable
-              onPress={openGallery}
-              disabled={loading}
-              style={[s.outlineBtn, { borderColor: colors.border }]}
-            >
-              <Feather name="image" size={16} color={colors.foreground} />
-              <Text style={[s.outlineBtnText, { color: colors.foreground }]}>CHOOSE FROM LIBRARY</Text>
-            </Pressable>
-
-            <Text style={[s.privacy, { color: colors.mutedForeground }]}>
-              📷 Your photo never leaves your device
-            </Text>
-          </View>
-        </ScrollView>
+          <Text style={[s.permTitle, { color: colors.foreground }]}>Camera Access Needed</Text>
+          <Text style={[s.permSub, { color: colors.mutedForeground }]}>
+            Maison Simon uses your camera so you can preview looks on yourself in real time — no photo saved unless you share.
+          </Text>
+          <Pressable onPress={requestPermission} style={[s.primaryBtn, { backgroundColor: colors.gold }]}>
+            <Feather name="camera" size={15} color="#0B0B0C" />
+            <Text style={s.primaryBtnText}>ALLOW CAMERA</Text>
+          </Pressable>
+          <Pressable onPress={() => router.back()} style={s.ghostBtn}>
+            <Text style={[s.ghostBtnText, { color: colors.mutedForeground }]}>Not now</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
-  // ── STUDIO ────────────────────────────────────────────────────────────
+  // ── REQUESTING / WEB FALLBACK ──────────────────────────────────────────
+  const showWebFallback = Platform.OS === "web";
+
+  // ── LIVE CAMERA VIEW ───────────────────────────────────────────────────
   return (
-    <View style={[s.screen, { backgroundColor: "#050506" }]}>
-      {/* User photo — fills top 58% */}
-      {photoUri && (
-        <Image
-          source={{ uri: photoUri }}
-          style={s.userPhoto}
-          resizeMode="cover"
+    <View style={s.screen}>
+      {/* Live camera — full screen */}
+      {showWebFallback ? (
+        <View style={[s.webFallback, { backgroundColor: "#0B0B0C" }]}>
+          <Feather name="camera" size={48} color="rgba(198,167,94,0.4)" />
+          <Text style={s.webFallbackText}>Live camera preview{"\n"}available on device</Text>
+        </View>
+      ) : (
+        <CameraView
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          facing={facing}
         />
       )}
 
-      {/* Gradient overlay on photo */}
+      {/* Top gradient scrim */}
       <LinearGradient
-        colors={["rgba(5,5,6,0.45)", "transparent", "rgba(5,5,6,0.8)", "#050506"]}
-        locations={[0, 0.3, 0.68, 1]}
-        style={s.photoGradient}
+        colors={["rgba(5,5,6,0.7)", "rgba(5,5,6,0.2)", "transparent"]}
+        locations={[0, 0.35, 1]}
+        style={s.topScrim}
         pointerEvents="none"
       />
 
-      {/* Top bar over photo */}
-      <View style={[s.topBar, { paddingTop: topPad + 8, position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }]}>
-        <BrandWordmark style={{ opacity: 0.95 }} />
-        <Pressable onPress={() => router.back()} hitSlop={12} style={[s.closeBtn, { borderColor: "rgba(245,245,240,0.25)", backgroundColor: "rgba(5,5,6,0.5)" }]}>
-          <Feather name="x" size={16} color="#F5F5F0" />
-        </Pressable>
-      </View>
+      {/* Bottom gradient scrim */}
+      <LinearGradient
+        colors={["transparent", "rgba(5,5,6,0.6)", "rgba(5,5,6,0.97)"]}
+        locations={[0, 0.3, 1]}
+        style={s.bottomScrim}
+        pointerEvents="none"
+      />
 
-      {/* Studio editing label */}
-      <View style={[s.studioLabel, { top: topPad + 52 }]}>
-        <View style={[s.studioTag, { backgroundColor: "rgba(198,167,94,0.15)", borderColor: "rgba(198,167,94,0.4)" }]}>
-          <Feather name="zap" size={9} color="#C6A75E" />
-          <Text style={s.studioTagText}>TRYING ON</Text>
+      {/* Top bar */}
+      <Animated.View style={[s.topBar, { paddingTop: topPad + 8, opacity: fadeAnim }]}>
+        <BrandWordmark style={{ opacity: 0.95 }} />
+        <View style={s.topActions}>
+          {/* Flip camera */}
+          <Pressable onPress={flipCamera} hitSlop={10} style={s.iconBtn}>
+            <Feather name="refresh-cw" size={16} color="#F5F5F0" />
+          </Pressable>
+          {/* Close */}
+          <Pressable onPress={() => router.back()} hitSlop={10} style={s.iconBtn}>
+            <Feather name="x" size={16} color="#F5F5F0" />
+          </Pressable>
         </View>
-      </View>
+      </Animated.View>
+
+      {/* LIVE badge */}
+      <Animated.View style={[s.liveBadge, { top: topPad + 60 }, { opacity: fadeAnim }]}>
+        <View style={s.liveDot} />
+        <Text style={s.liveBadgeText}>LIVE</Text>
+      </Animated.View>
+
+      {/* Look style card — top-right corner */}
+      <Animated.View style={[s.lookCard, { top: topPad + 52 }, { opacity: Animated.multiply(fadeAnim, lookFade) }]}>
+        <Image source={activeLook.image} style={s.lookCardImg} resizeMode="cover" />
+        <LinearGradient
+          colors={["transparent", "rgba(5,5,6,0.9)"]}
+          style={StyleSheet.absoluteFill}
+        />
+        <Text style={s.lookCardStyle}>{activeLook.style}</Text>
+      </Animated.View>
 
       {/* Bottom panel */}
       <Animated.View
-        style={[
-          s.panel,
-          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-        ]}
+        style={[s.panel, { opacity: fadeAnim, transform: [{ translateY: panelSlide }] }]}
       >
-        {/* Look nav */}
-        <View style={s.lookNav}>
-          <Pressable onPress={() => switchLook("prev")} style={[s.navArrow, { borderColor: "rgba(245,245,240,0.15)" }]}>
-            <Feather name="chevron-left" size={18} color="#F5F5F0" />
+        {/* Look navigator */}
+        <Animated.View style={[s.lookNav, { opacity: lookFade }]}>
+          <Pressable onPress={() => switchLook("prev")} style={s.navArrow}>
+            <Feather name="chevron-left" size={20} color="#F5F5F0" />
           </Pressable>
 
           <View style={s.lookMeta}>
-            <Text style={s.lookNavName}>{activeLook.name}</Text>
+            <Text style={s.lookNavName} numberOfLines={1}>{activeLook.name}</Text>
             <Text style={s.lookNavStyle}>{activeLook.style}</Text>
           </View>
 
-          <Pressable onPress={() => switchLook("next")} style={[s.navArrow, { borderColor: "rgba(245,245,240,0.15)" }]}>
-            <Feather name="chevron-right" size={18} color="#F5F5F0" />
+          <Pressable onPress={() => switchLook("next")} style={s.navArrow}>
+            <Feather name="chevron-right" size={20} color="#F5F5F0" />
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* Dot indicators */}
         <View style={s.dots}>
@@ -338,7 +220,7 @@ export default function TryOnScreen() {
               onPress={() => { Haptics.selectionAsync(); setActiveLookIdx(i); }}
               style={[
                 s.dot,
-                { backgroundColor: i === activeLookIdx ? "#C6A75E" : "rgba(245,245,240,0.25)" },
+                { backgroundColor: i === activeLookIdx ? "#C6A75E" : "rgba(245,245,240,0.2)" },
                 i === activeLookIdx && { width: 20 },
               ]}
             />
@@ -346,48 +228,59 @@ export default function TryOnScreen() {
         </View>
 
         {/* Pieces strip */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.pieces}
-        >
-          {activeLook.pieces.map((piece) => (
-            <View key={piece.id} style={s.piece}>
-              <View style={s.pieceThumb}>
-                {piece.imageUrl ? (
-                  <Image
-                    source={{ uri: piece.imageUrl }}
-                    style={s.pieceImg}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Feather name="tag" size={16} color="rgba(245,245,240,0.3)" />
-                )}
+        <Animated.View style={{ opacity: lookFade }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.pieces}
+          >
+            {activeLook.pieces.map((piece) => (
+              <View key={piece.id} style={s.piece}>
+                <View style={s.pieceThumb}>
+                  {piece.imageUrl ? (
+                    <Image source={{ uri: piece.imageUrl }} style={s.pieceImg} resizeMode="cover" />
+                  ) : (
+                    <Feather name="tag" size={14} color="rgba(245,245,240,0.3)" />
+                  )}
+                </View>
+                <Text style={s.pieceName} numberOfLines={2}>{piece.name}</Text>
+                <Text style={s.pieceBrand} numberOfLines={1}>{piece.brand}</Text>
               </View>
-              <Text style={s.pieceName} numberOfLines={2}>{piece.name}</Text>
-              <Text style={s.pieceBrand} numberOfLines={1}>{piece.brand}</Text>
-            </View>
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        </Animated.View>
 
-        {/* Price + divider */}
+        {/* Price row */}
         <View style={s.priceRow}>
           <Text style={s.priceLabel}>LOOK TOTAL</Text>
-          <Text style={s.priceValue}>
+          <Animated.Text style={[s.priceValue, { opacity: lookFade }]}>
             ${activeLook.estimatedPrice?.toLocaleString() ?? "—"}
-          </Text>
+          </Animated.Text>
         </View>
 
         {/* Action buttons */}
         <View style={[s.actions, { paddingBottom: insets.bottom + 16 }]}>
-          <Pressable onPress={retake} style={s.retakeBtn}>
-            <Feather name="camera" size={15} color="rgba(245,245,240,0.7)" />
-            <Text style={s.retakeBtnText}>RETAKE</Text>
+          <Pressable
+            onPress={flipCamera}
+            style={s.retakeBtn}
+          >
+            <Feather name="refresh-cw" size={15} color="rgba(245,245,240,0.7)" />
+            <Text style={s.retakeBtnText}>FLIP</Text>
           </Pressable>
 
-          <Pressable onPress={shareStyleCard} style={[s.shareBtn, { backgroundColor: "#C6A75E" }]}>
-            <Feather name="share-2" size={15} color="#0B0B0C" />
-            <Text style={s.shareBtnText}>SHARE STYLE CARD</Text>
+          <Pressable
+            onPress={shareStyleCard}
+            disabled={capturing}
+            style={[s.shareBtn, { backgroundColor: "#C6A75E", opacity: capturing ? 0.7 : 1 }]}
+          >
+            {capturing ? (
+              <ActivityIndicator size="small" color="#0B0B0C" />
+            ) : (
+              <>
+                <Feather name="share-2" size={15} color="#0B0B0C" />
+                <Text style={s.shareBtnText}>SHARE LOOK</Text>
+              </>
+            )}
           </Pressable>
         </View>
       </Animated.View>
@@ -396,13 +289,63 @@ export default function TryOnScreen() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1 },
+  screen: { flex: 1, backgroundColor: "#050506" },
+
+  topScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 160,
+    zIndex: 1,
+  },
+  bottomScrim: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.65,
+    zIndex: 1,
+  },
+  webFallback: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+  },
+  webFallbackText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(245,245,240,0.4)",
+    textAlign: "center",
+    lineHeight: 22,
+  },
+
   topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 12,
+  },
+  topActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(5,5,6,0.45)",
+    borderWidth: 0.5,
+    borderColor: "rgba(245,245,240,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeBtn: {
     width: 36,
@@ -413,186 +356,90 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Landing
-  landingContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    gap: 32,
-  },
-  heroIcon: {
-    alignItems: "center",
-    marginTop: 8,
-  },
-  cameraCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sparkle: {
-    position: "absolute",
-  },
-  heroText: {
-    gap: 12,
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 3,
-  },
-  headline: {
-    fontSize: 48,
-    fontFamily: "PlayfairDisplay_700Bold",
-    letterSpacing: -0.5,
-    lineHeight: 54,
-  },
-  sub: {
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-    lineHeight: 23,
-    letterSpacing: 0.2,
-  },
-  howSection: {
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
-    paddingVertical: 4,
-    gap: 2,
-  },
-  howRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 14,
-  },
-  howNum: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  howNumText: {
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-  },
-  howInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  howLabel: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-  },
-  howDesc: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
-  ctas: {
-    gap: 12,
-  },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 16,
-    borderRadius: 2,
-  },
-  primaryBtnText: {
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
-    color: "#0B0B0C",
-  },
-  outlineBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 15,
-    borderRadius: 2,
-    borderWidth: 0.5,
-  },
-  outlineBtnText: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 2,
-  },
-  privacy: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    letterSpacing: 0.2,
-  },
-
-  // Studio
-  userPhoto: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: height * 0.62,
-  },
-  photoGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: height * 0.72,
-  },
-  studioLabel: {
+  liveBadge: {
     position: "absolute",
     left: 20,
     zIndex: 10,
-  },
-  studioTag: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
+    backgroundColor: "rgba(5,5,6,0.5)",
+    borderWidth: 0.5,
+    borderColor: "rgba(245,245,240,0.15)",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
-    borderWidth: 0.5,
   },
-  studioTagText: {
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#C6A75E",
+  },
+  liveBadgeText: {
     fontSize: 9,
     fontFamily: "Inter_700Bold",
     letterSpacing: 2,
     color: "#C6A75E",
   },
+
+  lookCard: {
+    position: "absolute",
+    right: 20,
+    zIndex: 10,
+    width: 72,
+    height: 96,
+    borderRadius: 4,
+    overflow: "hidden",
+    borderWidth: 0.5,
+    borderColor: "rgba(198,167,94,0.4)",
+    justifyContent: "flex-end",
+  },
+  lookCardImg: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  lookCardStyle: {
+    fontSize: 8,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.8,
+    color: "#C6A75E",
+    padding: 6,
+    textTransform: "uppercase",
+  },
+
+  // Panel
   panel: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingTop: 20,
-    gap: 16,
+    zIndex: 10,
+    gap: 14,
+    paddingTop: 16,
   },
   lookNav: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 10,
   },
   navArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(5,5,6,0.4)",
     borderWidth: 0.5,
+    borderColor: "rgba(245,245,240,0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
   lookMeta: {
     flex: 1,
     alignItems: "center",
-    gap: 2,
+    gap: 3,
   },
   lookNavName: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: "PlayfairDisplay_700Bold",
     color: "#F5F5F0",
     textAlign: "center",
@@ -604,6 +451,7 @@ const s = StyleSheet.create({
     color: "rgba(245,245,240,0.5)",
     letterSpacing: 1.5,
     textAlign: "center",
+    textTransform: "uppercase",
   },
   dots: {
     flexDirection: "row",
@@ -620,13 +468,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 10,
   },
-  piece: {
-    width: 88,
-    gap: 6,
-  },
+  piece: { width: 80, gap: 5 },
   pieceThumb: {
-    width: 88,
-    height: 88,
+    width: 80,
+    height: 80,
     borderRadius: 2,
     backgroundColor: "rgba(245,245,240,0.08)",
     overflow: "hidden",
@@ -635,20 +480,17 @@ const s = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(245,245,240,0.12)",
   },
-  pieceImg: {
-    width: "100%",
-    height: "100%",
-  },
+  pieceImg: { width: "100%", height: "100%" },
   pieceName: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Inter_500Medium",
     color: "#F5F5F0",
-    lineHeight: 14,
+    lineHeight: 13,
   },
   pieceBrand: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "Inter_400Regular",
-    color: "rgba(245,245,240,0.5)",
+    color: "rgba(245,245,240,0.45)",
     letterSpacing: 0.3,
   },
   priceRow: {
@@ -663,11 +505,11 @@ const s = StyleSheet.create({
   priceLabel: {
     fontSize: 9,
     fontFamily: "Inter_600SemiBold",
-    color: "rgba(245,245,240,0.45)",
+    color: "rgba(245,245,240,0.4)",
     letterSpacing: 2,
   },
   priceValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: "PlayfairDisplay_700Bold",
     color: "#C6A75E",
   },
@@ -694,7 +536,7 @@ const s = StyleSheet.create({
     letterSpacing: 1.5,
   },
   shareBtn: {
-    flex: 2,
+    flex: 2.5,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -707,5 +549,61 @@ const s = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: "#0B0B0C",
     letterSpacing: 1.5,
+  },
+
+  // Permission screen
+  permissionBody: {
+    flex: 1,
+    paddingHorizontal: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
+  },
+  permCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  permTitle: {
+    fontSize: 24,
+    fontFamily: "PlayfairDisplay_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.2,
+  },
+  permSub: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  primaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 2,
+    width: "100%",
+    marginTop: 8,
+  },
+  primaryBtnText: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2,
+    color: "#0B0B0C",
+  },
+  ghostBtn: {
+    paddingVertical: 12,
+  },
+  ghostBtnText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.3,
   },
 });
