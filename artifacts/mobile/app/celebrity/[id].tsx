@@ -175,46 +175,47 @@ export default function CelebrityDetailScreen() {
 
         {/* ── Looks tab ── */}
         {activeTab === "looks" && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Signature Looks
-            </Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
-              Recreate these iconic outfits
-            </Text>
-            {celeb.looks.map((look, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.lookCard,
-                  { backgroundColor: colors.card, borderColor: i === 0 ? celeb.accentColor : colors.border },
-                ]}
-              >
-                <View style={styles.lookHeader}>
-                  <Text style={[styles.lookName, { color: colors.foreground }]}>
-                    {look.name}
-                  </Text>
-                  {i === 0 && (
-                    <View style={[styles.iconicBadge, { backgroundColor: celeb.accentColor }]}>
-                      <Text style={styles.iconicText}>ICONIC</Text>
-                    </View>
-                  )}
-                </View>
-                {look.pieces.map((piece, j) => (
-                  <View
-                    key={j}
-                    style={[styles.lookPieceRow, { borderTopColor: colors.border }]}
-                  >
-                    <Text style={[styles.lookPieceBrand, { color: celeb.accentColor }]}>
-                      {piece.brand.toUpperCase()}
+          <View style={styles.looksSection}>
+            <View style={styles.looksSectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Signature Looks
+              </Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+                Recreate these iconic outfits
+              </Text>
+            </View>
+            <View style={styles.looksGrid}>
+              {celeb.looks.map((look, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.lookGridCard,
+                    { backgroundColor: colors.card, borderColor: i === 0 ? celeb.accentColor : colors.border },
+                  ]}
+                >
+                  <View style={styles.lookGridHeader}>
+                    <Text style={[styles.lookGridName, { color: colors.foreground }]} numberOfLines={2}>
+                      {look.name}
                     </Text>
-                    <Text style={[styles.lookPieceName, { color: colors.foreground }]}>
-                      {piece.item}
-                    </Text>
+                    {i === 0 && (
+                      <View style={[styles.iconicBadge, { backgroundColor: celeb.accentColor }]}>
+                        <Text style={styles.iconicText}>ICONIC</Text>
+                      </View>
+                    )}
                   </View>
-                ))}
-              </View>
-            ))}
+                  <View style={styles.lookGridPieces}>
+                    {look.pieces.slice(0, 2).map((piece, j) => (
+                      <Text key={j} style={[styles.lookGridPiece, { color: colors.mutedForeground }]} numberOfLines={1}>
+                        <Text style={{ color: celeb.accentColor, fontFamily: "Inter_700Bold" }}>
+                          {piece.brand}
+                        </Text>
+                        {" · "}{piece.item}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -443,23 +444,39 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginBottom: 4,
   },
-  lookCard: {
+  looksSection: { paddingBottom: 24 },
+  looksSectionHeader: { padding: 24, paddingBottom: 16, gap: 4 },
+  looksGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 24,
+  },
+  lookGridCard: {
+    width: (width - 48 - 10) / 2,
     borderWidth: 0.5,
     borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 4,
+    padding: 12,
+    gap: 8,
   },
-  lookHeader: {
+  lookGridHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    padding: 14,
-    paddingBottom: 10,
+    gap: 4,
   },
-  lookName: {
-    fontSize: 15,
+  lookGridName: {
+    fontSize: 11,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.2,
+    flex: 1,
+    lineHeight: 15,
+  },
+  lookGridPieces: { gap: 3 },
+  lookGridPiece: {
+    fontSize: 9,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 13,
   },
   iconicBadge: {
     paddingHorizontal: 8,

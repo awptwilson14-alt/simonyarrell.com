@@ -72,7 +72,7 @@ export default function StyleScreen() {
     setStep("results");
     setResults([]);
     await new Promise((r) => setTimeout(r, 2000));
-    setResults(LOOKS.slice(0, 4));
+    setResults(LOOKS);
     setLoading(false);
   };
 
@@ -258,15 +258,11 @@ export default function StyleScreen() {
               </View>
             ) : (
               <>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.resultsList}
-                >
+                <View style={styles.resultsGrid}>
                   {results.map((look) => (
-                    <LookCard key={look.id} look={look} />
+                    <LookCard key={look.id} look={look} width={CARD_W} />
                   ))}
-                </ScrollView>
+                </View>
                 <View style={styles.resultActions}>
                   <GoldButton label="GENERATE MORE" onPress={generate} variant="outline" />
                   <GoldButton label="START OVER" onPress={reset} variant="ghost" />
@@ -411,6 +407,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     letterSpacing: 0.3,
   },
-  resultsList: { paddingRight: 8 },
+  resultsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   resultActions: { gap: 12 },
 });
