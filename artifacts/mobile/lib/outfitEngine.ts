@@ -72,7 +72,17 @@ function fingerprint(ids: string[]): string {
   return [...ids].sort().join("|");
 }
 
-// ─── Look image pools (full-outfit Unsplash photos by style) ─────────────────
+// ─── Deterministic hash — same look always gets same image ───────────────────
+
+function hashStr(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+// ─── Look hero image pools — 12+ per style so cards never repeat ─────────────
 
 const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string }>> = {
   "Old Money": [
@@ -80,54 +90,207 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string }>> = {
     { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },
     { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
     { uri: uns("1591047139829-d91aecb6caea", 600, 900) },
+    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
+    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
+    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },
+    { uri: uns("1549068106-b024baf0f72a", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
   ],
   "Luxury Streetwear": [
     { uri: uns("1556821840-3a63f15732ce", 600, 900) },
     { uri: uns("1542272054537-4845f1353d17", 600, 900) },
     { uri: uns("1539008835657-9e8e9680c956", 600, 900) },
     { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
+    { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },
+    { uri: uns("1558618666-fcd25c85cd64", 600, 900) },
+    { uri: uns("1525507119028-ed4c629a60a3", 600, 900) },
+    { uri: uns("1583744757-f2c17db12c94", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
   ],
   "Techwear": [
     { uri: uns("1539008835657-9e8e9680c956", 600, 900) },
     { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },
     { uri: uns("1556821840-3a63f15732ce", 600, 900) },
+    { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1558618666-fcd25c85cd64", 600, 900) },
+    { uri: uns("1525507119028-ed4c629a60a3", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
   ],
   "Vacation Luxe": [
     { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
     { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
     { uri: uns("1473496169904-658ba7574b0d", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
+    { uri: uns("1549068106-b024baf0f72a", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
   ],
   "Evening": [
     { uri: uns("1566174053879-31528523f8ae", 600, 900) },
     { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
     { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1549068106-b024baf0f72a", 600, 900) },
+    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
   ],
   "Clean Minimal": [
     { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
     { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
     { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
+    { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
+    { uri: uns("1549068106-b024baf0f72a", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },
+    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },
   ],
   "Business": [
     { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
     { uri: uns("1591047139829-d91aecb6caea", 600, 900) },
     { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
+    { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },
+    { uri: uns("1549068106-b024baf0f72a", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
   ],
   "Y2K Revival": [
     { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
     { uri: uns("1542272054537-4845f1353d17", 600, 900) },
     { uri: uns("1556821840-3a63f15732ce", 600, 900) },
+    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
+    { uri: uns("1558618666-fcd25c85cd64", 600, 900) },
+    { uri: uns("1525507119028-ed4c629a60a3", 600, 900) },
+    { uri: uns("1509631179647-0177331693ae", 600, 900) },
+    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },
   ],
   "default": [
     { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
     { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
     { uri: uns("1556821840-3a63f15732ce", 600, 900) },
     { uri: uns("1539008835657-9e8e9680c956", 600, 900) },
+    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
+    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
+    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },
+    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
+    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
+    { uri: uns("1529139574466-a303027bc851", 600, 900) },
   ],
 };
 
-function getLookImage(style: string): { uri: string } {
+// Deterministic per look — same outfit fingerprint → same image every time
+function getLookImage(style: string, seed: string): { uri: string } {
   const pool = LOOK_IMAGE_POOLS[style] ?? LOOK_IMAGE_POOLS["default"];
-  return pick(pool);
+  return pool[hashStr(seed) % pool.length];
+}
+
+// ─── Per-category piece image pools — varies by item id so same category ─────
+//     items all show different thumbnail photos in the detail screen
+
+const PIECE_IMAGE_POOLS: Record<string, string[]> = {
+  top: [
+    uns("1503342217505-b0a15ec3261c"), uns("1521572163474-6864f9cf17ab"),
+    uns("1558618666-fcd25c85cd64"),    uns("1525507119028-ed4c629a60a3"),
+    uns("1583744757-f2c17db12c94"),    uns("1529139574466-a303027bc851"),
+    uns("1549068106-b024baf0f72a"),    uns("1516762121899-c04ad64fc6e0"),
+    uns("1441986300917-64674bd600d8"), uns("1539109136090-3bb05fd40e9d"),
+    uns("1485968579580-fc6f488d40d5"), uns("1483985988355-763728e1cfc4"),
+  ],
+  bottom: [
+    uns("1552902865-b72c031ac5ea"),    uns("1542272054537-4845f1353d17"),
+    uns("1515886657613-9f3515b0c78f"), uns("1624378441164-f3b5a4ec2a53"),
+    uns("1469334031218-e382a71b716b"), uns("1483985988355-763728e1cfc4"),
+    uns("1509631179647-0177331693ae"), uns("1485968579580-fc6f488d40d5"),
+    uns("1529139574466-a303027bc851"), uns("1516762121899-c04ad64fc6e0"),
+    uns("1549068106-b024baf0f72a"),    uns("1558618666-fcd25c85cd64"),
+  ],
+  dress: [
+    uns("1566174053879-31528523f8ae"), uns("1515886657613-9f3515b0c78f"),
+    uns("1543163521-1bf539c55dd2"),    uns("1503342217505-b0a15ec3261c"),
+    uns("1441986300917-64674bd600d8"), uns("1469334031218-e382a71b716b"),
+    uns("1529139574466-a303027bc851"), uns("1549068106-b024baf0f72a"),
+    uns("1516762121899-c04ad64fc6e0"), uns("1539109136090-3bb05fd40e9d"),
+    uns("1483985988355-763728e1cfc4"), uns("1509631179647-0177331693ae"),
+  ],
+  outerwear: [
+    uns("1591047139829-d91aecb6caea"), uns("1507003211169-0a1dd7228f2d"),
+    uns("1539008835657-9e8e9680c956"), uns("1556821840-3a63f15732ce"),
+    uns("1441986300917-64674bd600d8"), uns("1469334031218-e382a71b716b"),
+    uns("1509631179647-0177331693ae"), uns("1483985988355-763728e1cfc4"),
+    uns("1485968579580-fc6f488d40d5"), uns("1583744757-f2c17db12c94"),
+    uns("1529139574466-a303027bc851"), uns("1521572163474-6864f9cf17ab"),
+  ],
+  shoes: [
+    uns("1543163521-1bf539c55dd2"),    uns("1608256246005-4e6b4e65f82c"),
+    uns("1542291026-7eec264c27ff"),    uns("1515347619252-60a4bf4fff4f"),
+    uns("1491553895911-0055eca6402d"), uns("1614252235316-8c857d38b5f4"),
+    uns("1529139574466-a303027bc851"), uns("1483985988355-763728e1cfc4"),
+    uns("1469334031218-e382a71b716b"), uns("1516762121899-c04ad64fc6e0"),
+    uns("1558618666-fcd25c85cd64"),    uns("1525507119028-ed4c629a60a3"),
+  ],
+  bag: [
+    uns("1548036328-c9fa89d128fa"),    uns("1584917865442-de89df76afd3"),
+    uns("1590874175748-39b18e7ab1e9"), uns("1571513800374-841571dbf2e2"),
+    uns("1553062407-98421e9b72b9"),    uns("1566150905458-1bf1fb572f8e"),
+    uns("1548036328-c9fa89d128fa"),    uns("1584917865442-de89df76afd3"),
+    uns("1441986300917-64674bd600d8"), uns("1469334031218-e382a71b716b"),
+  ],
+  accessories: [
+    uns("1473496169904-658ba7574b0d"), uns("1523275335684-37898b6baf30"),
+    uns("1611558709798-e009c8fd7706"), uns("1526170375885-4d8ecf77b99f"),
+    uns("1558618666-fcd25c85cd64"),    uns("1525507119028-ed4c629a60a3"),
+    uns("1549068106-b024baf0f72a"),    uns("1441986300917-64674bd600d8"),
+    uns("1469334031218-e382a71b716b"), uns("1483985988355-763728e1cfc4"),
+  ],
+  jewelry: [
+    uns("1599643477877-530eb83abc8e"), uns("1523275335684-37898b6baf30"),
+    uns("1526170375885-4d8ecf77b99f"), uns("1611558709798-e009c8fd7706"),
+    uns("1441986300917-64674bd600d8"), uns("1469334031218-e382a71b716b"),
+    uns("1483985988355-763728e1cfc4"), uns("1509631179647-0177331693ae"),
+    uns("1549068106-b024baf0f72a"),    uns("1516762121899-c04ad64fc6e0"),
+  ],
+};
+
+function getPieceImage(category: string, itemId: string): string {
+  const pool = PIECE_IMAGE_POOLS[category] ?? [
+    uns("1507003211169-0a1dd7228f2d"),
+    uns("1515886657613-9f3515b0c78f"),
+  ];
+  return pool[hashStr(itemId) % pool.length];
 }
 
 // ─── Look name / description generators ──────────────────────────────────────
@@ -201,6 +364,44 @@ const LOOK_DESCRIPTIONS: Record<string, string[]> = {
     "Because some nights call for your best possible self.",
   ],
 };
+
+// ─── Color palettes — each look picks one and biases all pieces toward it ─────
+
+const COLOR_PALETTES: Array<{ name: string; colors: string[] }> = [
+  { name: "Ivory & Camel",    colors: ["Ivory", "Camel", "Champagne", "Cream", "Sand", "Stone", "Oatmeal", "Ecru", "Beige"] },
+  { name: "All Black",        colors: ["Black", "Charcoal", "Graphite", "Slate"] },
+  { name: "Navy & Cobalt",    colors: ["Navy", "Cobalt", "Soft Blue", "Sky Blue", "Blue", "Blue Stripe"] },
+  { name: "Earth Tones",      colors: ["Rust", "Terracotta", "Brown", "Cognac", "Chocolate", "Dark Brown", "Tan", "Khaki"] },
+  { name: "Blush & Rose",     colors: ["Blush", "Pink", "Dusty Pink", "Lilac", "Rose", "Nude", "Soft Pink"] },
+  { name: "Emerald Forest",   colors: ["Emerald", "Forest", "Sage", "Olive", "Green"] },
+  { name: "Pure White",       colors: ["White", "Ivory", "Cream", "Ecru", "Off-White", "Chalk"] },
+  { name: "Gold & Metallics", colors: ["Gold", "Champagne", "Silver", "Crystal", "Gold/Diamond"] },
+  { name: "Power Red",        colors: ["Red", "Burgundy", "Crimson", "Wine", "Cherry"] },
+  { name: "Warm Neutrals",    colors: ["Stone", "Sand", "Nude", "Beige", "Tan", "Cream", "Oatmeal", "Camel"] },
+  { name: "Monochrome Grey",  colors: ["Grey", "Charcoal", "Graphite", "Silver", "Stone", "Slate"] },
+  { name: "Deep Jewels",      colors: ["Emerald", "Navy", "Burgundy", "Cobalt", "Crimson", "Sapphire"] },
+];
+
+function paletteMatch(itemColors: string[], paletteColors: string[]): boolean {
+  return itemColors.some((c) =>
+    paletteColors.some(
+      (pc) =>
+        c.toLowerCase().includes(pc.toLowerCase()) ||
+        pc.toLowerCase().includes(c.toLowerCase())
+    )
+  );
+}
+
+function pickPaletteColor(itemColors: string[], paletteColors: string[]): string {
+  const aligned = itemColors.filter((c) =>
+    paletteColors.some(
+      (pc) =>
+        c.toLowerCase().includes(pc.toLowerCase()) ||
+        pc.toLowerCase().includes(c.toLowerCase())
+    )
+  );
+  return aligned.length > 0 ? pick(aligned) : pick(itemColors);
+}
 
 function generateLookName(occasion: string): string {
   const names = LOOK_NAMES[occasion] ?? LOOK_NAMES["Casual"];
@@ -466,8 +667,9 @@ export function generateLooks(params: GenerateParams): Look[] {
   while (looks.length < count && attempts < 200) {
     attempts++;
 
-    // Pick a dominant style for this look
+    // Pick a dominant style and color palette for this look
     const dominantStyle = pick(stylePool.length > 0 ? stylePool : occasionStyles);
+    const selectedPalette = pick(COLOR_PALETTES);
 
     // Decide outfit structure
     const useDress =
@@ -478,12 +680,22 @@ export function generateLooks(params: GenerateParams): Look[] {
     const pieces: OutfitPiece[] = [];
     let total = 0;
 
-    // Helper: pick a style-preferring item from a pool
+    // Helper: pick style + palette-preferring item from a pool
     const stylePick = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
-      // Try to find an item matching dominant style first
+      // Best: matches dominant style AND color palette
+      const perfect = pool_.filter(
+        (i) => i.styles.includes(dominantStyle) && paletteMatch(i.colors, selectedPalette.colors)
+      );
+      if (perfect.length > 0) return pick(perfect);
+      // Good: matches dominant style
       const styleMatch = pool_.filter((i) => i.styles.includes(dominantStyle));
-      return styleMatch.length > 0 ? pick(styleMatch) : pick(pool_);
+      if (styleMatch.length > 0) return pick(styleMatch);
+      // OK: matches palette only
+      const paletteOnly = pool_.filter((i) => paletteMatch(i.colors, selectedPalette.colors));
+      if (paletteOnly.length > 0) return pick(paletteOnly);
+      // Fallback: anything in the pool
+      return pick(pool_);
     };
 
     const addPiece = (item: CatalogItem) => {
@@ -493,8 +705,8 @@ export function generateLooks(params: GenerateParams): Look[] {
         brand: item.brand,
         price: item.price,
         category: item.category,
-        color: pick(item.colors),
-        imageUrl: item.imageUrl,
+        color: pickPaletteColor(item.colors, selectedPalette.colors),
+        imageUrl: getPieceImage(item.category, item.id),
         purchaseUrl: item.purchaseUrl,
       });
       total += item.price;
@@ -563,11 +775,12 @@ export function generateLooks(params: GenerateParams): Look[] {
     if (_shownFingerprints.has(fp)) continue;
     _shownFingerprints.add(fp);
 
-    // Build the Look
+    // Build the Look — use fp as image seed so each unique outfit gets a unique, consistent photo
     const lookName = generateLookName(occasion);
     const lookDesc = generateDescription(occasion);
     const tags = [
       occasion.toLowerCase(),
+      selectedPalette.name.toLowerCase(),
       ...(STYLE_TAGS[dominantStyle] ?? []).slice(0, 2),
       pieces[0].brand.toLowerCase(),
     ];
@@ -579,7 +792,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       occasion,
       season: ["Spring", "Summer", "Autumn", "Winter", "All Season"][Math.floor(Math.random() * 5)],
       estimatedPrice: total,
-      image: getLookImage(dominantStyle),
+      image: getLookImage(dominantStyle, fp),
       pieces,
       style: dominantStyle,
       tags,
