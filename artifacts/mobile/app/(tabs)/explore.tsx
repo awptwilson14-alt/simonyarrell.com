@@ -139,7 +139,7 @@ export default function ExploreScreen() {
                   {/* Photo */}
                   <View style={[styles.celebPhotoWrapper, { backgroundColor: colors.secondary }]}>
                     <Image
-                      source={{ uri: celeb.imageUrl }}
+                      source={celeb.image}
                       style={styles.celebPhoto}
                       contentFit="cover"
                       transition={300}
@@ -185,7 +185,7 @@ export default function ExploreScreen() {
                 {/* Thumbnail */}
                 <View style={[styles.listThumb, { backgroundColor: colors.secondary }]}>
                   <Image
-                    source={{ uri: celeb.imageUrl }}
+                    source={celeb.image}
                     style={styles.listThumbImg}
                     contentFit="cover"
                     transition={250}

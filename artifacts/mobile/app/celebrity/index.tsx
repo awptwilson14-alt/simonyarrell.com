@@ -130,7 +130,7 @@ export default function CelebrityPickerScreen() {
               {/* Photo */}
               <View style={styles.photoWrapper}>
                 <Image
-                  source={{ uri: celeb.imageUrl }}
+                  source={celeb.image}
                   style={styles.photo}
                   contentFit="cover"
                   transition={300}

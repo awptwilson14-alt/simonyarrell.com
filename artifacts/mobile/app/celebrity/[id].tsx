@@ -51,7 +51,7 @@ export default function CelebrityDetailScreen() {
         {/* ── Hero ── */}
         <View style={styles.hero}>
           <Image
-            source={{ uri: celeb.imageUrl }}
+            source={celeb.image}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             transition={400}
