@@ -431,13 +431,23 @@ const PIECE_IMAGE_POOLS: Record<string, string[]> = {
     uns("1631815986858-a27780785fc3"), uns("1584820688313-b22ef25a6b29"),
     uns("1614728894971-0e7c57df5c6c"), uns("1559839731-9bf2e0a4a218"),
   ],
+  exec_suit_women: [
+    uns("1503342217505-b0a15ec3261c"), uns("1441986300917-64674bd600d8"),
+    uns("1469334031218-e382a71b716b"), uns("1529139574466-a303027bc851"),
+    uns("1516762121899-c04ad64fc6e0"), uns("1509631179647-0177331693ae"),
+    uns("1483985988355-763728e1cfc4"), uns("1541643600914-78b084683702"),
+  ],
 };
 
 function getPieceImage(category: string, itemId: string): string {
   // Route by item ID prefix for contextually matched imagery
   const id = itemId.toLowerCase();
   let poolKey = category;
-  if      (id.startsWith("fsh"))    poolKey = "formal_shirt";
+  if      (id.startsWith("exmt"))   poolKey = "formal_trouser";
+  else if (id.startsWith("exm"))    poolKey = "formal_suit";
+  else if (id.startsWith("exwt"))   poolKey = "formal_trouser";
+  else if (id.startsWith("exw"))    poolKey = "exec_suit_women";
+  else if (id.startsWith("fsh"))    poolKey = "formal_shirt";
   else if (id.startsWith("fsw"))    poolKey = "formal_shoes_women";
   else if (id.startsWith("fsm"))    poolKey = "formal_shoes_men";
   else if (id.startsWith("ftr"))    poolKey = "formal_trouser";
@@ -588,6 +598,7 @@ const COLOR_PALETTES: Array<{ name: string; colors: string[] }> = [
   { name: "Warm Neutrals",    colors: ["Stone", "Sand", "Nude", "Beige", "Tan", "Cream", "Oatmeal", "Camel"] },
   { name: "Monochrome Grey",  colors: ["Grey", "Charcoal", "Graphite", "Silver", "Stone", "Slate"] },
   { name: "Deep Jewels",      colors: ["Emerald", "Navy", "Burgundy", "Cobalt", "Crimson", "Sapphire"] },
+  { name: "Executive Suite",  colors: ["Dark Navy", "Midnight Blue", "Dark Blue", "Charcoal", "Black", "Deep Charcoal", "Slate", "Dark Slate"] },
 ];
 
 function paletteMatch(itemColors: string[], paletteColors: string[]): boolean {
@@ -751,6 +762,23 @@ const CATALOG: CatalogItem[] = [
   { id: "o014", name: "Cashmere Overcoat", brand: "Kiton", price: 8900, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["men"], colors: ["Charcoal", "Camel", "Navy"], imageUrl: uns("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.kiton.com" },
 
   // ── FORMAL SUITS & TUXEDOS — Men ─────────────────────────────────────────
+  // ── Executive Suit Jackets — Men (Old Money · Business) ─────────────────────
+  { id: "exm01", name: "Dark Navy Two-Button Suit Jacket", brand: "Giorgio Armani", price: 3400, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["men"], colors: ["Dark Navy", "Midnight Blue"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.armani.com" },
+  { id: "exm02", name: "Charcoal Flannel Single-Breasted Jacket", brand: "Brioni", price: 5800, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["men"], colors: ["Charcoal", "Deep Charcoal"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.brioni.com" },
+  { id: "exm03", name: "Midnight Blue Peak-Lapel Suit Jacket", brand: "Corneliani", price: 1890, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["men"], colors: ["Midnight Blue", "Dark Navy"], imageUrl: uns("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.corneliani.com" },
+  { id: "exm04", name: "Tailored Dark Navy Suit Jacket", brand: "Ermenegildo Zegna", price: 2800, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["men"], colors: ["Dark Navy", "Black"], imageUrl: uns("1517841905240-472988babdf9"), purchaseUrl: "https://www.zegna.com" },
+  { id: "exm05", name: "Black Slim-Fit Executive Blazer", brand: "Tom Ford", price: 3200, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["men"], colors: ["Black", "Charcoal"], imageUrl: uns("1519085360753-af0119f7cbe7"), purchaseUrl: "https://www.tomford.com" },
+  { id: "exm06", name: "Power Navy Double-Breasted Blazer", brand: "Kilgour", price: 2400, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["men"], colors: ["Dark Navy", "Midnight Blue", "Dark Blue"], imageUrl: uns("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.kilgour.com" },
+
+  // ── Executive Suit Jackets — Women (Old Money · Business) ────────────────────
+  { id: "exw01", name: "Dark Navy Power Suit Jacket", brand: "Giorgio Armani", price: 2900, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Dark Navy", "Midnight Blue"], imageUrl: uns("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.armani.com" },
+  { id: "exw02", name: "Black Executive Power Blazer", brand: "Roland Mouret", price: 1890, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Black", "Charcoal"], imageUrl: uns("1441986300917-64674bd600d8"), purchaseUrl: "https://www.rolandmouret.com" },
+  { id: "exw03", name: "Charcoal Power Suit Jacket", brand: "Max Mara", price: 2100, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["women"], colors: ["Charcoal", "Deep Charcoal", "Dark Slate"], imageUrl: uns("1469334031218-e382a71b716b"), purchaseUrl: "https://www.maxmara.com" },
+  { id: "exw04", name: "Dark Navy Executive Jacket", brand: "St. John Knits", price: 2400, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Dark Navy", "Black", "Midnight Blue"], imageUrl: uns("1529139574466-a303027bc851"), purchaseUrl: "https://www.stjohnknits.com" },
+  { id: "exw05", name: "Midnight Blue Power Blazer", brand: "Victoria Beckham", price: 1680, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Midnight Blue", "Dark Navy", "Dark Blue"], imageUrl: uns("1516762121899-c04ad64fc6e0"), purchaseUrl: "https://www.victoriabeckham.com" },
+  { id: "exw06", name: "Black Structured Executive Jacket", brand: "Theory", price: 890, category: "outerwear", styles: ["Old Money", "Business"], occasions: ["Work", "Date Night", "Event"], genders: ["women"], colors: ["Black", "Charcoal", "Dark Navy"], imageUrl: uns("1509631179647-0177331693ae"), purchaseUrl: "https://www.theory.com" },
+
+  // ── Formal Tuxedos ───────────────────────────────────────────────────────────
   { id: "fs01", name: "Classic Black Tuxedo Jacket", brand: "Tom Ford", price: 4800, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.tomford.com" },
   { id: "fs02", name: "Peak-Lapel Tuxedo Jacket", brand: "Brioni", price: 6200, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "Midnight Blue"], imageUrl: uns("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.brioni.com" },
   { id: "fs03", name: "Shawl-Lapel Dinner Jacket", brand: "Ralph Lauren Purple Label", price: 3900, category: "outerwear", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "White", "Ivory"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.ralphlauren.com" },
@@ -771,6 +799,18 @@ const CATALOG: CatalogItem[] = [
   { id: "ftr02", name: "Flat-Front Dress Trousers", brand: "Canali", price: 680, category: "bottom", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Black", "Mid Grey"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.canali.com" },
   { id: "ftr03", name: "Pleated Formal Trousers", brand: "Brioni", price: 980, category: "bottom", styles: ["Evening", "Old Money"], occasions: ["Formal", "Event"], genders: ["men"], colors: ["Black", "Charcoal", "Midnight Blue"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.brioni.com" },
   { id: "ftr04", name: "Wide-Leg Formal Trouser", brand: "Ermenegildo Zegna", price: 790, category: "bottom", styles: ["Business", "Old Money"], occasions: ["Formal", "Work", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Slate", "Black"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.zegna.com" },
+
+  // ── Executive Trousers — Men (Old Money · Business) ───────────────────────────
+  { id: "exmt01", name: "Dark Navy Flat-Front Dress Trousers", brand: "Giorgio Armani", price: 980, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["men"], colors: ["Dark Navy", "Midnight Blue"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.armani.com" },
+  { id: "exmt02", name: "Charcoal Flannel Suit Trousers", brand: "Brioni", price: 1400, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["men"], colors: ["Charcoal", "Deep Charcoal"], imageUrl: uns("1542272054537-4845f1353d17"), purchaseUrl: "https://www.brioni.com" },
+  { id: "exmt03", name: "Midnight Blue Slim Dress Trousers", brand: "Ermenegildo Zegna", price: 890, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["men"], colors: ["Midnight Blue", "Dark Navy"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.zegna.com" },
+  { id: "exmt04", name: "Black Wool Executive Trousers", brand: "Tom Ford", price: 1100, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["men"], colors: ["Black", "Charcoal", "Dark Slate"], imageUrl: uns("1542272054537-4845f1353d17"), purchaseUrl: "https://www.tomford.com" },
+
+  // ── Executive Trousers — Women (Old Money · Business) ────────────────────────
+  { id: "exwt01", name: "Dark Navy Tailored Suit Trousers", brand: "Giorgio Armani", price: 840, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Dark Navy", "Midnight Blue"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.armani.com" },
+  { id: "exwt02", name: "Black Wide-Leg Executive Trousers", brand: "Roland Mouret", price: 690, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Black", "Charcoal"], imageUrl: uns("1542272054537-4845f1353d17"), purchaseUrl: "https://www.rolandmouret.com" },
+  { id: "exwt03", name: "Charcoal Straight-Leg Power Trousers", brand: "Max Mara", price: 780, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event"], genders: ["women"], colors: ["Charcoal", "Deep Charcoal", "Dark Slate"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.maxmara.com" },
+  { id: "exwt04", name: "Midnight Blue Slim Suit Trousers", brand: "Theory", price: 395, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Midnight Blue", "Dark Navy", "Dark Blue"], imageUrl: uns("1542272054537-4845f1353d17"), purchaseUrl: "https://www.theory.com" },
 
   // ── SHOES — Women ─────────────────────────────────────────────────────────
   { id: "s001", name: "Slingback Kitten Heel", brand: "Miu Miu", price: 780, category: "shoes", styles: ["Old Money", "Business", "Y2K Revival"], occasions: ["Work", "Date Night", "Event", "Casual"], genders: ["women"], colors: ["Nude", "Black", "Red"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.miumiu.com" },
