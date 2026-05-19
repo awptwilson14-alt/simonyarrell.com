@@ -42,3 +42,45 @@ id = "365vYaOSlhwhRqrF30L62"
 uri = "file://artifacts/mobile/assets/images/splash_bg.png"
 type = "image"
 title = "luxury splash background"
+
+[[generated]]
+id = "8yEuLesNzVy3wPA9WBLPF"
+uri = "file://artifacts/mobile/assets/images/splash_hero.png"
+type = "image"
+title = "splash hero editorial"
+
+[[generated]]
+id = "JndDBqchrQ4xznoeJfuk2"
+uri = "file://artifacts/mobile/assets/images/occasion_casual.png"
+type = "image"
+title = "casual occasion card"
+
+[[generated]]
+id = "z0Z4gQFnICYSxb0vNh9D0"
+uri = "file://artifacts/mobile/assets/images/occasion_date.png"
+type = "image"
+title = "date night occasion card"
+
+[[generated]]
+id = "5-fQFVtRzwIZL0O-xTMfl"
+uri = "file://artifacts/mobile/assets/images/occasion_work.png"
+type = "image"
+title = "work occasion card"
+
+[[generated]]
+id = "0vqqDuX591q6cbpxubaNJ"
+uri = "file://artifacts/mobile/assets/images/occasion_vacation.png"
+type = "image"
+title = "vacation occasion card"
+
+[[generated]]
+id = "lH1UTpl_kgrlvOKqCc7oW"
+uri = "file://artifacts/mobile/assets/images/occasion_event.png"
+type = "image"
+title = "event occasion card"
+
+[[generated]]
+id = "i9Il5QkYLbFp8C7V61pwF"
+uri = "file://artifacts/mobile/assets/images/occasion_street.png"
+type = "image"
+title = "streetwear occasion card"

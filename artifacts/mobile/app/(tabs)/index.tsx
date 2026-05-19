@@ -1,15 +1,15 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useRef } from "react";
+import React from "react";
 import {
   Dimensions,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -17,27 +17,20 @@ import { Feather } from "@expo/vector-icons";
 import { LookCard } from "@/components/LookCard";
 import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
+import { GoldButton } from "@/components/GoldButton";
 import { LOOKS, TRENDS } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 const { width } = Dimensions.get("window");
-const HEADER_HEIGHT = 70;
+const HEADER_HEIGHT = 64;
 
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userProfile } = useApp();
-
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-
-  const quickActions = [
-    { label: "AI Stylist", icon: "zap" as const, route: "/(tabs)/style" as const },
-    { label: "Celebrities", icon: "star" as const, route: "/(tabs)/explore" as const },
-    { label: "Trends", icon: "trending-up" as const, route: "/(tabs)/explore" as const },
-    { label: "My Closet", icon: "shopping-bag" as const, route: "/(tabs)/closet" as const },
-  ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -45,70 +38,87 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: 100 + (Platform.OS === "web" ? 34 : insets.bottom) }]}
       >
-        {/* Hero */}
+        {/* ── Hero ── */}
         <View style={[styles.hero, { paddingTop: topPad + HEADER_HEIGHT }]}>
           <Image
-            source={require("../../assets/images/hero_banner.png")}
+            source={require("../../assets/images/splash_hero.png")}
             style={styles.heroImage}
             resizeMode="cover"
           />
           <LinearGradient
-            colors={["transparent", "rgba(8,8,8,0.5)", "#080808"]}
-            style={styles.heroGradient}
+            colors={["rgba(11,11,12,0.3)", "transparent", "rgba(11,11,12,0.75)", "#0B0B0C"]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={StyleSheet.absoluteFill}
           />
           <View style={styles.heroContent}>
-            <Text style={styles.heroEyebrow}>TODAY'S EDIT</Text>
-            <Text style={styles.heroTitle}>Côte d'Azur{"\n"}Evening</Text>
-            <Pressable
-              style={styles.heroBtn}
-              onPress={() => router.push({ pathname: "/look/[id]", params: { id: "l1" } })}
-            >
-              <Text style={styles.heroBtnText}>VIEW LOOK</Text>
-            </Pressable>
+            <Text style={styles.heroEyebrow}>AI CURATED LOOKS · INSPIRED BY ICONS</Text>
+            <Text style={styles.heroHeadline}>Discover{"\n"}Your Signature{"\n"}Style</Text>
+            <Text style={[styles.heroSub, { color: "rgba(245,245,240,0.65)" }]}>
+              Made for you.
+            </Text>
+            <View style={styles.heroActions}>
+              <GoldButton
+                label="GET STYLED"
+                onPress={() => router.push("/(tabs)/style")}
+                style={{ alignSelf: "flex-start" }}
+              />
+            </View>
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          {quickActions.map((action) => (
-            <Pressable
-              key={action.label}
-              onPress={() => router.push(action.route)}
-              style={({ pressed }) => [
-                styles.quickAction,
-                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
-              ]}
-            >
-              <Feather name={action.icon} size={20} color={colors.gold} />
-              <Text style={[styles.quickActionLabel, { color: colors.foreground }]}>
-                {action.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Trending Looks */}
+        {/* ── Trending Looks ── */}
         <View style={styles.section}>
           <SectionHeader
             title="Trending Looks"
-            subtitle="Curated for you"
             onSeeAll={() => router.push("/(tabs)/explore")}
           />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hList}
+          >
             {LOOKS.map((look) => (
               <LookCard key={look.id} look={look} />
             ))}
           </ScrollView>
         </View>
 
-        {/* Trending Styles */}
+        {/* ── Feature Pills ── */}
+        <View style={styles.featurePills}>
+          {[
+            { icon: "zap" as const, label: "AI Style\nCurator", route: "/(tabs)/style" as const },
+            { icon: "star" as const, label: "Celebrity\nInspired", route: "/(tabs)/explore" as const },
+            { icon: "layers" as const, label: "Closet\nIntelligence", route: "/(tabs)/closet" as const },
+            { icon: "shopping-bag" as const, label: "Shop\nLuxury", route: "/(tabs)/shop" as const },
+          ].map((item) => (
+            <Pressable
+              key={item.label}
+              onPress={() => router.push(item.route)}
+              style={({ pressed }) => [
+                styles.featurePill,
+                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Feather name={item.icon} size={22} color={colors.gold} />
+              <Text style={[styles.featurePillLabel, { color: colors.foreground }]}>
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* ── Trending Styles ── */}
         <View style={styles.section}>
           <SectionHeader
             title="Trending Now"
             subtitle="What the world is wearing"
             onSeeAll={() => router.push("/(tabs)/explore")}
           />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hList}
+          >
             {TRENDS.slice(0, 4).map((trend) => (
               <TrendCard
                 key={trend.id}
@@ -119,32 +129,48 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* For You */}
+        {/* ── For You ── */}
         <View style={styles.section}>
-          <SectionHeader title="For You" subtitle={`Based on ${userProfile.favoriteStyles.length > 0 ? userProfile.favoriteStyles[0] : "your taste"}`} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
+          <SectionHeader
+            title="For You"
+            subtitle={userProfile.favoriteStyles.length > 0 ? userProfile.favoriteStyles.join(", ") : "Based on your taste"}
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hList}
+          >
             {[...LOOKS].reverse().map((look) => (
               <LookCard key={look.id} look={look} />
             ))}
           </ScrollView>
         </View>
+
+        {/* ── Brand Strip ── */}
+        <View style={[styles.brandStrip, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
+          {["GUCCI", "PRADA", "AMIRI", "BALENCIAGA", "SAINT LAURENT", "OFF-WHITE"].map((brand) => (
+            <Text key={brand} style={[styles.brandName, { color: colors.mutedForeground }]}>
+              {brand}
+            </Text>
+          ))}
+        </View>
       </ScrollView>
 
-      {/* Floating Header */}
-      <View
-        style={[
-          styles.header,
-          { paddingTop: topPad, backgroundColor: "transparent" },
-        ]}
-        pointerEvents="box-none"
-      >
-        <View style={[styles.headerInner]} pointerEvents="box-none">
-          <Text style={[styles.logo, { color: colors.gold }]}>MAISON SIMON</Text>
-          <Pressable onPress={() => router.push("/(tabs)/profile")}>
-            <View style={[styles.avatar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Feather name="user" size={16} color={colors.gold} />
-            </View>
-          </Pressable>
+      {/* ── Floating Header ── */}
+      <View style={[styles.header, { paddingTop: topPad }]} pointerEvents="box-none">
+        <View style={styles.headerInner} pointerEvents="box-none">
+          <View style={styles.logoRow}>
+            <Text style={[styles.logoMark, { color: colors.gold }]}>MS</Text>
+            <Text style={[styles.logoText, { color: colors.foreground }]}>MAISON SIMON</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Pressable onPress={() => {}} style={styles.headerIcon}>
+              <Feather name="bell" size={18} color={colors.foreground} />
+            </Pressable>
+            <Pressable onPress={() => router.push("/(tabs)/profile")} style={styles.headerIcon}>
+              <Feather name="user" size={18} color={colors.foreground} />
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>
@@ -153,81 +179,76 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { gap: 0 },
+  content: {},
   hero: {
-    height: 520,
+    height: 580,
     position: "relative",
-    marginBottom: 24,
+    marginBottom: 32,
+    justifyContent: "flex-end",
   },
-  heroImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-  },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  heroImage: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
   heroContent: {
-    position: "absolute",
-    bottom: 32,
-    left: 24,
-    right: 24,
-    gap: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+    gap: 10,
   },
   heroEyebrow: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Inter_600SemiBold",
-    color: "rgba(201,168,76,0.9)",
-    letterSpacing: 3,
+    color: "rgba(198,167,94,0.85)",
+    letterSpacing: 2.5,
   },
-  heroTitle: {
-    fontSize: 36,
-    fontFamily: "Inter_700Bold",
+  heroHeadline: {
+    fontSize: 42,
+    fontFamily: "PlayfairDisplay_700Bold",
     color: "#F5F5F0",
+    lineHeight: 50,
     letterSpacing: -0.5,
-    lineHeight: 42,
   },
-  heroBtn: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: "rgba(201,168,76,0.8)",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginTop: 4,
+  heroSub: {
+    fontSize: 14,
+    fontFamily: "PlayfairDisplay_400Regular",
+    letterSpacing: 0.3,
   },
-  heroBtnText: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    color: "#C9A84C",
-    letterSpacing: 2,
-  },
-  quickActions: {
+  heroActions: { marginTop: 8 },
+  section: { marginBottom: 36 },
+  hList: { paddingHorizontal: 20, paddingRight: 8 },
+  featurePills: {
     flexDirection: "row",
     paddingHorizontal: 20,
     gap: 10,
     marginBottom: 36,
   },
-  quickAction: {
+  featurePill: {
     flex: 1,
     alignItems: "center",
     gap: 8,
-    paddingVertical: 16,
-    borderRadius: 2,
+    paddingVertical: 18,
+    borderRadius: 4,
     borderWidth: 0.5,
   },
-  quickActionLabel: {
-    fontSize: 10,
+  featurePillLabel: {
+    fontSize: 9,
     fontFamily: "Inter_500Medium",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     textAlign: "center",
+    lineHeight: 14,
   },
-  section: {
-    marginBottom: 36,
-    gap: 0,
-  },
-  hList: {
+  brandStrip: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 20,
+    paddingVertical: 28,
     paddingHorizontal: 20,
-    paddingRight: 8,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    marginBottom: 8,
+  },
+  brandName: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2,
   },
   header: {
     position: "absolute",
@@ -243,17 +264,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: HEADER_HEIGHT,
   },
-  logo: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 4,
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logoMark: {
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+    letterSpacing: 1,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 0.5,
-    alignItems: "center",
-    justifyContent: "center",
+  logoText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 3,
   },
+  headerRight: { flexDirection: "row", gap: 16, alignItems: "center" },
+  headerIcon: { padding: 4 },
 });

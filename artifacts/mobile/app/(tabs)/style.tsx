@@ -1,7 +1,10 @@
 import * as Haptics from "expo-haptics";
-import React, { useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -12,63 +15,71 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
 
-import { FilterChips } from "@/components/FilterChips";
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
-import { BUDGETS, GENDERS, LOOKS, OCCASIONS, SEASONS } from "@/constants/data";
+import { LOOKS } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 
-const PROMPTS = [
-  "A day at the Louvre followed by dinner at Costes",
-  "Yacht party off the Amalfi Coast",
-  "Opening night at the Met Gala",
-  "Brooklyn art opening on a Saturday",
-  "Business lunch in Tokyo's Roppongi Hills",
+const { width } = Dimensions.get("window");
+const CARD_W = (width - 48 - 12) / 2;
+
+interface Occasion {
+  label: string;
+  image: any;
+}
+
+const OCCASIONS: Occasion[] = [
+  { label: "Casual", image: require("../../assets/images/occasion_casual.png") },
+  { label: "Date Night", image: require("../../assets/images/occasion_date.png") },
+  { label: "Work", image: require("../../assets/images/occasion_work.png") },
+  { label: "Vacation", image: require("../../assets/images/occasion_vacation.png") },
+  { label: "Event", image: require("../../assets/images/occasion_event.png") },
+  { label: "Streetwear", image: require("../../assets/images/occasion_street.png") },
 ];
+
+const BUDGETS = ["Under $500", "$500–$1500", "$1500–$3000", "$3000–$6000", "$6000+"];
+
+type Step = "occasion" | "prompt" | "results";
 
 export default function StyleScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const inputRef = useRef<TextInput>(null);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
+  const [step, setStep] = useState<Step>("occasion");
+  const [selectedOccasion, setSelectedOccasion] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [occasion, setOccasion] = useState(OCCASIONS[0]);
-  const [season, setSeason] = useState(SEASONS[0]);
-  const [budget, setBudget] = useState(BUDGETS[1]);
-  const [gender, setGender] = useState(GENDERS[0]);
+  const [selectedBudget, setSelectedBudget] = useState("$500–$1500");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<typeof LOOKS>([]);
-  const [generated, setGenerated] = useState(false);
+
+  const selectOccasion = (label: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedOccasion(label);
+  };
+
+  const goToPrompt = () => {
+    if (!selectedOccasion) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setStep("prompt");
+  };
 
   const generate = async () => {
-    if (!prompt.trim() && !generated) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setLoading(true);
+    setStep("results");
     setResults([]);
-    inputRef.current?.blur();
-
-    await new Promise((r) => setTimeout(r, 2200));
-
-    const filtered = LOOKS.filter(
-      (l) =>
-        l.occasion.toLowerCase() === occasion.toLowerCase() ||
-        l.style.toLowerCase().includes("luxe") ||
-        true
-    ).slice(0, 3);
-
-    setResults(filtered.length > 0 ? filtered : LOOKS.slice(0, 3));
-    setGenerated(true);
+    await new Promise((r) => setTimeout(r, 2000));
+    setResults(LOOKS.slice(0, 4));
     setLoading(false);
   };
 
-  const examplePress = (p: string) => {
-    setPrompt(p);
-    Haptics.selectionAsync();
+  const reset = () => {
+    setStep("occasion");
+    setSelectedOccasion("");
+    setPrompt("");
+    setResults([]);
   };
 
   return (
@@ -81,108 +92,185 @@ export default function StyleScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <Text style={[styles.eyebrow, { color: colors.gold }]}>AI STYLIST</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            What are you{"\n"}dressing for?
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Describe your moment and we'll build the perfect look.
-          </Text>
-        </View>
-
-        {/* Prompt Input */}
-        <View style={styles.inputSection}>
-          <View
-            style={[
-              styles.inputWrapper,
-              { borderColor: prompt.length > 0 ? colors.gold : colors.border, backgroundColor: colors.input },
-            ]}
-          >
-            <Feather name="edit-2" size={16} color={colors.mutedForeground} style={styles.inputIcon} />
-            <TextInput
-              ref={inputRef}
-              value={prompt}
-              onChangeText={setPrompt}
-              placeholder="Describe your style moment..."
-              placeholderTextColor={colors.mutedForeground}
-              style={[styles.input, { color: colors.foreground }]}
-              multiline
-              returnKeyType="done"
-            />
-            {prompt.length > 0 && (
-              <Pressable onPress={() => setPrompt("")} hitSlop={12}>
-                <Feather name="x" size={16} color={colors.mutedForeground} />
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            {step !== "occasion" && (
+              <Pressable onPress={() => setStep(step === "results" ? "prompt" : "occasion")} hitSlop={12}>
+                <Feather name="arrow-left" size={20} color={colors.foreground} />
               </Pressable>
             )}
+            <View style={styles.headerBadge}>
+              <Feather name="zap" size={11} color={colors.gold} />
+              <Text style={[styles.headerBadgeText, { color: colors.gold }]}>AI STYLE CURATOR</Text>
+            </View>
+            {step !== "occasion" && (
+              <Pressable onPress={reset} hitSlop={12}>
+                <Feather name="refresh-cw" size={16} color={colors.mutedForeground} />
+              </Pressable>
+            )}
+            {step === "occasion" && <View style={{ width: 20 }} />}
           </View>
 
-          {/* Example Prompts */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.examples}>
-            {PROMPTS.map((p) => (
-              <Pressable
-                key={p}
-                onPress={() => examplePress(p)}
-                style={[styles.exampleChip, { borderColor: colors.border }]}
-              >
-                <Text style={[styles.exampleText, { color: colors.mutedForeground }]} numberOfLines={1}>
-                  {p}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          {step === "occasion" && (
+            <>
+              <Text style={[styles.title, { color: colors.foreground }]}>
+                What's the{"\n"}occasion?
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+                Let's find the perfect look for you.
+              </Text>
+            </>
+          )}
+          {step === "prompt" && (
+            <>
+              <Text style={[styles.title, { color: colors.foreground }]}>
+                Describe your{"\n"}style moment.
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+                {selectedOccasion} · Tell us more (optional)
+              </Text>
+            </>
+          )}
+          {step === "results" && (
+            <>
+              <Text style={[styles.title, { color: colors.foreground }]}>
+                Your Curated{"\n"}Looks
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+                {selectedOccasion} · {selectedBudget}
+              </Text>
+            </>
+          )}
         </View>
 
-        {/* Filters */}
-        <View style={[styles.filtersCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <FilterChips options={GENDERS} selected={gender} onSelect={setGender} label="FOR" />
-          <FilterChips options={OCCASIONS} selected={occasion} onSelect={setOccasion} label="OCCASION" />
-          <FilterChips options={SEASONS} selected={season} onSelect={setSeason} label="SEASON" />
-          <FilterChips options={BUDGETS} selected={budget} onSelect={setBudget} label="BUDGET" />
-        </View>
+        {/* ── Occasion Grid ── */}
+        {step === "occasion" && (
+          <View style={styles.occasionSection}>
+            <View style={styles.occasionGrid}>
+              {OCCASIONS.map((occ) => {
+                const active = selectedOccasion === occ.label;
+                return (
+                  <Pressable
+                    key={occ.label}
+                    onPress={() => selectOccasion(occ.label)}
+                    style={({ pressed }) => [
+                      styles.occasionCard,
+                      { width: CARD_W, opacity: pressed ? 0.88 : 1 },
+                    ]}
+                  >
+                    <Image
+                      source={occ.image}
+                      style={styles.occasionImage}
+                      resizeMode="cover"
+                    />
+                    {/* Overlay */}
+                    <View
+                      style={[
+                        styles.occasionOverlay,
+                        active && { backgroundColor: "rgba(198,167,94,0.25)" },
+                      ]}
+                    />
+                    {active && (
+                      <View style={[styles.occasionCheckmark, { backgroundColor: colors.gold }]}>
+                        <Feather name="check" size={12} color="#0B0B0C" />
+                      </View>
+                    )}
+                    {/* Label */}
+                    <View style={styles.occasionLabel}>
+                      <Text style={[styles.occasionLabelText, active && { color: colors.gold }]}>
+                        {occ.label}
+                      </Text>
+                    </View>
+                    {/* Gold border when selected */}
+                    {active && (
+                      <View style={[styles.occasionBorder, { borderColor: colors.gold }]} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
 
-        {/* Generate Button */}
-        <GoldButton
-          label={loading ? "Styling..." : generated ? "Regenerate Look" : "Generate Look"}
-          onPress={generate}
-          loading={loading}
-          disabled={!prompt.trim() && !generated}
-        />
-
-        {/* Results */}
-        {loading && (
-          <View style={styles.loadingSection}>
-            <ActivityIndicator color={colors.gold} size="large" />
-            <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
-              Curating your perfect look...
-            </Text>
+            <GoldButton
+              label="NEXT"
+              onPress={goToPrompt}
+              disabled={!selectedOccasion}
+            />
           </View>
         )}
 
-        {results.length > 0 && !loading && (
+        {/* ── Prompt Step ── */}
+        {step === "prompt" && (
+          <View style={styles.promptSection}>
+            {/* Optional prompt */}
+            <View style={[styles.promptInput, { borderColor: colors.border, backgroundColor: colors.input }]}>
+              <Feather name="edit-2" size={15} color={colors.mutedForeground} />
+              <TextInput
+                value={prompt}
+                onChangeText={setPrompt}
+                placeholder="e.g. Dinner at a rooftop restaurant in Paris..."
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.textInput, { color: colors.foreground }]}
+                multiline
+              />
+            </View>
+
+            {/* Budget selection */}
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>BUDGET</Text>
+            <View style={styles.budgetGrid}>
+              {BUDGETS.map((b) => (
+                <Pressable
+                  key={b}
+                  onPress={() => { Haptics.selectionAsync(); setSelectedBudget(b); }}
+                  style={[
+                    styles.budgetChip,
+                    {
+                      borderColor: selectedBudget === b ? colors.gold : colors.border,
+                      backgroundColor: selectedBudget === b ? "rgba(198,167,94,0.1)" : "transparent",
+                    },
+                  ]}
+                >
+                  <Text style={[styles.budgetChipText, { color: selectedBudget === b ? colors.gold : colors.mutedForeground }]}>
+                    {b}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <GoldButton label="GENERATE LOOK" onPress={generate} />
+          </View>
+        )}
+
+        {/* ── Results ── */}
+        {step === "results" && (
           <View style={styles.resultsSection}>
-            <View style={styles.resultsHeader}>
-              <Text style={[styles.resultsTitle, { color: colors.foreground }]}>
-                Your Curated Looks
-              </Text>
-              <View style={[styles.resultsBadge, { backgroundColor: "rgba(201,168,76,0.12)", borderColor: colors.gold }]}>
-                <Text style={[styles.resultsBadgeText, { color: colors.gold }]}>
-                  {results.length} LOOKS
+            {loading ? (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator color={colors.gold} size="large" />
+                <Text style={[styles.loadingTitle, { color: colors.foreground }]}>
+                  Curating your look...
+                </Text>
+                <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+                  Consulting 1,000+ premium brands
                 </Text>
               </View>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.resultsList}>
-              {results.map((look) => (
-                <LookCard key={look.id} look={look} />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {generated && results.length > 0 && !loading && (
-          <View style={styles.actions}>
-            <GoldButton label="See All Results" onPress={() => {}} variant="outline" />
+            ) : (
+              <>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.resultsList}
+                >
+                  {results.map((look) => (
+                    <LookCard key={look.id} look={look} />
+                  ))}
+                </ScrollView>
+                <View style={styles.resultActions}>
+                  <GoldButton label="GENERATE MORE" onPress={generate} variant="outline" />
+                  <GoldButton label="START OVER" onPress={reset} variant="ghost" />
+                </View>
+              </>
+            )}
           </View>
         )}
       </ScrollView>
@@ -192,111 +280,135 @@ export default function StyleScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: {
-    paddingHorizontal: 20,
-    gap: 28,
+  content: { paddingHorizontal: 24, gap: 28 },
+  header: { gap: 10 },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
   },
-  headerSection: {
-    gap: 8,
+  headerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  eyebrow: {
+  headerBadgeText: {
     fontSize: 10,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 4,
+    letterSpacing: 2,
   },
   title: {
-    fontSize: 34,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: -0.5,
-    lineHeight: 40,
+    fontSize: 36,
+    fontFamily: "PlayfairDisplay_700Bold",
+    lineHeight: 44,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    lineHeight: 21,
+    lineHeight: 20,
   },
-  inputSection: {
+  occasionSection: { gap: 28 },
+  occasionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
-  inputWrapper: {
+  occasionCard: {
+    height: CARD_W * 1.22,
+    borderRadius: 4,
+    overflow: "hidden",
+    position: "relative",
+  },
+  occasionImage: { width: "100%", height: "100%" },
+  occasionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.28)",
+  },
+  occasionCheckmark: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  occasionBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 2,
+    borderRadius: 4,
+  },
+  occasionLabel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  occasionLabelText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: "#F5F5F0",
+    letterSpacing: 0.3,
+  },
+  promptSection: { gap: 20 },
+  promptInput: {
     flexDirection: "row",
     alignItems: "flex-start",
+    gap: 12,
     borderWidth: 0.5,
-    borderRadius: 2,
+    borderRadius: 4,
     paddingHorizontal: 14,
     paddingVertical: 14,
-    gap: 10,
   },
-  inputIcon: {
-    marginTop: 2,
-  },
-  input: {
+  textInput: {
     flex: 1,
     fontSize: 15,
     fontFamily: "Inter_400Regular",
     lineHeight: 22,
-    minHeight: 44,
+    minHeight: 80,
   },
-  examples: {
+  filterLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 2,
+  },
+  budgetGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
-  exampleChip: {
+  budgetChip: {
     borderWidth: 0.5,
-    borderRadius: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    maxWidth: 220,
+    borderRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  exampleText: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    letterSpacing: 0.2,
+  budgetChipText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.3,
   },
-  filtersCard: {
-    borderWidth: 0.5,
-    borderRadius: 2,
-    padding: 16,
-    gap: 20,
-  },
-  loadingSection: {
+  resultsSection: { gap: 24 },
+  loadingBox: {
     alignItems: "center",
-    paddingVertical: 32,
+    paddingVertical: 60,
     gap: 16,
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+    letterSpacing: 0.2,
   },
   loadingText: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
-  resultsSection: {
-    gap: 16,
-  },
-  resultsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  resultsTitle: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.2,
-  },
-  resultsBadge: {
-    borderWidth: 0.5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 2,
-  },
-  resultsBadgeText: {
-    fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 1.5,
-  },
-  resultsList: {
-    paddingRight: 8,
-  },
-  actions: {
-    gap: 12,
-  },
+  resultsList: { paddingRight: 8 },
+  resultActions: { gap: 12 },
 });
