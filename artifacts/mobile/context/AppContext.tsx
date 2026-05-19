@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 
-import { Look, Product } from "@/constants/data";
+import { Look, LOOKS, Product } from "@/constants/data";
 
 export interface ClosetItem {
   id: string;
@@ -45,6 +45,8 @@ interface AppContextType {
   isCelebritySaved: (id: string) => boolean;
   updateProfile: (updates: Partial<UserProfile>) => void;
   completeOnboarding: (profile: Partial<UserProfile>) => void;
+  registerGeneratedLooks: (looks: Look[]) => void;
+  findLook: (id: string) => Look | undefined;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -64,6 +66,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [closetItems, setClosetItems] = useState<ClosetItem[]>([]);
   const [savedCelebrityIds, setSavedCelebrityIds] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [generatedLooksMap, setGeneratedLooksMap] = useState<Record<string, Look>>({});
 
   useEffect(() => {
     loadPersistedData();
@@ -178,6 +181,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const registerGeneratedLooks = useCallback((looks: Look[]) => {
+    setGeneratedLooksMap((prev) => {
+      const next = { ...prev };
+      for (const look of looks) next[look.id] = look;
+      return next;
+    });
+  }, []);
+
+  const findLook = useCallback(
+    (id: string): Look | undefined =>
+      LOOKS.find((l) => l.id === id) ??
+      generatedLooksMap[id] ??
+      savedLooks.find((l) => l.id === id),
+    [generatedLooksMap, savedLooks]
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -198,6 +217,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isCelebritySaved,
         updateProfile,
         completeOnboarding,
+        registerGeneratedLooks,
+        findLook,
       }}
     >
       {children}

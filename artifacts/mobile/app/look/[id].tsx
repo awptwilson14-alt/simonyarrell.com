@@ -22,6 +22,7 @@ import { LOOKS } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import type { Look } from "@/constants/data";
 
 const { width, height } = Dimensions.get("window");
 
@@ -32,10 +33,10 @@ export default function LookDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved } = useApp();
+  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook } = useApp();
   const [panel, setPanel] = useState<PanelView>("details");
 
-  const look = LOOKS.find((l) => l.id === id);
+  const look = findLook(id ?? "");
   const allRelated = look
     ? LOOKS.filter((l) => l.id !== id).slice(0, 3)
     : LOOKS.slice(0, 3);

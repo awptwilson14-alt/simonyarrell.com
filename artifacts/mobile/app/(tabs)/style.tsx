@@ -49,7 +49,7 @@ export default function StyleScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { userProfile } = useApp();
+  const { userProfile, registerGeneratedLooks } = useApp();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [step, setStep] = useState<Step>("occasion");
@@ -93,6 +93,7 @@ export default function StyleScreen() {
       new Promise((r) => setTimeout(r, 1800)),
     ]);
 
+    registerGeneratedLooks(generatedLooks);
     setResults((prev) => (isMore ? [...prev, ...generatedLooks] : generatedLooks));
     setGenerateCount((c) => c + 1);
     setLoading(false);
