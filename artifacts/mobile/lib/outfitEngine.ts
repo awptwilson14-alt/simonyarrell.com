@@ -297,14 +297,119 @@ const PIECE_IMAGE_POOLS: Record<string, string[]> = {
     uns("1483985988355-763728e1cfc4"), uns("1509631179647-0177331693ae"),
     uns("1549068106-b024baf0f72a"),    uns("1516762121899-c04ad64fc6e0"),
   ],
+  // ── Subcategory-specific pools for better image matching ──────────────────
+  formal_gown: [
+    uns("1566174053879-31528523f8ae"), uns("1515886657613-9f3515b0c78f"),
+    uns("1496747986212-04f8d1b97f16"), uns("1518611012118-696072aa579a"),
+    uns("1503342217505-b0a15ec3261c"), uns("1441986300917-64674bd600d8"),
+    uns("1549068106-b024baf0f72a"),    uns("1509631179647-0177331693ae"),
+    uns("1543163521-1bf539c55dd2"),    uns("1539109136090-3bb05fd40e9d"),
+    uns("1469334031218-e382a71b716b"), uns("1529139574466-a303027bc851"),
+  ],
+  formal_suit: [
+    uns("1507003211169-0a1dd7228f2d"), uns("1552902865-b72c031ac5ea"),
+    uns("1591047139829-d91aecb6caea"), uns("1543163521-1bf539c55dd2"),
+    uns("1517841905240-472988babdf9"), uns("1519085360753-af0119f7cbe7"),
+    uns("1521572163474-6864f9cf17ab"), uns("1441986300917-64674bd600d8"),
+    uns("1483985988355-763728e1cfc4"), uns("1509631179647-0177331693ae"),
+    uns("1549068106-b024baf0f72a"),    uns("1469334031218-e382a71b716b"),
+  ],
+  formal_shirt: [
+    uns("1521572163474-6864f9cf17ab"), uns("1507003211169-0a1dd7228f2d"),
+    uns("1552902865-b72c031ac5ea"),    uns("1503342217505-b0a15ec3261c"),
+    uns("1591047139829-d91aecb6caea"), uns("1441986300917-64674bd600d8"),
+    uns("1549068106-b024baf0f72a"),    uns("1469334031218-e382a71b716b"),
+  ],
+  formal_trouser: [
+    uns("1552902865-b72c031ac5ea"),    uns("1507003211169-0a1dd7228f2d"),
+    uns("1591047139829-d91aecb6caea"), uns("1542272054537-4845f1353d17"),
+    uns("1624378441164-f3b5a4ec2a53"), uns("1441986300917-64674bd600d8"),
+    uns("1469334031218-e382a71b716b"), uns("1509631179647-0177331693ae"),
+  ],
+  formal_shoes_women: [
+    uns("1543163521-1bf539c55dd2"),    uns("1614252235316-8c857d38b5f4"),
+    uns("1515347619252-60a4bf4fff4f"), uns("1608256246005-4e6b4e65f82c"),
+    uns("1542291026-7eec264c27ff"),    uns("1491553895911-0055eca6402d"),
+    uns("1469334031218-e382a71b716b"), uns("1529139574466-a303027bc851"),
+  ],
+  formal_shoes_men: [
+    uns("1608256246005-4e6b4e65f82c"), uns("1543163521-1bf539c55dd2"),
+    uns("1515347619252-60a4bf4fff4f"), uns("1542291026-7eec264c27ff"),
+    uns("1491553895911-0055eca6402d"), uns("1614252235316-8c857d38b5f4"),
+    uns("1469334031218-e382a71b716b"), uns("1483985988355-763728e1cfc4"),
+  ],
+  scrub_top: [
+    uns("1584820688313-b22ef25a6b29"), uns("1559839731-9bf2e0a4a218"),
+    uns("1631815986858-a27780785fc3"), uns("1579684385127-1d5ef9f76e44"),
+    uns("1584820688313-b22ef25a6b29"), uns("1614728894971-0e7c57df5c6c"),
+    uns("1559839731-9bf2e0a4a218"),    uns("1631815986858-a27780785fc3"),
+  ],
+  scrub_bottom: [
+    uns("1559839731-9bf2e0a4a218"),    uns("1584820688313-b22ef25a6b29"),
+    uns("1614728894971-0e7c57df5c6c"), uns("1579684385127-1d5ef9f76e44"),
+    uns("1631815986858-a27780785fc3"), uns("1584820688313-b22ef25a6b29"),
+    uns("1614728894971-0e7c57df5c6c"), uns("1559839731-9bf2e0a4a218"),
+  ],
 };
 
 function getPieceImage(category: string, itemId: string): string {
-  const pool = PIECE_IMAGE_POOLS[category] ?? [
+  // Route by item ID prefix for contextually matched imagery
+  const id = itemId.toLowerCase();
+  let poolKey = category;
+  if      (id.startsWith("fsh"))    poolKey = "formal_shirt";
+  else if (id.startsWith("fsw"))    poolKey = "formal_shoes_women";
+  else if (id.startsWith("fsm"))    poolKey = "formal_shoes_men";
+  else if (id.startsWith("ftr"))    poolKey = "formal_trouser";
+  else if (id.startsWith("fs"))     poolKey = "formal_suit";
+  else if (id.startsWith("fg"))     poolKey = "formal_gown";
+  else if (id.startsWith("figs_t")) poolKey = "scrub_top";
+  else if (id.startsWith("figs_b")) poolKey = "scrub_bottom";
+
+  const pool = PIECE_IMAGE_POOLS[poolKey] ?? PIECE_IMAGE_POOLS[category] ?? [
     uns("1507003211169-0a1dd7228f2d"),
     uns("1515886657613-9f3515b0c78f"),
   ];
   return pool[hashStr(itemId) % pool.length];
+}
+
+// ─── Purchase URL builder — converts brand homepage to product search page ────
+// So tapping "BUY" on any piece lands the user at a search results page
+// for that exact product on the brand's own website.
+function buildPurchaseUrl(item: CatalogItem): string {
+  const base = item.purchaseUrl.replace(/\/$/, "");
+  // Items that already have specific collection/search URLs (e.g. FIGS)
+  if (base.includes("/collections/") || base.includes("/search?") || base.includes("/search/?")) {
+    return base;
+  }
+  const q = encodeURIComponent(item.name);
+  // Brand-specific search URL patterns
+  if (base.includes("gucci.com"))           return `https://www.gucci.com/us/en/search?q=${q}`;
+  if (base.includes("loropiana.com"))        return `https://www.loropiana.com/en/search?searchTerm=${q}`;
+  if (base.includes("balenciaga.com"))       return `https://www.balenciaga.com/en-us/search?q=${q}`;
+  if (base.includes("balmain.com"))          return `https://www.balmain.com/us/search?q=${q}`;
+  if (base.includes("valentino.com"))        return `https://www.valentino.com/en-us/search?q=${q}`;
+  if (base.includes("versace.com"))          return `https://www.versace.com/us/en/search?q=${q}`;
+  if (base.includes("tomford.com"))          return `https://www.tomford.com/search?q=${q}`;
+  if (base.includes("bottegaveneta.com"))    return `https://www.bottegaveneta.com/en-us/search?q=${q}`;
+  if (base.includes("zegna.com"))            return `https://www.zegna.com/us-en/search/?q=${q}`;
+  if (base.includes("jimmychoo.com"))        return `https://us.jimmychoo.com/en_us/search?q=${q}`;
+  if (base.includes("manoloblahnik.com"))    return `https://www.manoloblahnik.com/us/search/?q=${q}`;
+  if (base.includes("brioni.com"))           return `https://www.brioni.com/en_us/search/?q=${q}`;
+  if (base.includes("canali.com"))           return `https://www.canali.com/en_ww/search/?q=${q}`;
+  if (base.includes("brunellocucinelli.com")) return `https://www.brunellocucinelli.com/en/search?q=${q}`;
+  if (base.includes("therow.com"))           return `https://www.therow.com/en-us/search?q=${q}`;
+  if (base.includes("net-a-porter.com"))     return `https://www.net-a-porter.com/en-us/shop/search?q=${q}`;
+  if (base.includes("farfetch.com"))         return `https://www.farfetch.com/shopping/search/?q=${q}`;
+  if (base.includes("ssense.com"))           return `https://www.ssense.com/en-us/search/?q=${q}`;
+  if (base.includes("mytheresa.com"))        return `https://www.mytheresa.com/en-us/search?searchterm=${q}`;
+  if (base.includes("matches"))             return `https://www.matchesfashion.com/us/search?q=${q}`;
+  if (base.includes("wearfigs.com"))         return `https://www.wearfigs.com/search?q=${q}`;
+  if (base.includes("ralphlauren.com"))      return `https://www.ralphlauren.com/search?q=${q}`;
+  if (base.includes("zara.com"))             return `https://www.zara.com/us/en/search?searchTerm=${q}`;
+  if (base.includes("cos"))                  return `https://www.cosstores.com/en_usd/search/?q=${q}`;
+  if (base.includes("acnestudios.com"))      return `https://www.acnestudios.com/us/en/search?q=${q}`;
+  // Default: most modern e-commerce sites support /search?q=
+  return `${base}/search?q=${q}`;
 }
 
 // ─── Look name / description generators ──────────────────────────────────────
@@ -471,16 +576,16 @@ const CATALOG: CatalogItem[] = [
   { id: "t030", name: "Silk Evening Blouse", brand: "Valentino", price: 1480, category: "top", styles: ["Evening", "Old Money"], occasions: ["Event", "Date Night", "Work"], genders: ["women"], colors: ["Blush", "Red", "Black"], imageUrl: uns("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.valentino.com" },
 
   // ── FIGS Scrubs — Women ───────────────────────────────────────────────────
-  { id: "figs_t01", name: "Catarina One-Pocket Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Ceil Blue", "Navy", "Slate", "Hunter Green", "Black", "Burgundy"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_t02", name: "Rafaela Raglan Scrub Top", brand: "FIGS", price: 42, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Navy", "Black", "Heather Grey", "Royal Blue", "Mulberry"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_t03", name: "Bria Reversible Scrub Top", brand: "FIGS", price: 52, category: "top", styles: ["Business"], occasions: ["Work"], genders: ["women"], colors: ["Ceil Blue", "Black", "Olive", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_t04", name: "Yola Cross-Back Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Navy", "Royal Blue", "Sage", "Mulberry", "Burgundy"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_t05", name: "Casma Three-Pocket Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business"], occasions: ["Work"], genders: ["women"], colors: ["Hunter Green", "Navy", "Dusty Blue", "Ceil Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
+  { id: "figs_t01", name: "Catarina One-Pocket Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Ceil Blue", "Navy", "Slate", "Hunter Green", "Black", "Burgundy"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-tops" },
+  { id: "figs_t02", name: "Rafaela Raglan Scrub Top", brand: "FIGS", price: 42, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Navy", "Black", "Heather Grey", "Royal Blue", "Mulberry"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-tops" },
+  { id: "figs_t03", name: "Bria Reversible Scrub Top", brand: "FIGS", price: 52, category: "top", styles: ["Business"], occasions: ["Work"], genders: ["women"], colors: ["Ceil Blue", "Black", "Olive", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-tops" },
+  { id: "figs_t04", name: "Yola Cross-Back Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Navy", "Royal Blue", "Sage", "Mulberry", "Burgundy"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-tops" },
+  { id: "figs_t05", name: "Casma Three-Pocket Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business"], occasions: ["Work"], genders: ["women"], colors: ["Hunter Green", "Navy", "Dusty Blue", "Ceil Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-tops" },
 
   // ── FIGS Scrubs — Men ─────────────────────────────────────────────────────
-  { id: "figs_t06", name: "Pisco One-Pocket Scrub Top", brand: "FIGS", price: 42, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Heather Grey", "Ceil Blue", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_t07", name: "Leon Two-Pocket Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Hunter Green", "Slate", "Royal Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_t08", name: "Axim Utility Scrub Top", brand: "FIGS", price: 48, category: "top", styles: ["Business", "Techwear"], occasions: ["Work"], genders: ["men"], colors: ["Black", "Graphite", "Navy", "Charcoal"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
+  { id: "figs_t06", name: "Pisco One-Pocket Scrub Top", brand: "FIGS", price: 42, category: "top", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Heather Grey", "Ceil Blue", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-tops" },
+  { id: "figs_t07", name: "Leon Two-Pocket Scrub Top", brand: "FIGS", price: 38, category: "top", styles: ["Business"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Hunter Green", "Slate", "Royal Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-tops" },
+  { id: "figs_t08", name: "Axim Utility Scrub Top", brand: "FIGS", price: 48, category: "top", styles: ["Business", "Techwear"], occasions: ["Work"], genders: ["men"], colors: ["Black", "Graphite", "Navy", "Charcoal"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-tops" },
 
   // ── BOTTOMS — Women ───────────────────────────────────────────────────────
   { id: "b001", name: "Wide-Leg Wool Trouser", brand: "Jil Sander", price: 890, category: "bottom", styles: ["Clean Minimal", "Business", "Old Money"], occasions: ["Work", "Event", "Date Night"], genders: ["women"], colors: ["Ivory", "Camel", "Charcoal"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.jilsander.com" },
@@ -509,15 +614,15 @@ const CATALOG: CatalogItem[] = [
   { id: "b022", name: "Slim Tailored Trouser", brand: "Acne Studios", price: 480, category: "bottom", styles: ["Clean Minimal", "Business"], occasions: ["Work", "Date Night", "Event"], genders: ["men"], colors: ["Black", "Charcoal", "Navy"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.acnestudios.com" },
 
   // ── FIGS Scrub Bottoms — Women ────────────────────────────────────────────
-  { id: "figs_b01", name: "Zamora Jogger Scrub Pants", brand: "FIGS", price: 42, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Ceil Blue", "Navy", "Slate", "Hunter Green", "Black", "Burgundy"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_b02", name: "Ames Cargo Scrub Pants", brand: "FIGS", price: 52, category: "bottom", styles: ["Business", "Techwear"], occasions: ["Work"], genders: ["women"], colors: ["Navy", "Black", "Hunter Green", "Olive", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_b03", name: "Kade Scrub Shorts", brand: "FIGS", price: 38, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work", "Casual"], genders: ["women"], colors: ["Navy", "Black", "Heather Grey", "Ceil Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_b04", name: "Rafaela Drawstring Scrub Pants", brand: "FIGS", price: 46, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Burgundy", "Royal Blue", "Mulberry", "Slate", "Dusty Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
+  { id: "figs_b01", name: "Zamora Jogger Scrub Pants", brand: "FIGS", price: 42, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Ceil Blue", "Navy", "Slate", "Hunter Green", "Black", "Burgundy"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-pants" },
+  { id: "figs_b02", name: "Ames Cargo Scrub Pants", brand: "FIGS", price: 52, category: "bottom", styles: ["Business", "Techwear"], occasions: ["Work"], genders: ["women"], colors: ["Navy", "Black", "Hunter Green", "Olive", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-pants" },
+  { id: "figs_b03", name: "Kade Scrub Shorts", brand: "FIGS", price: 38, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work", "Casual"], genders: ["women"], colors: ["Navy", "Black", "Heather Grey", "Ceil Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-shorts" },
+  { id: "figs_b04", name: "Rafaela Drawstring Scrub Pants", brand: "FIGS", price: 46, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["women"], colors: ["Burgundy", "Royal Blue", "Mulberry", "Slate", "Dusty Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/womens-scrub-pants" },
 
   // ── FIGS Scrub Bottoms — Men ──────────────────────────────────────────────
-  { id: "figs_b05", name: "Yola Jogger Scrub Pant", brand: "FIGS", price: 42, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Heather Grey", "Slate", "Ceil Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_b06", name: "Axim Cargo Scrub Pant", brand: "FIGS", price: 52, category: "bottom", styles: ["Business", "Techwear"], occasions: ["Work"], genders: ["men"], colors: ["Black", "Navy", "Hunter Green", "Graphite", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
-  { id: "figs_b07", name: "Cairo Relaxed Scrub Pant", brand: "FIGS", price: 38, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Slate", "Royal Blue", "Charcoal"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com" },
+  { id: "figs_b05", name: "Yola Jogger Scrub Pant", brand: "FIGS", price: 42, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Heather Grey", "Slate", "Ceil Blue"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-pants" },
+  { id: "figs_b06", name: "Axim Cargo Scrub Pant", brand: "FIGS", price: 52, category: "bottom", styles: ["Business", "Techwear"], occasions: ["Work"], genders: ["men"], colors: ["Black", "Navy", "Hunter Green", "Graphite", "Slate"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-pants" },
+  { id: "figs_b07", name: "Cairo Relaxed Scrub Pant", brand: "FIGS", price: 38, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Slate", "Royal Blue", "Charcoal"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-pants" },
 
   // ── DRESSES — Women ───────────────────────────────────────────────────────
   { id: "d001", name: "Column Gown", brand: "Valentino Haute Couture", price: 5800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Event", "Party"], genders: ["women"], colors: ["Crimson", "Ivory", "Black"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.valentino.com" },
@@ -804,7 +909,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         category: item.category,
         color: pickPaletteColor(item.colors, selectedPalette.colors),
         imageUrl: getPieceImage(item.category, item.id),
-        purchaseUrl: item.purchaseUrl,
+        purchaseUrl: buildPurchaseUrl(item),
       });
       total += item.price;
     };
