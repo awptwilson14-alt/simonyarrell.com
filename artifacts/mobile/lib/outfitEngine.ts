@@ -102,207 +102,167 @@ function hashStr(str: string): number {
 //     of photo IDs (no cross-style sharing) so every category looks different.
 //     Keys: "{Style}_{gender}" with "default_{gender}" fallback.
 
+// All pools use ONLY local PNG assets — Unsplash URIs were failing to load
+// (CORS/network) and rendering as solid-black cards. Local requires guarantee
+// images render and visually match the style.
 const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
 
   // ══ OLD MONEY ══════════════════════════════════════════════════════════════
   "Old Money_women": [
-    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },  // silk blouse editorial
-    { uri: uns("1441986300917-64674bd600d8", 600, 900) },  // women's classic fashion
-    { uri: uns("1469334031218-e382a71b716b", 600, 900) },  // women's heritage style
-    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },  // women's editorial
-    { uri: uns("1529139574466-a303027bc851", 600, 900) },  // preppy women's
-    { uri: uns("1509631179647-0177331693ae", 600, 900) },  // classic women's look
-    { uri: uns("1476231682828-37533792a49f", 600, 900) },  // women's quiet luxury
-    { uri: uns("1524503033903-a6b0d4e7b012", 600, 900) },  // women's editorial
+    require("../assets/images/looks/old_money_weekend_women.png"),
+    require("../assets/images/looks/parisian_chic_women.png"),
+    require("../assets/images/looks/dark_academia_women.png"),
+    require("../assets/images/trends/old_money_women.png"),
+    require("../assets/images/looks/cote_dazur_evening_women.png"),
   ],
   "Old Money_men": [
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },  // man in dark suit
-    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },     // tailored men's trousers
-    { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },  // men's heritage fashion
-    { uri: uns("1591047139829-d91aecb6caea", 600, 900) },  // men's luxury editorial
-    { uri: uns("1517841905240-472988babdf9", 600, 900) },  // man in classic suit
-    { uri: uns("1519085360753-af0119f7cbe7", 600, 900) },  // men's refined style
-    { uri: uns("1490481911-ae6d03e0c7a7", 600, 900) },     // men's tailored casual
-    { uri: uns("1463453947-60df1e5bccd5", 600, 900) },     // men's blazer look
+    require("../assets/images/looks/old_money_weekend_men.png"),
+    require("../assets/images/looks/parisian_chic_men.png"),
+    require("../assets/images/looks/dark_academia_men.png"),
+    require("../assets/images/trends/old_money_men.png"),
+    require("../assets/images/looks/cote_dazur_evening_men.png"),
+    require("../assets/images/look_old_money.png"),
   ],
 
   // ══ LUXURY STREETWEAR ══════════════════════════════════════════════════════
   "Luxury Streetwear_women": [
-    { uri: uns("1556821840-3a63f15732ce", 600, 900) },     // women's streetwear
-    { uri: uns("1558618666-fcd25c85cd64", 600, 900) },     // women's street style
-    { uri: uns("1554412933-d5a313077787", 600, 900) },     // women's urban fashion
-    { uri: uns("1544005313-94ddf0286df2", 600, 900) },     // street fashion women
-    { uri: uns("1522337360492-f0b819058e50", 600, 900) },  // women's hype editorial
-    { uri: uns("1573496359808-0ed5975d9a2a", 600, 900) },  // women's streetwear
-    { uri: uns("1562886784-0ce878e0dbbc", 600, 900) },     // women's urban look
-    { uri: uns("1508214751620-7661e8d2d24c", 600, 900) },  // women's drop culture
+    require("../assets/images/looks/luxury_streetwear_icon_women.png"),
+    require("../assets/images/trends/luxury_streetwear_women.png"),
+    require("../assets/images/looks_named/downtown_edit_women.png"),
+    require("../assets/images/looks_named/the_culture_women.png"),
+    require("../assets/images/looks_named/concrete_luxe_women.png"),
   ],
   "Luxury Streetwear_men": [
-    require("../assets/images/streetwear_hero_men.png"),         // luxury hip-hop streetwear
-    require("../assets/images/trends/luxury_streetwear_men.png"), // Times Square graphic-tee fit
-    { uri: uns("1539008835657-9e8e9680c956", 600, 900) },  // men's urban outerwear
-    { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },  // men's streetwear
-    { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },  // men's hype fashion
-    { uri: uns("1578681994506-b8f463906a8f", 600, 900) },  // men's luxury street
-    { uri: uns("1542272054537-4845f1353d17", 600, 900) },  // urban men's drip
-    { uri: uns("1531297484001-80022131f5a1", 600, 900) },  // men's tech/street
-    { uri: uns("1525507119028-ed4c629a60a3", 600, 900) },  // men's drop look
+    require("../assets/images/looks/luxury_streetwear_icon_men.png"),
+    require("../assets/images/trends/luxury_streetwear_men.png"),
+    require("../assets/images/streetwear_hero_men.png"),
+    require("../assets/images/looks_named/downtown_edit_men.png"),
+    require("../assets/images/looks_named/the_culture_men.png"),
+    require("../assets/images/looks_named/concrete_luxe_men.png"),
+    require("../assets/images/look_streetwear.png"),
   ],
 
   // ══ TECHWEAR ═══════════════════════════════════════════════════════════════
   "Techwear_women": [
-    require("../assets/images/trends/techwear_women.png"), // hand-picked techwear editorial
-    { uri: uns("1573496359808-0ed5975d9a2a", 600, 900) },  // women's technical
-    { uri: uns("1508214751620-7661e8d2d24c", 600, 900) },  // women's future style
-    { uri: uns("1522337360492-f0b819058e50", 600, 900) },  // women's techwear
+    require("../assets/images/trends/techwear_women.png"),
+    require("../assets/images/looks/urban_architect_women.png"),
+    require("../assets/images/looks_named/concrete_luxe_women.png"),
   ],
   "Techwear_men": [
-    require("../assets/images/trends/techwear_men.png"),   // hand-picked techwear editorial
-    { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },  // men's utility
-    { uri: uns("1583744757-f2c17db12c94", 600, 900) },     // men's functional
-    { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },  // men's techwear
+    require("../assets/images/trends/techwear_men.png"),
+    require("../assets/images/looks/urban_architect_men.png"),
+    require("../assets/images/looks_named/concrete_luxe_men.png"),
+    require("../assets/images/look_techwear.png"),
   ],
 
   // ══ VACATION LUXE ══════════════════════════════════════════════════════════
   "Vacation Luxe_women": [
-    { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },  // women's resort wear
-    { uri: uns("1473496169904-658ba7574b0d", 600, 900) },  // women's vacation style
-    { uri: uns("1541643600914-78b084683702", 600, 900) },  // women's sun fashion
-    { uri: uns("1519748759207-a25b8f93f83d", 600, 900) },  // women's riviera look
-    { uri: uns("1476231682828-37533792a49f", 600, 900) },  // women's resort editorial
-    { uri: uns("1524503033903-a6b0d4e7b012", 600, 900) },  // women's island luxe
+    require("../assets/images/looks/resort_billionaire_women.png"),
+    require("../assets/images/looks/cote_dazur_evening_women.png"),
+    require("../assets/images/trends/vacation_luxe_women.png"),
+    require("../assets/images/occasions/vacation_women.png"),
   ],
   "Vacation Luxe_men": [
-    { uri: uns("1519238263029-82dea7fd9ea9", 600, 900) },  // men's resort casual
-    { uri: uns("1500648767791-00dcc994a43e", 600, 900) },  // men's vacation style
-    { uri: uns("1490481911-ae6d03e0c7a7", 600, 900) },     // men's island fashion
-    { uri: uns("1463453947-60df1e5bccd5", 600, 900) },     // men's vacation look
-    { uri: uns("1567401893098-a14ab4b1d5fb", 600, 900) },  // men's resort editorial
-    { uri: uns("1593030761757-71fae45fa0e7", 600, 900) },  // men's luxe casual
+    require("../assets/images/looks/resort_billionaire_men.png"),
+    require("../assets/images/looks/cote_dazur_evening_men.png"),
+    require("../assets/images/trends/vacation_luxe_men.png"),
+    require("../assets/images/occasions/vacation_men.png"),
+    require("../assets/images/look_vacation.png"),
   ],
 
   // ══ EVENING ════════════════════════════════════════════════════════════════
   "Evening_women": [
-    { uri: uns("1566174053879-31528523f8ae", 600, 900) },  // women's gown editorial
-    { uri: uns("1496747986212-04f8d1b97f16", 600, 900) },  // formal gown
-    { uri: uns("1518611012118-696072aa579a", 600, 900) },  // evening gown
-    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },     // women's evening look
-    { uri: uns("1549068106-b024baf0f72a", 600, 900) },     // women's evening fashion
-    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },  // women's night editorial
-    { uri: uns("1581044777550-4cfa2a2b1538", 600, 900) },  // women's glamour look
-    { uri: uns("1564423924225-a9ef7e51e03a", 600, 900) },  // women's soirée style
+    require("../assets/images/looks/gala_glamour_women.png"),
+    require("../assets/images/looks/cote_dazur_evening_women.png"),
+    require("../assets/images/looks/galerie_opening_women.png"),
+    require("../assets/images/occasions/event_women.png"),
+    require("../assets/images/occasions/date_women.png"),
   ],
   "Evening_men": [
-    { uri: uns("1568602471122-9d4a3d5ba2f8", 600, 900) },  // men's evening look
-    { uri: uns("1576566588405-41e7e3c1da80", 600, 900) },  // men's black tie
-    { uri: uns("1610391897898-75c5dafae7a0", 600, 900) },  // men's formal evening
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },  // men in dark suit
-    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },     // men's formal trousers
-    { uri: uns("1591047139829-d91aecb6caea", 600, 900) },  // men's evening editorial
-    { uri: uns("1519085360753-af0119f7cbe7", 600, 900) },  // men's black tie look
-    { uri: uns("1517841905240-472988babdf9", 600, 900) },  // men's evening suit
+    require("../assets/images/looks/gala_glamour_men.png"),
+    require("../assets/images/looks/cote_dazur_evening_men.png"),
+    require("../assets/images/looks/galerie_opening_men.png"),
+    require("../assets/images/occasions/event_men.png"),
+    require("../assets/images/occasions/date_men.png"),
   ],
 
   // ══ CLEAN MINIMAL ══════════════════════════════════════════════════════════
   "Clean Minimal_women": [
-    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },  // women's minimal look
-    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },  // women's minimal fashion
-    { uri: uns("1441986300917-64674bd600d8", 600, 900) },  // women's clean editorial
-    { uri: uns("1469334031218-e382a71b716b", 600, 900) },  // women's architectural
-    { uri: uns("1529139574466-a303027bc851", 600, 900) },  // women's pared-back
-    { uri: uns("1564423924225-a9ef7e51e03a", 600, 900) },  // women's tonal look
-    { uri: uns("1581044777550-4cfa2a2b1538", 600, 900) },  // women's monochrome
-    { uri: uns("1519748759207-a25b8f93f83d", 600, 900) },  // women's quiet style
+    require("../assets/images/looks/urban_minimalist_women.png"),
+    require("../assets/images/looks/galerie_opening_women.png"),
+    require("../assets/images/looks/parisian_chic_women.png"),
+    require("../assets/images/trends/clean_minimal_women.png"),
+    require("../assets/images/looks/urban_architect_women.png"),
   ],
   "Clean Minimal_men": [
-    { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },  // men's minimal fashion
-    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },     // men's clean editorial
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },  // men's pared-back
-    { uri: uns("1593030761757-71fae45fa0e7", 600, 900) },  // men's monochrome look
-    { uri: uns("1567401893098-a14ab4b1d5fb", 600, 900) },  // men's architectural
-    { uri: uns("1500648767791-00dcc994a43e", 600, 900) },  // men's tonal editorial
-    { uri: uns("1519238263029-82dea7fd9ea9", 600, 900) },  // men's quiet luxury
-    { uri: uns("1519085360753-af0119f7cbe7", 600, 900) },  // men's structural
+    require("../assets/images/looks/urban_minimalist_men.png"),
+    require("../assets/images/looks/galerie_opening_men.png"),
+    require("../assets/images/looks/parisian_chic_men.png"),
+    require("../assets/images/trends/clean_minimal_men.png"),
+    require("../assets/images/looks/urban_architect_men.png"),
   ],
 
   // ══ BUSINESS ═══════════════════════════════════════════════════════════════
   "Business_women": [
-    { uri: uns("1509631179647-0177331693ae", 600, 900) },  // women's power dressing
-    { uri: uns("1483985988355-763728e1cfc4", 600, 900) },  // women's boardroom look
-    { uri: uns("1469460340997-2f854c2e9d75", 600, 900) },  // women's professional
-    { uri: uns("1541643600914-78b084683702", 600, 900) },  // women's exec fashion
-    { uri: uns("1519748759207-a25b8f93f83d", 600, 900) },  // women's corner office
-    { uri: uns("1529139574466-a303027bc851", 600, 900) },  // women's structured look
-    { uri: uns("1476231682828-37533792a49f", 600, 900) },  // women's business edit
-    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },  // women's work style
+    require("../assets/images/looks/power_dressing_women.png"),
+    require("../assets/images/occasions/work_women.png"),
+    require("../assets/images/looks/urban_minimalist_women.png"),
+    require("../assets/images/looks/parisian_chic_women.png"),
   ],
   "Business_men": [
-    { uri: uns("1591047139829-d91aecb6caea", 600, 900) },  // men's power dressing
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },  // men's boardroom suit
-    { uri: uns("1517841905240-472988babdf9", 600, 900) },  // men's exec style
-    { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },  // men's professional
-    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },     // men's structured look
-    { uri: uns("1490481911-ae6d03e0c7a7", 600, 900) },     // men's work editorial
-    { uri: uns("1610391897898-75c5dafae7a0", 600, 900) },  // men's corner office
-    { uri: uns("1568602471122-9d4a3d5ba2f8", 600, 900) },  // men's boardroom edit
+    require("../assets/images/looks/power_dressing_men.png"),
+    require("../assets/images/occasions/work_men.png"),
+    require("../assets/images/looks/urban_minimalist_men.png"),
+    require("../assets/images/looks/parisian_chic_men.png"),
   ],
 
   // ══ Y2K REVIVAL ════════════════════════════════════════════════════════════
   "Y2K Revival_women": [
-    require("../assets/images/looks/y2k_soiree_women.png"),// hand-picked Y2K editorial
-    { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },  // women's Y2K look
-    { uri: uns("1481437156560-3205f6a55735", 600, 900) },  // women's nostalgia style
-    { uri: uns("1485217988980-cc7283d1da23", 600, 900) },  // women's bold Y2K
-    { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },  // women's millennium look
+    require("../assets/images/looks/y2k_soiree_women.png"),
+    require("../assets/images/trends/y2k_revival_women.png"),
+    require("../assets/images/looks/gala_glamour_women.png"),
   ],
   "Y2K Revival_men": [
-    require("../assets/images/looks/y2k_soiree_men.png"),  // hand-picked Y2K editorial
-    { uri: uns("1542272054537-4845f1353d17", 600, 900) },  // men's Y2K style
-    { uri: uns("1556821840-3a63f15732ce", 600, 900) },     // men's 2000s vibe
-    { uri: uns("1539008835657-9e8e9680c956", 600, 900) },  // men's retro street
+    require("../assets/images/looks/y2k_soiree_men.png"),
+    require("../assets/images/trends/y2k_revival_men.png"),
+    require("../assets/images/looks/gala_glamour_men.png"),
   ],
 
   // ══ FORMAL ══════════════════════════════════════════════════════════════════
   "Formal_women": [
-    { uri: uns("1566174053879-31528523f8ae", 600, 900) },  // women's gown editorial
-    { uri: uns("1496747986212-04f8d1b97f16", 600, 900) },  // formal ball gown
-    { uri: uns("1518611012118-696072aa579a", 600, 900) },  // formal gown
-    { uri: uns("1543163521-1bf539c55dd2", 600, 900) },     // women's ceremony look
-    { uri: uns("1581044777550-4cfa2a2b1538", 600, 900) },  // women's black tie gown
-    { uri: uns("1564423924225-a9ef7e51e03a", 600, 900) },  // women's white tie
+    require("../assets/images/looks/gala_glamour_women.png"),
+    require("../assets/images/occasions/formal_women.png"),
+    require("../assets/images/looks/galerie_opening_women.png"),
   ],
   "Formal_men": [
-    { uri: uns("1519085360753-af0119f7cbe7", 600, 900) },  // men's tuxedo look
-    { uri: uns("1576566588405-41e7e3c1da80", 600, 900) },  // men's black tie
-    { uri: uns("1568602471122-9d4a3d5ba2f8", 600, 900) },  // men's formal editorial
-    { uri: uns("1517841905240-472988babdf9", 600, 900) },  // men's ceremony suit
-    { uri: uns("1610391897898-75c5dafae7a0", 600, 900) },  // men's gala look
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },  // men's white tie
+    require("../assets/images/looks/gala_glamour_men.png"),
+    require("../assets/images/occasions/formal_men.png"),
+    require("../assets/images/looks/galerie_opening_men.png"),
   ],
 
   // ══ GENDER-NEUTRAL DEFAULTS (fallback) ═════════════════════════════════════
   "default_women": [
-    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
-    { uri: uns("1441986300917-64674bd600d8", 600, 900) },
-    { uri: uns("1469334031218-e382a71b716b", 600, 900) },
-    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },
-    { uri: uns("1509631179647-0177331693ae", 600, 900) },
-    { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
+    require("../assets/images/looks/parisian_chic_women.png"),
+    require("../assets/images/looks/urban_minimalist_women.png"),
+    require("../assets/images/looks/galerie_opening_women.png"),
+    require("../assets/images/looks/cote_dazur_evening_women.png"),
+    require("../assets/images/looks/old_money_weekend_women.png"),
+    require("../assets/images/looks/luxury_streetwear_icon_women.png"),
   ],
   "default_men": [
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
-    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
-    { uri: uns("1521572163474-6864f9cf17ab", 600, 900) },
-    { uri: uns("1539008835657-9e8e9680c956", 600, 900) },
-    { uri: uns("1591047139829-d91aecb6caea", 600, 900) },
-    { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },
+    require("../assets/images/looks/parisian_chic_men.png"),
+    require("../assets/images/looks/urban_minimalist_men.png"),
+    require("../assets/images/looks/galerie_opening_men.png"),
+    require("../assets/images/looks/cote_dazur_evening_men.png"),
+    require("../assets/images/looks/old_money_weekend_men.png"),
+    require("../assets/images/looks/luxury_streetwear_icon_men.png"),
   ],
   "default": [
-    { uri: uns("1507003211169-0a1dd7228f2d", 600, 900) },
-    { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },
-    { uri: uns("1503342217505-b0a15ec3261c", 600, 900) },
-    { uri: uns("1552902865-b72c031ac5ea", 600, 900) },
-    { uri: uns("1539008835657-9e8e9680c956", 600, 900) },
+    require("../assets/images/looks/parisian_chic_men.png"),
+    require("../assets/images/looks/parisian_chic_women.png"),
+    require("../assets/images/looks/urban_minimalist_men.png"),
+    require("../assets/images/looks/urban_minimalist_women.png"),
+    require("../assets/images/look_old_money.png"),
   ],
 };
 
