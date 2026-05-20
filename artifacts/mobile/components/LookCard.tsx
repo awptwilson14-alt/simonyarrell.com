@@ -20,19 +20,25 @@ import { pickStyleHero } from "@/constants/heroImages";
 // Last-resort fallbacks if the look's image source ever fails to load.
 // All current pools are local PNGs so this should be unreachable in practice,
 // but the safety net guarantees a card can never render as a black rectangle.
-const STYLE_FALLBACK: Record<string, ImageSourcePropType> = {
-  "Old Money":         require("../assets/images/looks/old_money_weekend_men.png"),
-  "Luxury Streetwear": require("../assets/images/looks/luxury_streetwear_icon_men.png"),
-  "Vacation Luxe":     require("../assets/images/looks/resort_billionaire_men.png"),
-  Techwear:            require("../assets/images/looks/urban_architect_men.png"),
-  "Clean Minimal":     require("../assets/images/looks/urban_minimalist_men.png"),
-  "Y2K Revival":       require("../assets/images/looks/y2k_soiree_men.png"),
-  Business:            require("../assets/images/looks/power_dressing_men.png"),
-  Evening:             require("../assets/images/looks/gala_glamour_men.png"),
-  Formal:              require("../assets/images/looks/gala_glamour_men.png"),
-  "Avant-garde":       require("../assets/images/looks/gala_glamour_men.png"),
+// Both gender variants supplied so the fallback respects the user's profile —
+// a female user must never see a male editorial as a fallback, and vice versa.
+type GenderedSource = { men: ImageSourcePropType; women: ImageSourcePropType };
+const STYLE_FALLBACK: Record<string, GenderedSource> = {
+  "Old Money":         { men: require("../assets/images/looks/old_money_weekend_men.png"),    women: require("../assets/images/looks/old_money_weekend_women.png") },
+  "Luxury Streetwear": { men: require("../assets/images/looks/luxury_streetwear_icon_men.png"), women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
+  "Vacation Luxe":     { men: require("../assets/images/looks/resort_billionaire_men.png"),   women: require("../assets/images/looks/resort_billionaire_women.png") },
+  Techwear:            { men: require("../assets/images/looks/urban_architect_men.png"),      women: require("../assets/images/looks/urban_architect_women.png") },
+  "Clean Minimal":     { men: require("../assets/images/looks/urban_minimalist_men.png"),     women: require("../assets/images/looks/urban_minimalist_women.png") },
+  "Y2K Revival":       { men: require("../assets/images/looks/y2k_soiree_men.png"),           women: require("../assets/images/looks/y2k_soiree_women.png") },
+  Business:            { men: require("../assets/images/looks/power_dressing_men.png"),       women: require("../assets/images/looks/power_dressing_women.png") },
+  Evening:             { men: require("../assets/images/looks/gala_glamour_men.png"),         women: require("../assets/images/looks/gala_glamour_women.png") },
+  Formal:              { men: require("../assets/images/looks/gala_glamour_men.png"),         women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Avant-garde":       { men: require("../assets/images/looks/gala_glamour_men.png"),         women: require("../assets/images/looks/gala_glamour_women.png") },
 };
-const UNIVERSAL_FALLBACK: ImageSourcePropType = require("../assets/images/looks/parisian_chic_men.png");
+const UNIVERSAL_FALLBACK: GenderedSource = {
+  men:   require("../assets/images/looks/parisian_chic_men.png"),
+  women: require("../assets/images/looks/parisian_chic_women.png"),
+};
 
 const { width } = Dimensions.get("window");
 
@@ -49,10 +55,12 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
   const saved = isLookSaved(look.id);
   const w = cardWidth ?? width * 0.62;
   const [imgFailed, setImgFailed] = useState(false);
+  const g: "men" | "women" =
+    (userProfile.gender ?? "").toLowerCase() === "men" ? "men" : "women";
   const fallback =
     pickStyleHero(look.style, userProfile.gender, look.id) ??
-    STYLE_FALLBACK[look.style] ??
-    UNIVERSAL_FALLBACK;
+    (STYLE_FALLBACK[look.style]?.[g]) ??
+    UNIVERSAL_FALLBACK[g];
   const source = imgFailed ? fallback : look.image;
 
   const toggleSave = () => {

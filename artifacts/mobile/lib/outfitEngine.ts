@@ -257,13 +257,9 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
     require("../assets/images/looks/old_money_weekend_men.png"),
     require("../assets/images/looks/luxury_streetwear_icon_men.png"),
   ],
-  "default": [
-    require("../assets/images/looks/parisian_chic_men.png"),
-    require("../assets/images/looks/parisian_chic_women.png"),
-    require("../assets/images/looks/urban_minimalist_men.png"),
-    require("../assets/images/looks/urban_minimalist_women.png"),
-    require("../assets/images/look_old_money.png"),
-  ],
+  // NOTE: Intentionally no gender-neutral "default" pool. Mixing men+women
+  // images in a single fallback bucket let women's photos leak into male
+  // profiles when the per-gender pools were exhausted during dedupe.
 };
 
 export function hasNamedLookImage(name: string): boolean {
@@ -292,10 +288,9 @@ export function assignUniqueLookImages<T extends { id: string; name: string; sty
     const candidatePools: Array<Array<{ uri: string } | number>> = [];
     const named = NAMED_LOOK_IMAGES[look.name];
     if (named) candidatePools.push([named[g]]);
-    const stylePool = LOOK_IMAGE_POOLS[`${look.style}_${g}`] ?? LOOK_IMAGE_POOLS[look.style];
+    const stylePool = LOOK_IMAGE_POOLS[`${look.style}_${g}`];
     if (stylePool) candidatePools.push(stylePool);
     candidatePools.push(LOOK_IMAGE_POOLS[`default_${g}`]!);
-    candidatePools.push(LOOK_IMAGE_POOLS["default"]!);
 
     let chosen: { uri: string } | number = look.image;
     const originalKey = imageKey(look.image);
@@ -319,9 +314,13 @@ export function assignUniqueLookImages<T extends { id: string; name: string; sty
         }
       }
     }
-    // Last-resort: scan every pool for ANY unused image to enforce strict uniqueness.
+    // Last-resort: scan every SAME-GENDER pool for an unused image. We
+    // never cross genders here — a male profile must never receive a
+    // women's editorial, even when all preferred pools are exhausted.
     if (!found) {
-      for (const pool of Object.values(LOOK_IMAGE_POOLS)) {
+      const genderSuffix = `_${g}`;
+      for (const [key, pool] of Object.entries(LOOK_IMAGE_POOLS)) {
+        if (!key.endsWith(genderSuffix)) continue;
         for (const candidate of pool) {
           const k = imageKey(candidate);
           if (!used.has(k)) {
@@ -457,12 +456,11 @@ const NAMED_LOOK_IMAGES: Record<string, { men: number; women: number }> = {
 function getLookImage(style: string, seed: string, gender: string, name?: string): { uri: string } | number {
   const g = gender.toLowerCase() === "men" ? "men" : "women";
   if (name && NAMED_LOOK_IMAGES[name]) return NAMED_LOOK_IMAGES[name][g];
+  // Strictly same-gender. Never fall through to a mixed pool.
   const pool =
     LOOK_IMAGE_POOLS[`${style}_${g}`] ??
-    LOOK_IMAGE_POOLS[style] ??
-    LOOK_IMAGE_POOLS[`default_${g}`] ??
-    LOOK_IMAGE_POOLS["default"]!;
-  return pool[hashStr(seed) % pool.length];
+    LOOK_IMAGE_POOLS[`default_${g}`]!;
+  return pool[hashStr(seed) % pool.length]!;
 }
 
 // ─── Per-category piece image pools — varies by item id so same category ─────
