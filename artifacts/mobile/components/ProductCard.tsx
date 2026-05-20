@@ -40,7 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       {/* ── Product Image ── */}
       <View style={[styles.imageWrapper, { backgroundColor: colors.secondary }]}>
-        {!imgError ? (
+        {!imgError && product.imageUrl ? (
           <Image
             source={{ uri: product.imageUrl }}
             style={styles.image}

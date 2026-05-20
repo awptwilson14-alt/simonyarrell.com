@@ -47,13 +47,35 @@ export interface Product {
   category: string;
   style: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
   purchaseUrl: string;
 }
 
 // ─── Unsplash helpers ───────────────────────────────────────────────────────
-const UNS = (id: string, w = 480, h = 600) =>
-  `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&auto=format&q=80`;
+// Visual audit: these Unsplash photo IDs were assigned to pieces but the
+// photos do NOT depict what their item claims (wrong garment, wrong color,
+// wrong gender, or 404). Returning undefined here makes the look detail's
+// ResilientImage render the editorial brand-monogram fallback instead —
+// preserving the project rule that no thumbnail may visibly contradict the
+// item it labels. Append new bad IDs here as future audits surface them.
+const KNOWN_BAD_UNS_IDS = new Set<string>([
+  "1515886657613-9f3515b0c78f", // generic white/dress — wrong for l1 dress, l6 skirt, l7 slip
+  "1599643477877-530eb83abc8e", // teal jewelry — wrong for "Gold Sculptural Cuff"
+  "1543163521-1bf539c55dd2",    // blue heel — wrong for "Nude" mules / slingbacks
+  "1521572163474-6864f9cf17ab", // white tee — wrong for "Camel Cashmere Polo"
+  "1552902865-b72c031ac5ea",    // person in black — wrong for ivory/stone trousers
+  "1571513800374-841571dbf2e2", // yellow square — not a recognizable Goyard tote
+  "1539008835657-9e8e9680c956", // white flowy dress — wrong for "Black GORE-TEX Shell"
+  "1542291026-7eec264c27ff",    // red sneaker — wrong for "Black Nike Air Drone"
+  "1584917865442-de89df76afd3", // red bag — wrong for "Black Cote&Ciel Crossbody"
+  "1507003211169-0a1dd7228f2d", // man's portrait — wrong for "Cream Oversized Blazer"
+  "1503342217505-b0a15ec3261c", // person in dark shirt — wrong for "White Knit Tank"
+]);
+
+const UNS = (id: string, w = 480, h = 600): string | undefined => {
+  if (KNOWN_BAD_UNS_IDS.has(id)) return undefined;
+  return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&auto=format&q=80`;
+};
 
 // ─── Celebrities ────────────────────────────────────────────────────────────
 export const CELEBRITIES: Celebrity[] = [
