@@ -900,8 +900,43 @@ function generateLookName(occasion: string, style?: string): string {
   return chosen;
 }
 
-function generateDescription(occasion: string): string {
-  const descs = LOOK_DESCRIPTIONS[occasion] ?? LOOK_DESCRIPTIONS["Casual"];
+// Same rationale as STYLE_LOOK_NAMES: for styles whose identity clashes with
+// most occasion vocabularies, descriptions must also speak the style's
+// language — not the occasion's — so card copy stays aligned with the locked hero.
+const STYLE_LOOK_DESCRIPTIONS: Record<string, string[]> = {
+  "Old Money": [
+    "Inherited taste. Nothing announces itself. Everything is understood.",
+    "Quiet luxury, generations deep — never new, never trying.",
+    "The uniform of people who own the building, not rent the corner office.",
+    "Tweed, cashmere, leather worn soft by time. The opposite of fashion.",
+    "Heritage cut, library hush — dressed like the family album.",
+  ],
+  Techwear: [
+    "Engineered fabrics, sealed seams, hardware that earns its place.",
+    "Function as aesthetic — dressed for the city after dark.",
+    "Tactical silhouettes, weather-sealed luxury, zero ornamentation.",
+    "All black, all considered, every pocket purposeful.",
+    "Future-leaning utility cut for movement, weather, and intent.",
+  ],
+  "Clean Minimal": [
+    "Three pieces, perfect proportion, nothing extra. The discipline shows.",
+    "Negative space is the statement. Restraint is the luxury.",
+    "Architectural calm — every line decided, every detail removed.",
+    "Reduced to essentials, finished with precision. Quiet by design.",
+    "Monochrome, monumental, and entirely unbothered.",
+  ],
+  "Avant-garde": [
+    "Sculptural, theatrical, and entirely uninterested in fitting in.",
+    "Wearable architecture — the silhouette is the conversation.",
+    "Form pushed past function. The room reorganizes around it.",
+    "Conceptual cuts, dramatic volume, couture-edge fearlessness.",
+    "Dressed like a manifesto. The rest of the room is footnotes.",
+  ],
+};
+
+function generateDescription(occasion: string, style?: string): string {
+  const styleDescs = style ? STYLE_LOOK_DESCRIPTIONS[style] : undefined;
+  const descs = styleDescs ?? LOOK_DESCRIPTIONS[occasion] ?? LOOK_DESCRIPTIONS["Casual"];
   return pick(descs);
 }
 
@@ -1417,7 +1452,7 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     // Build the Look — use fp as image seed so each unique outfit gets a unique, consistent photo
     const lookName = generateLookName(occasion, dominantStyle);
-    const lookDesc = generateDescription(occasion);
+    const lookDesc = generateDescription(occasion, dominantStyle);
     const tags = [
       occasion.toLowerCase(),
       selectedPalette.name.toLowerCase(),
@@ -1488,7 +1523,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       looks.push({
         id: `gen_fallback_${Date.now()}`,
         name: generateLookName(occasion, fallbackStyle),
-        description: generateDescription(occasion),
+        description: generateDescription(occasion, fallbackStyle),
         occasion,
         season: "All Season",
         estimatedPrice: total,
