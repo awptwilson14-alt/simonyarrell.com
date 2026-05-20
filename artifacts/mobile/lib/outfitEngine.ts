@@ -342,18 +342,113 @@ export function assignUniqueLookImages<T extends { id: string; name: string; sty
 // Specific named looks get a hand-picked, on-description editorial that overrides
 // the generic style pool. Both gender variants supplied so profile switching works.
 const NAMED_LOOK_IMAGES: Record<string, { men: number; women: number }> = {
-  "Downtown Edit": {
-    men: require("../assets/images/looks_named/downtown_edit_men.png"),
-    women: require("../assets/images/looks_named/downtown_edit_women.png"),
-  },
-  "Concrete Luxe": {
-    men: require("../assets/images/looks_named/concrete_luxe_men.png"),
-    women: require("../assets/images/looks_named/concrete_luxe_women.png"),
-  },
-  "The Culture": {
-    men: require("../assets/images/looks_named/the_culture_men.png"),
-    women: require("../assets/images/looks_named/the_culture_women.png"),
-  },
+  // ── STREETWEAR ────────────────────────────────────────────────────────────
+  "Downtown Edit":     { men: require("../assets/images/looks_named/downtown_edit_men.png"),       women: require("../assets/images/looks_named/downtown_edit_women.png") },
+  "Concrete Luxe":     { men: require("../assets/images/looks_named/concrete_luxe_men.png"),       women: require("../assets/images/looks_named/concrete_luxe_women.png") },
+  "The Culture":       { men: require("../assets/images/looks_named/the_culture_men.png"),         women: require("../assets/images/looks_named/the_culture_women.png") },
+  "Block-to-Runway":   { men: require("../assets/images/looks/luxury_streetwear_icon_men.png"),    women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
+  "The Drop":          { men: require("../assets/images/trends/luxury_streetwear_men.png"),        women: require("../assets/images/trends/luxury_streetwear_women.png") },
+  "Street Archives":   { men: require("../assets/images/streetwear_hero_men.png"),                 women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
+  "Urban Blueprint":   { men: require("../assets/images/looks/urban_architect_men.png"),           women: require("../assets/images/looks/urban_architect_women.png") },
+  "The Flex":          { men: require("../assets/images/looks/luxury_streetwear_icon_men.png"),    women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
+  "City Uniform":      { men: require("../assets/images/looks/urban_architect_men.png"),           women: require("../assets/images/looks/urban_architect_women.png") },
+  "Street Level":      { men: require("../assets/images/look_streetwear.png"),                     women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
+
+  // ── DATE NIGHT ────────────────────────────────────────────────────────────
+  "Dinner at Eight":      { men: require("../assets/images/looks/cote_dazur_evening_men.png"),  women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "La Dolce Vita":        { men: require("../assets/images/looks/cote_dazur_evening_men.png"),  women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "The Seduction":        { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Velvet Night":         { men: require("../assets/images/looks/y2k_soiree_men.png"),          women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Champagne Evening":    { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Midnight Allure":      { men: require("../assets/images/looks/y2k_soiree_men.png"),          women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Candlelit Confidence": { men: require("../assets/images/looks/galerie_opening_men.png"),     women: require("../assets/images/looks/galerie_opening_women.png") },
+  "After Dark":           { men: require("../assets/images/looks/y2k_soiree_men.png"),          women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "The Rendezvous":       { men: require("../assets/images/looks/cote_dazur_evening_men.png"),  women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "First Impression":     { men: require("../assets/images/looks/parisian_chic_men.png"),       women: require("../assets/images/looks/parisian_chic_women.png") },
+
+  // ── WORK ──────────────────────────────────────────────────────────────────
+  "Corner Office":       { men: require("../assets/images/looks/power_dressing_men.png"),   women: require("../assets/images/looks/power_dressing_women.png") },
+  "The Power Play":      { men: require("../assets/images/looks/power_dressing_men.png"),   women: require("../assets/images/looks/power_dressing_women.png") },
+  "Boardroom Presence":  { men: require("../assets/images/looks/power_dressing_men.png"),   women: require("../assets/images/looks/power_dressing_women.png") },
+  "Executive Edit":      { men: require("../assets/images/looks/power_dressing_men.png"),   women: require("../assets/images/looks/power_dressing_women.png") },
+  "Quiet Authority":     { men: require("../assets/images/looks/urban_minimalist_men.png"), women: require("../assets/images/looks/urban_minimalist_women.png") },
+  "The Professional":    { men: require("../assets/images/occasions/work_men.png"),         women: require("../assets/images/occasions/work_women.png") },
+  "Boardroom Chic":      { men: require("../assets/images/looks/power_dressing_men.png"),   women: require("../assets/images/looks/power_dressing_women.png") },
+  "Dressed for Impact":  { men: require("../assets/images/looks/power_dressing_men.png"),   women: require("../assets/images/looks/power_dressing_women.png") },
+  "The 9-to-5 Luxe":     { men: require("../assets/images/looks/urban_minimalist_men.png"), women: require("../assets/images/looks/urban_minimalist_women.png") },
+  "Sharp & Minimal":     { men: require("../assets/images/looks/urban_minimalist_men.png"), women: require("../assets/images/looks/urban_minimalist_women.png") },
+
+  // ── VACATION ──────────────────────────────────────────────────────────────
+  "Côte d’Azur":         { men: require("../assets/images/looks/cote_dazur_evening_men.png"), women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "Island Money":        { men: require("../assets/images/looks/resort_billionaire_men.png"), women: require("../assets/images/looks/resort_billionaire_women.png") },
+  "Resort Royalty":      { men: require("../assets/images/looks/resort_billionaire_men.png"), women: require("../assets/images/looks/resort_billionaire_women.png") },
+  "Golden Sands":        { men: require("../assets/images/trends/vacation_luxe_men.png"),     women: require("../assets/images/trends/vacation_luxe_women.png") },
+  "Mediterranean Edit":  { men: require("../assets/images/looks/cote_dazur_evening_men.png"), women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "Yacht Club":          { men: require("../assets/images/looks/resort_billionaire_men.png"), women: require("../assets/images/looks/resort_billionaire_women.png") },
+  "The Riviera Look":    { men: require("../assets/images/looks/cote_dazur_evening_men.png"), women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "Sun-Drenched Luxe":   { men: require("../assets/images/occasions/vacation_men.png"),       women: require("../assets/images/occasions/vacation_women.png") },
+  "Bougainvillea Hours": { men: require("../assets/images/looks/cote_dazur_evening_men.png"), women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "Amalfi Afternoon":    { men: require("../assets/images/look_vacation.png"),                women: require("../assets/images/trends/vacation_luxe_women.png") },
+
+  // ── EVENT ─────────────────────────────────────────────────────────────────
+  "Red Carpet Ready": { men: require("../assets/images/looks/gala_glamour_men.png"),    women: require("../assets/images/looks/gala_glamour_women.png") },
+  "The Statement":    { men: require("../assets/images/looks/gala_glamour_men.png"),    women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Opening Night":    { men: require("../assets/images/looks/galerie_opening_men.png"), women: require("../assets/images/looks/galerie_opening_women.png") },
+  "Gala Presence":    { men: require("../assets/images/looks/gala_glamour_men.png"),    women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Front Row":        { men: require("../assets/images/looks/galerie_opening_men.png"), women: require("../assets/images/looks/galerie_opening_women.png") },
+  "Grand Entrance":   { men: require("../assets/images/looks/gala_glamour_men.png"),    women: require("../assets/images/looks/gala_glamour_women.png") },
+  "The Moment":       { men: require("../assets/images/occasions/event_men.png"),       women: require("../assets/images/occasions/event_women.png") },
+  "All Eyes Here":    { men: require("../assets/images/looks/gala_glamour_men.png"),    women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Ceremony Edit":    { men: require("../assets/images/looks/galerie_opening_men.png"), women: require("../assets/images/looks/galerie_opening_women.png") },
+  "Award Season":     { men: require("../assets/images/looks/gala_glamour_men.png"),    women: require("../assets/images/looks/gala_glamour_women.png") },
+
+  // ── EVENING ───────────────────────────────────────────────────────────────
+  "Midnight Garden":   { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Noir Elegance":     { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "The Gown":          { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Evening Ritual":    { men: require("../assets/images/looks/cote_dazur_evening_men.png"),  women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "Black Tie Reborn":  { men: require("../assets/images/occasions/formal_men.png"),          women: require("../assets/images/occasions/formal_women.png") },
+  "The Velvet Hour":   { men: require("../assets/images/looks/y2k_soiree_men.png"),          women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Soirée Supreme":    { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Starlit Glamour":   { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Opulent Evening":   { men: require("../assets/images/looks/galerie_opening_men.png"),     women: require("../assets/images/looks/galerie_opening_women.png") },
+  "The Grand Look":    { men: require("../assets/images/looks/gala_glamour_men.png"),        women: require("../assets/images/looks/gala_glamour_women.png") },
+
+  // ── PARTY ─────────────────────────────────────────────────────────────────
+  "Main Character":  { men: require("../assets/images/looks/y2k_soiree_men.png"),       women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "The Afterparty":  { men: require("../assets/images/trends/y2k_revival_men.png"),     women: require("../assets/images/trends/y2k_revival_women.png") },
+  "Disco Heaven":    { men: require("../assets/images/looks/y2k_soiree_men.png"),       women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Glitter & Gold":  { men: require("../assets/images/looks/gala_glamour_men.png"),     women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Night Frequency": { men: require("../assets/images/looks/y2k_soiree_men.png"),       women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Party Season":    { men: require("../assets/images/trends/y2k_revival_men.png"),     women: require("../assets/images/trends/y2k_revival_women.png") },
+  "Euphoric Edit":   { men: require("../assets/images/looks/y2k_soiree_men.png"),       women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Club Luxe":       { men: require("../assets/images/looks/y2k_soiree_men.png"),       women: require("../assets/images/looks/y2k_soiree_women.png") },
+  "Electric Night":  { men: require("../assets/images/trends/y2k_revival_men.png"),     women: require("../assets/images/trends/y2k_revival_women.png") },
+  "The Entrance":    { men: require("../assets/images/looks/gala_glamour_men.png"),     women: require("../assets/images/looks/gala_glamour_women.png") },
+
+  // ── FORMAL ────────────────────────────────────────────────────────────────
+  "The Black Tie":             { men: require("../assets/images/occasions/formal_men.png"),       women: require("../assets/images/occasions/formal_women.png") },
+  "White Tie & Tails":         { men: require("../assets/images/occasions/formal_men.png"),       women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Grande Ceremony":           { men: require("../assets/images/looks/gala_glamour_men.png"),     women: require("../assets/images/looks/gala_glamour_women.png") },
+  "The Tuxedo Edit":           { men: require("../assets/images/occasions/formal_men.png"),       women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Gala Royale":               { men: require("../assets/images/looks/gala_glamour_men.png"),     women: require("../assets/images/looks/gala_glamour_women.png") },
+  "The Floor-Length Moment":   { men: require("../assets/images/looks/gala_glamour_men.png"),     women: require("../assets/images/looks/gala_glamour_women.png") },
+  "Couture Formality":         { men: require("../assets/images/looks/galerie_opening_men.png"),  women: require("../assets/images/looks/galerie_opening_women.png") },
+  "The Dress Code":            { men: require("../assets/images/occasions/formal_men.png"),       women: require("../assets/images/occasions/formal_women.png") },
+  "Champagne & Silk":          { men: require("../assets/images/looks/gala_glamour_men.png"),     women: require("../assets/images/looks/gala_glamour_women.png") },
+  "The Invitation":            { men: require("../assets/images/looks/galerie_opening_men.png"),  women: require("../assets/images/looks/galerie_opening_women.png") },
+
+  // ── CASUAL ────────────────────────────────────────────────────────────────
+  "Sunday Edit":         { men: require("../assets/images/looks/parisian_chic_men.png"),       women: require("../assets/images/looks/parisian_chic_women.png") },
+  "Off-Duty Luxe":       { men: require("../assets/images/looks/old_money_weekend_men.png"),   women: require("../assets/images/looks/old_money_weekend_women.png") },
+  "Weekend Uniform":     { men: require("../assets/images/looks/old_money_weekend_men.png"),   women: require("../assets/images/looks/old_money_weekend_women.png") },
+  "Relaxed Authority":   { men: require("../assets/images/looks/urban_minimalist_men.png"),    women: require("../assets/images/looks/urban_minimalist_women.png") },
+  "The Easy Day":        { men: require("../assets/images/occasions/casual_men.png"),          women: require("../assets/images/occasions/casual_women.png") },
+  "Laid-Back Elegance":  { men: require("../assets/images/looks/old_money_weekend_men.png"),   women: require("../assets/images/looks/old_money_weekend_women.png") },
+  "Casual Royalty":      { men: require("../assets/images/looks/dark_academia_men.png"),       women: require("../assets/images/looks/dark_academia_women.png") },
+  "The Soft Hour":       { men: require("../assets/images/looks/parisian_chic_men.png"),       women: require("../assets/images/looks/parisian_chic_women.png") },
+  "Golden Hour Casual":  { men: require("../assets/images/looks/cote_dazur_evening_men.png"),  women: require("../assets/images/looks/cote_dazur_evening_women.png") },
+  "Quiet Morning":       { men: require("../assets/images/looks/parisian_chic_men.png"),       women: require("../assets/images/looks/parisian_chic_women.png") },
 };
 
 // Deterministic per look — same outfit fingerprint → same image every time.
