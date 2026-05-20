@@ -234,3 +234,69 @@ id = "KIxa-5bNxFcF20JEMmN8l"
 uri = "file://artifacts/mobile/assets/images/occasions/formal_men.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "hUZY-Jx5mEvVEM0sA1FG2"
+uri = "file://artifacts/mobile/assets/images/trends/old_money_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "bxAB62kFJgQ3GGigdeI7y"
+uri = "file://artifacts/mobile/assets/images/trends/techwear_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "kjbhskEOONswxCcu2Qtme"
+uri = "file://artifacts/mobile/assets/images/trends/old_money_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "la7WMonh9wBPAxAnbDOvZ"
+uri = "file://artifacts/mobile/assets/images/trends/techwear_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "3rqbFCZKy9fP0erah8jFG"
+uri = "file://artifacts/mobile/assets/images/trends/luxury_streetwear_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "-4u-0zJ5ARkbfagVAUU_H"
+uri = "file://artifacts/mobile/assets/images/trends/clean_minimal_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "E9VnqkukTlDFmassT0__C"
+uri = "file://artifacts/mobile/assets/images/trends/luxury_streetwear_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YDZ6aV5j_LHmvuSvPkHtV"
+uri = "file://artifacts/mobile/assets/images/trends/clean_minimal_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hyuRK0RKrQBswv6ASpZf3"
+uri = "file://artifacts/mobile/assets/images/trends/vacation_luxe_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "C0AaFy7xZZ1Rlj-V460oZ"
+uri = "file://artifacts/mobile/assets/images/trends/vacation_luxe_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "SLb3tuxb62u3sVzni59vF"
+uri = "file://artifacts/mobile/assets/images/trends/y2k_revival_women.png"
+type = "image"
+title = "generated_image"
