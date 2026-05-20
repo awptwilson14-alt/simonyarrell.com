@@ -835,6 +835,30 @@ const COLOR_PALETTES: Array<{ name: string; colors: string[] }> = [
   { name: "Executive Suite",  colors: ["Dark Navy", "Midnight Blue", "Dark Blue", "Charcoal", "Black", "Deep Charcoal", "Slate", "Dark Slate"] },
 ];
 
+// Bias the random palette pick toward palettes that fit each style's identity.
+// An Old Money look in "Power Red" or a Techwear look in "Blush & Rose" would
+// fight the locked hero image; this keeps the whole card (image + colors)
+// speaking the same language. Other styles fall back to the full COLOR_PALETTES.
+const STYLE_PALETTE_BIAS: Record<string, string[]> = {
+  "Old Money":         ["Ivory & Camel", "Earth Tones", "Warm Neutrals", "Navy & Cobalt", "Emerald Forest"],
+  Techwear:            ["All Black", "Monochrome Grey", "Executive Suite"],
+  "Clean Minimal":     ["Pure White", "Monochrome Grey", "Warm Neutrals", "All Black", "Ivory & Camel"],
+  "Avant-garde":       ["All Black", "Deep Jewels", "Gold & Metallics", "Power Red", "Monochrome Grey"],
+  "Luxury Streetwear": ["All Black", "Monochrome Grey", "Earth Tones", "Pure White"],
+  "Vacation Luxe":     ["Ivory & Camel", "Pure White", "Blush & Rose", "Warm Neutrals"],
+  "Y2K Revival":       ["Blush & Rose", "Power Red", "Gold & Metallics", "Deep Jewels"],
+  Business:            ["Executive Suite", "Navy & Cobalt", "Monochrome Grey", "All Black"],
+  Evening:             ["All Black", "Deep Jewels", "Gold & Metallics", "Power Red"],
+  Formal:              ["All Black", "Pure White", "Deep Jewels"],
+};
+
+function pickPaletteForStyle(style: string): { name: string; colors: string[] } {
+  const allowedNames = STYLE_PALETTE_BIAS[style];
+  if (!allowedNames || allowedNames.length === 0) return pick(COLOR_PALETTES);
+  const allowed = COLOR_PALETTES.filter((p) => allowedNames.includes(p.name));
+  return allowed.length > 0 ? pick(allowed) : pick(COLOR_PALETTES);
+}
+
 function paletteMatch(itemColors: string[], paletteColors: string[]): boolean {
   return itemColors.some((c) =>
     paletteColors.some(
@@ -1327,7 +1351,7 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     // Pick a dominant style and color palette for this look
     const dominantStyle = pick(stylePool.length > 0 ? stylePool : occasionStyles);
-    const selectedPalette = pick(COLOR_PALETTES);
+    const selectedPalette = pickPaletteForStyle(dominantStyle);
 
     // Decide outfit structure
     const useDress =
@@ -1507,7 +1531,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     }
     if (fallbackItems.length >= 2) {
       const fallbackStyle = pick(occasionStyles);
-      const fallbackPalette = pick(COLOR_PALETTES);
+      const fallbackPalette = pickPaletteForStyle(fallbackStyle);
       const pieces: OutfitPiece[] = fallbackItems.map((item) => ({
         id: item.id,
         name: item.name,
