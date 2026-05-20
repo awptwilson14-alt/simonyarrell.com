@@ -265,9 +265,21 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
 // Styles whose visual identity is so specific that we never let a generic
 // occasion-based named override (e.g. "Downtown Edit", "Main Character")
 // hijack the hero. For these styles, the curated style pool always wins so
-// every card stays on-brand — Old Money must always look dapper, elegant
-// and class-conscious regardless of which occasion the look was generated for.
-const STYLE_LOCKED_TO_POOL = new Set<string>(["Old Money"]);
+// every card stays on-brand regardless of which occasion the look was
+// generated for. Old Money must look dapper/elegant. Techwear must look
+// utilitarian/dark. Y2K must look sparkly/retro. Etc. Every primary style
+// pool was visually audited; each entry depicts the style it's named after.
+const STYLE_LOCKED_TO_POOL = new Set<string>([
+  "Old Money",
+  "Luxury Streetwear",
+  "Vacation Luxe",
+  "Techwear",
+  "Clean Minimal",
+  "Y2K Revival",
+  "Business",
+  "Evening",
+  "Formal",
+]);
 
 export function hasNamedLookImage(name: string): boolean {
   return Boolean(NAMED_LOOK_IMAGES[name]);
