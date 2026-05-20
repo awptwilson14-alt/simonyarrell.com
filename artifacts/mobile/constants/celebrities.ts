@@ -3,7 +3,7 @@ const PHOTOS = {
   drake:       require("../assets/images/celebrities/drake.jpeg"),
   rihanna:     require("../assets/images/celebrities/rihanna.jpeg"),
   kanye:       require("../assets/images/celebrities/kanye.jpeg"),
-  travis:      { uri: "https://images.unsplash.com/photo-1553514029-1318de880eea?w=480&h=560&fit=crop&auto=format&q=80" },
+  travis:      require("../assets/images/celebrities/travis_scott.jpeg"),
   fabolous:    require("../assets/images/celebrities/fabolous.jpeg"),
   denzel:      require("../assets/images/celebrities/denzel.jpeg"),
   snoop:       require("../assets/images/celebrities/snoop.jpeg"),
