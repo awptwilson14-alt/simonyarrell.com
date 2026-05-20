@@ -23,7 +23,7 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero } from "@/constants/heroImages";
-import { generateLooks, resetShownLooks } from "@/lib/outfitEngine";
+import { generateLooks, resetShownLooks, assignUniqueLookImages } from "@/lib/outfitEngine";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48 - 12) / 2;
@@ -307,7 +307,7 @@ export default function StyleScreen() {
               <>
                 {/* Results grid */}
                 <View style={s.resultsGrid}>
-                  {results.map((look) => (
+                  {assignUniqueLookImages(results, selectedGender || userProfile.gender).map((look) => (
                     <LookCard key={look.id} look={look} width={CARD_W} />
                   ))}
                 </View>

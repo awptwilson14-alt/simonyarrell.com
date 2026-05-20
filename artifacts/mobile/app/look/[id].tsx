@@ -20,7 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { LOOKS } from "@/constants/data";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
-import { hasNamedLookImage } from "@/lib/outfitEngine";
+import { hasNamedLookImage, assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -321,7 +321,10 @@ export default function LookDetailScreen() {
             You Might Also Love
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-            {allRelated.map((l) => <LookCard key={l.id} look={{ ...l, image: hasNamedLookImage(l.name) ? l.image : (pickLookHero(l.name, userProfile.gender, `rel-${l.id}`) ?? pickStyleHero(l.style, userProfile.gender, `rel-${l.id}`) ?? l.image) }} />)}
+            {assignUniqueLookImages(
+              allRelated.map((l) => ({ ...l, image: hasNamedLookImage(l.name) ? l.image : (pickLookHero(l.name, userProfile.gender, `rel-${l.id}`) ?? pickStyleHero(l.style, userProfile.gender, `rel-${l.id}`) ?? l.image) })),
+              userProfile.gender,
+            ).map((l) => <LookCard key={l.id} look={l} />)}
           </ScrollView>
         </View>
       </ScrollView>

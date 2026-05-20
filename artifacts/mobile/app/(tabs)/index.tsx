@@ -20,6 +20,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { LOOKS, TRENDS } from "@/constants/data";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
+import { assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -87,11 +88,11 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hList}
           >
-            {LOOKS.map((look) => (
-              <LookCard
-                key={look.id}
-                look={{ ...look, image: lookHero(look.name, look.id) ?? heroFor(look.style, look.id) ?? look.image }}
-              />
+            {assignUniqueLookImages(
+              LOOKS.map((look) => ({ ...look, image: lookHero(look.name, look.id) ?? heroFor(look.style, look.id) ?? look.image })),
+              userProfile.gender,
+            ).map((look) => (
+              <LookCard key={look.id} look={look} />
             ))}
           </ScrollView>
         </View>
@@ -153,11 +154,11 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hList}
           >
-            {[...LOOKS].reverse().map((look) => (
-              <LookCard
-                key={look.id}
-                look={{ ...look, image: lookHero(look.name, `fy-${look.id}`) ?? heroFor(look.style, `fy-${look.id}`) ?? look.image }}
-              />
+            {assignUniqueLookImages(
+              [...LOOKS].reverse().map((look) => ({ ...look, image: lookHero(look.name, `fy-${look.id}`) ?? heroFor(look.style, `fy-${look.id}`) ?? look.image })),
+              userProfile.gender,
+            ).map((look) => (
+              <LookCard key={look.id} look={look} />
             ))}
           </ScrollView>
         </View>

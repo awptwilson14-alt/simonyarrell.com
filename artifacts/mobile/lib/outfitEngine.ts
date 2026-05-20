@@ -319,6 +319,75 @@ export function hasNamedLookImage(name: string): boolean {
   return Boolean(NAMED_LOOK_IMAGES[name]);
 }
 
+// Stable key for any image source so we can detect dupes across {uri} and require()s.
+function imageKey(src: { uri: string } | number | unknown): string {
+  if (typeof src === "number") return `n:${src}`;
+  if (src && typeof src === "object" && "uri" in (src as object)) {
+    return `u:${(src as { uri: string }).uri}`;
+  }
+  return `x:${String(src)}`;
+}
+
+// Walk a list of looks and guarantee no two share the same hero image.
+// On a collision, advance through the matching pool until a fresh image is found;
+// if the whole pool is exhausted, fall back to default pools, then the original.
+export function assignUniqueLookImages<T extends { id: string; name: string; style: string; image: { uri: string } | number }>(
+  looks: T[],
+  gender: string,
+): T[] {
+  const g = gender.toLowerCase() === "men" ? "men" : "women";
+  const used = new Set<string>();
+  return looks.map((look) => {
+    const candidatePools: Array<Array<{ uri: string } | number>> = [];
+    const named = NAMED_LOOK_IMAGES[look.name];
+    if (named) candidatePools.push([named[g]]);
+    const stylePool = LOOK_IMAGE_POOLS[`${look.style}_${g}`] ?? LOOK_IMAGE_POOLS[look.style];
+    if (stylePool) candidatePools.push(stylePool);
+    candidatePools.push(LOOK_IMAGE_POOLS[`default_${g}`]!);
+    candidatePools.push(LOOK_IMAGE_POOLS["default"]!);
+
+    let chosen: { uri: string } | number = look.image;
+    const originalKey = imageKey(look.image);
+    // Preserve intentional per-look hero (named/style) when it's still unique.
+    if (!used.has(originalKey)) {
+      used.add(originalKey);
+      return { ...look, image: chosen };
+    }
+    // Collision — rotate through pools to find an unused candidate.
+    let found = false;
+    const seedBase = hashStr(`${look.id}|${look.name}|${look.style}`);
+    outer: for (const pool of candidatePools) {
+      for (let offset = 0; offset < pool.length; offset++) {
+        const candidate = pool[(seedBase + offset) % pool.length]!;
+        const k = imageKey(candidate);
+        if (!used.has(k)) {
+          chosen = candidate;
+          used.add(k);
+          found = true;
+          break outer;
+        }
+      }
+    }
+    // Last-resort: scan every pool for ANY unused image to enforce strict uniqueness.
+    if (!found) {
+      for (const pool of Object.values(LOOK_IMAGE_POOLS)) {
+        for (const candidate of pool) {
+          const k = imageKey(candidate);
+          if (!used.has(k)) {
+            chosen = candidate;
+            used.add(k);
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+    if (!found) used.add(originalKey);
+    return { ...look, image: chosen };
+  });
+}
+
 // Specific named looks get a hand-picked, on-description editorial that overrides
 // the generic style pool. Both gender variants supplied so profile switching works.
 const NAMED_LOOK_IMAGES: Record<string, { men: number; women: number }> = {
