@@ -7,21 +7,32 @@
  */
 
 import type { Look, OutfitPiece } from "@/constants/data";
+import { CATALOG_EXTRAS } from "./catalogExtras";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface CatalogItem {
+export interface CatalogItem {
   id: string;
   name: string;
   brand: string;
   price: number;
   category: "top" | "bottom" | "dress" | "outerwear" | "shoes" | "bag" | "accessories" | "jewelry";
+  // Optional shoe sub-classification — used to filter shoes by use case
+  // ("sneakers" | "dress" | "casual" | "work") when category === "shoes".
+  shoeType?: "sneakers" | "dress" | "casual" | "work";
   styles: string[];
   occasions: string[];
   genders: Array<"women" | "men" | "unisex">;
   colors: string[];
   imageUrl: string;
   purchaseUrl: string;
+  // ── Real-product enrichment (preferred when present) ──────────────────────
+  // productImageUrl: a live photo of the actual item from a brand/retailer CDN.
+  //   When set, the look-detail UI uses this instead of the placeholder pool.
+  // directProductUrl: the exact PDP for the item. When set, the "Shop this look"
+  //   buttons link straight to it instead of a brand-site search.
+  productImageUrl?: string;
+  directProductUrl?: string;
 }
 
 interface GenerateParams {
@@ -919,6 +930,8 @@ const CATALOG: CatalogItem[] = [
   { id: "j003", name: "Bold Chain Necklace", brand: "ASOS", price: 22, category: "jewelry", styles: ["Y2K Revival", "Luxury Streetwear"], occasions: ["Party", "Date Night", "Casual"], genders: ["women", "men"], colors: ["Gold", "Silver"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.asos.com" },
   { id: "j004", name: "Pearl Drop Earrings", brand: "Mikimoto", price: 2400, category: "jewelry", styles: ["Old Money", "Evening", "Business"], occasions: ["Event", "Work", "Date Night"], genders: ["women"], colors: ["White Pearl/Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.mikimoto.com" },
   { id: "j005", name: "Cuff Bracelet", brand: "Bottega Veneta", price: 980, category: "jewelry", styles: ["Clean Minimal", "Old Money", "Evening"], occasions: ["Event", "Date Night", "Work"], genders: ["women"], colors: ["Silver", "Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.bottegaveneta.com" },
+  // ── Verified extras with real PDP images + direct purchase URLs ─────────────
+  ...CATALOG_EXTRAS,
 ];
 
 // ─── Occasion Normalization ───────────────────────────────────────────────────
@@ -1065,8 +1078,11 @@ export function generateLooks(params: GenerateParams): Look[] {
         price: item.price,
         category: item.category,
         color: pickPaletteColor(item.colors, selectedPalette.colors),
-        imageUrl: getPieceImage(item.category, item.id),
-        purchaseUrl: buildPurchaseUrl(item),
+        // Prefer real product photo / PDP link when the catalog item has been
+        // enriched with verified retailer data; otherwise fall back to the
+        // category-matched placeholder pool and a brand-site search URL.
+        imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
+        purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
       });
       total += item.price;
     };

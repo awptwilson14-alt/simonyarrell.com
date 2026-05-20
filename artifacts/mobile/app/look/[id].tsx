@@ -30,6 +30,34 @@ const { width, height } = Dimensions.get("window");
 
 type PanelView = "details" | "shop";
 
+// Hotlinked product images from third-party CDNs can occasionally fail; fall
+// back to a neutral category swatch so the cell never renders empty/broken.
+function ResilientImage({
+  uri,
+  style,
+  fallbackColor,
+  transition = 250,
+}: {
+  uri?: string;
+  style: any;
+  fallbackColor: string;
+  transition?: number;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (!uri || failed) {
+    return <View style={[style, { backgroundColor: fallbackColor }]} />;
+  }
+  return (
+    <Image
+      source={{ uri }}
+      style={style}
+      contentFit="cover"
+      transition={transition}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function LookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
@@ -150,16 +178,11 @@ export default function LookDetailScreen() {
               >
                 {/* Piece image */}
                 <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
-                  {piece.imageUrl ? (
-                    <Image
-                      source={{ uri: piece.imageUrl }}
-                      style={styles.pieceThumbImg}
-                      contentFit="cover"
-                      transition={250}
-                    />
-                  ) : (
-                    <View style={[styles.pieceDot, { backgroundColor: categoryColor(piece.category) }]} />
-                  )}
+                  <ResilientImage
+                    uri={piece.imageUrl}
+                    style={styles.pieceThumbImg}
+                    fallbackColor={categoryColor(piece.category)}
+                  />
                 </View>
                 <View style={styles.pieceInfo}>
                   <Text style={[styles.pieceBrand, { color: colors.gold }]}>{piece.brand.toUpperCase()}</Text>
@@ -204,16 +227,11 @@ export default function LookDetailScreen() {
                 >
                   {/* Product image */}
                   <View style={[styles.shopThumb, { backgroundColor: colors.secondary }]}>
-                    {piece.imageUrl ? (
-                      <Image
-                        source={{ uri: piece.imageUrl }}
-                        style={styles.shopThumbImg}
-                        contentFit="cover"
-                        transition={250}
-                      />
-                    ) : (
-                      <View style={[styles.pieceDot, { backgroundColor: categoryColor(piece.category) }]} />
-                    )}
+                    <ResilientImage
+                      uri={piece.imageUrl}
+                      style={styles.shopThumbImg}
+                      fallbackColor={categoryColor(piece.category)}
+                    />
                   </View>
 
                   <View style={styles.shopInfo}>
@@ -287,11 +305,12 @@ export default function LookDetailScreen() {
               onPress={() => piece.purchaseUrl && Linking.openURL(piece.purchaseUrl).catch(() => {})}
               style={[styles.stripThumb, { backgroundColor: colors.secondary }]}
             >
-              {piece.imageUrl ? (
-                <Image source={{ uri: piece.imageUrl }} style={styles.stripImg} contentFit="cover" transition={200} />
-              ) : (
-                <View style={[styles.stripDot, { backgroundColor: categoryColor(piece.category) }]} />
-              )}
+              <ResilientImage
+                uri={piece.imageUrl}
+                style={styles.stripImg}
+                fallbackColor={categoryColor(piece.category)}
+                transition={200}
+              />
             </Pressable>
           ))}
         </ScrollView>
