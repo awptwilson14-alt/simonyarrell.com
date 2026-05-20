@@ -87,12 +87,12 @@ export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
     women: require("../assets/images/trends/y2k_revival_women.png"),
   },
   Business: {
-    men: UNS("1519085360753-af0119f7cbe7"),
-    women: UNS("1509631179647-0177331693ae"),
+    men: require("../assets/images/looks/power_dressing_men.png"),
+    women: require("../assets/images/looks/power_dressing_women.png"),
   },
   "Avant-garde": {
-    men: UNS("1566174053879-31528523f8ae"),
-    women: UNS("1599643477877-530eb83abc8e"),
+    men: require("../assets/images/looks/gala_glamour_men.png"),
+    women: require("../assets/images/looks/gala_glamour_women.png"),
   },
 };
 
