@@ -856,8 +856,37 @@ function pickPaletteColor(itemColors: string[], paletteColors: string[]): string
   return aligned.length > 0 ? pick(aligned) : pick(itemColors);
 }
 
-function generateLookName(occasion: string): string {
-  const names = LOOK_NAMES[occasion] ?? LOOK_NAMES["Casual"];
+// For styles whose visual identity clashes with most occasion vocabularies,
+// pull names from a style-specific pool instead of the occasion pool. Without
+// this, an Old Money look generated for a Party would get a name like
+// "Disco Heaven" — fighting the dapper hero the lock guarantees.
+const STYLE_LOOK_NAMES: Record<string, string[]> = {
+  "Old Money": [
+    "The Heir", "Pedigree", "Inherited Calm", "Library Hours", "The Estate",
+    "Lineage", "Quiet Wealth", "Riding Country", "Boarding School", "The Townhouse",
+  ],
+  Techwear: [
+    "Tactical Drift", "Concrete Shadow", "Night Protocol", "System Override",
+    "Off-Grid Luxe", "Engineered Calm", "Carbon Edit", "Modular City",
+    "The Operator", "Future Functional",
+  ],
+  "Clean Minimal": [
+    "Negative Space", "Architectural Calm", "The Quiet Edit", "Pure Form",
+    "Monastery Hours", "Reduction", "Studied Restraint", "The Blank Page",
+    "Geometric Hush", "The Essential",
+  ],
+  "Avant-garde": [
+    "The Statement", "Theatrical", "Sculptural", "The Provocation",
+    "Architectural Drama", "Beyond Form", "Avant Hour", "The Manifesto",
+    "Wearable Art", "Couture Edge",
+  ],
+};
+
+function generateLookName(occasion: string, style?: string): string {
+  // Style-locked vocabularies override occasion to keep the card text aligned
+  // with the locked image identity.
+  const styleNames = style ? STYLE_LOOK_NAMES[style] : undefined;
+  const names = styleNames ?? LOOK_NAMES[occasion] ?? LOOK_NAMES["Casual"];
   // Prefer names that haven't been shown yet — guarantees no duplicate names
   // within a session until the pool is exhausted, then resets gracefully.
   const fresh = names.filter((n) => !_shownNames.has(n));
@@ -1387,7 +1416,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     _shownFingerprints.add(fp);
 
     // Build the Look — use fp as image seed so each unique outfit gets a unique, consistent photo
-    const lookName = generateLookName(occasion);
+    const lookName = generateLookName(occasion, dominantStyle);
     const lookDesc = generateDescription(occasion);
     const tags = [
       occasion.toLowerCase(),
@@ -1458,12 +1487,12 @@ export function generateLooks(params: GenerateParams): Look[] {
       const fp = fingerprint(pieces.map((p) => p.id));
       looks.push({
         id: `gen_fallback_${Date.now()}`,
-        name: generateLookName(occasion),
+        name: generateLookName(occasion, fallbackStyle),
         description: generateDescription(occasion),
         occasion,
         season: "All Season",
         estimatedPrice: total,
-        image: getLookImage(fallbackStyle, fp, genderKey, generateLookName(occasion)),
+        image: getLookImage(fallbackStyle, fp, genderKey, generateLookName(occasion, fallbackStyle)),
         pieces,
         style: fallbackStyle,
         tags: [occasion.toLowerCase(), fallbackPalette.name.toLowerCase(), pieces[0].brand.toLowerCase()],
