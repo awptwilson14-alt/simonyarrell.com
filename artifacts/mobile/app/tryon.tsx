@@ -177,17 +177,40 @@ export default function TryOnScreen() {
         ]}
         pointerEvents="none"
       >
-        <Image
-          source={activeLook.image}
-          style={[
-            s.outfitImage,
-            {
-              top: -(PHOTO_FACE_CROP + verticalOffset * 0.4),
-              height: height + PHOTO_FACE_CROP,
-            },
-          ]}
-          resizeMode="cover"
-        />
+        {(() => {
+          const pieces = activeLook.pieces;
+          const dress = pieces.find((p) => p.category === "Dress");
+          const outer = pieces.find((p) => p.category === "Outerwear");
+          const top = pieces.find((p) => p.category === "Top");
+          const bottom = pieces.find((p) => p.category === "Bottom");
+          const shoes = pieces.find((p) => p.category === "Shoes");
+          const torso = dress ?? outer ?? top;
+          return (
+            <View style={s.garmentStack}>
+              {torso?.imageUrl && (
+                <Image
+                  source={{ uri: torso.imageUrl }}
+                  style={[s.garmentLayer, dress ? s.garmentDress : s.garmentTop]}
+                  resizeMode="contain"
+                />
+              )}
+              {!dress && bottom?.imageUrl && (
+                <Image
+                  source={{ uri: bottom.imageUrl }}
+                  style={[s.garmentLayer, s.garmentBottom]}
+                  resizeMode="contain"
+                />
+              )}
+              {shoes?.imageUrl && (
+                <Image
+                  source={{ uri: shoes.imageUrl }}
+                  style={[s.garmentLayer, s.garmentShoes]}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+          );
+        })()}
       </Animated.View>
 
       {/* ── LAYER 3: Subtle gradient scrim at face/clothes boundary ── */}
@@ -380,6 +403,40 @@ const s = StyleSheet.create({
     position: "absolute",
     left: 0,
     width: "100%",
+  },
+
+  // ── Garment stack (product photos composed over body) ─────────────
+  garmentStack: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  garmentLayer: {
+    position: "absolute",
+    left: "10%",
+    right: "10%",
+    width: "80%",
+  },
+  garmentTop: {
+    top: "2%",
+    height: "38%",
+  },
+  garmentBottom: {
+    top: "38%",
+    height: "42%",
+  },
+  garmentDress: {
+    top: "2%",
+    height: "78%",
+  },
+  garmentShoes: {
+    left: "22%",
+    right: "22%",
+    width: "56%",
+    bottom: "2%",
+    height: "16%",
   },
 
   // Thin gradient at the face/clothes boundary to smooth the transition
