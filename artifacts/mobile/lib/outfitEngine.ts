@@ -240,6 +240,24 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
     require("../assets/images/looks/galerie_opening_men.png"),
   ],
 
+  // ══ AVANT-GARDE ═════════════════════════════════════════════════════════════
+  // Bold, theatrical, architectural — Gala drama, gallery-opening edge,
+  // architectural lines, and high-shine Y2K statement looks.
+  "Avant-garde_women": [
+    require("../assets/images/looks/gala_glamour_women.png"),
+    require("../assets/images/looks/galerie_opening_women.png"),
+    require("../assets/images/looks/urban_architect_women.png"),
+    require("../assets/images/looks/y2k_soiree_women.png"),
+    require("../assets/images/trends/y2k_revival_women.png"),
+  ],
+  "Avant-garde_men": [
+    require("../assets/images/looks/gala_glamour_men.png"),
+    require("../assets/images/looks/galerie_opening_men.png"),
+    require("../assets/images/looks/urban_architect_men.png"),
+    require("../assets/images/looks/y2k_soiree_men.png"),
+    require("../assets/images/trends/y2k_revival_men.png"),
+  ],
+
   // ══ GENDER-NEUTRAL DEFAULTS (fallback) ═════════════════════════════════════
   "default_women": [
     require("../assets/images/looks/parisian_chic_women.png"),
@@ -279,6 +297,7 @@ const STYLE_LOCKED_TO_POOL = new Set<string>([
   "Business",
   "Evening",
   "Formal",
+  "Avant-garde",
 ]);
 
 export function hasNamedLookImage(name: string): boolean {

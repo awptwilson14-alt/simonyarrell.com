@@ -20,7 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { LOOKS } from "@/constants/data";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
-import { hasNamedLookImage, hasNamedLookImageForStyle, assignUniqueLookImages } from "@/lib/outfitEngine";
+import { hasNamedLookImageForStyle, assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
