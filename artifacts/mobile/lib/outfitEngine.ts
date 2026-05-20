@@ -89,7 +89,7 @@ function hashStr(str: string): number {
 //     of photo IDs (no cross-style sharing) so every category looks different.
 //     Keys: "{Style}_{gender}" with "default_{gender}" fallback.
 
-const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string }>> = {
+const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
 
   // ══ OLD MONEY ══════════════════════════════════════════════════════════════
   "Old Money_women": [
@@ -125,10 +125,12 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string }>> = {
     { uri: uns("1508214751620-7661e8d2d24c", 600, 900) },  // women's drop culture
   ],
   "Luxury Streetwear_men": [
+    require("../assets/images/streetwear_hero_men.png"),   // custom hero — luxury hip-hop streetwear
+    require("../assets/images/streetwear_hero_men.png"),   // weighted heavier to appear more often
+    require("../assets/images/streetwear_hero_men.png"),
     { uri: uns("1539008835657-9e8e9680c956", 600, 900) },  // men's urban outerwear
     { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },  // men's streetwear
     { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },  // men's hype fashion
-    { uri: uns("1583744757-f2c17db12c94", 600, 900) },     // men's street editorial
     { uri: uns("1578681994506-b8f463906a8f", 600, 900) },  // men's luxury street
     { uri: uns("1542272054537-4845f1353d17", 600, 900) },  // urban men's drip
     { uri: uns("1531297484001-80022131f5a1", 600, 900) },  // men's tech/street
@@ -303,7 +305,7 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string }>> = {
 
 // Deterministic per look — same outfit fingerprint → same image every time.
 // Gender param ensures men see male models, women see female models.
-function getLookImage(style: string, seed: string, gender: string): { uri: string } {
+function getLookImage(style: string, seed: string, gender: string): { uri: string } | number {
   const g = gender.toLowerCase() === "men" ? "men" : "women";
   const pool =
     LOOK_IMAGE_POOLS[`${style}_${g}`] ??

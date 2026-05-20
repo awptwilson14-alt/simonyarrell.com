@@ -84,3 +84,9 @@ id = "i9Il5QkYLbFp8C7V61pwF"
 uri = "file://artifacts/mobile/assets/images/occasion_street.png"
 type = "image"
 title = "streetwear occasion card"
+
+[[generated]]
+id = "ozI7U3v0v8bivX9fHuc88"
+uri = "file://artifacts/mobile/assets/images/streetwear_hero_men.png"
+type = "image"
+title = "streetwear hero men"
