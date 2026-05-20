@@ -262,7 +262,21 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
   // profiles when the per-gender pools were exhausted during dedupe.
 };
 
+// Styles whose visual identity is so specific that we never let a generic
+// occasion-based named override (e.g. "Downtown Edit", "Main Character")
+// hijack the hero. For these styles, the curated style pool always wins so
+// every card stays on-brand — Old Money must always look dapper, elegant
+// and class-conscious regardless of which occasion the look was generated for.
+const STYLE_LOCKED_TO_POOL = new Set<string>(["Old Money"]);
+
 export function hasNamedLookImage(name: string): boolean {
+  return Boolean(NAMED_LOOK_IMAGES[name]);
+}
+
+// Same intent as hasNamedLookImage but respects style locks. The look-detail
+// hero check uses this so a locked style never displays a mismatched editorial.
+export function hasNamedLookImageForStyle(name: string, style: string): boolean {
+  if (STYLE_LOCKED_TO_POOL.has(style)) return false;
   return Boolean(NAMED_LOOK_IMAGES[name]);
 }
 
@@ -286,10 +300,17 @@ export function assignUniqueLookImages<T extends { id: string; name: string; sty
   const used = new Set<string>();
   return looks.map((look) => {
     const candidatePools: Array<Array<{ uri: string } | number>> = [];
-    const named = NAMED_LOOK_IMAGES[look.name];
-    if (named) candidatePools.push([named[g]]);
+    const locked = STYLE_LOCKED_TO_POOL.has(look.style);
     const stylePool = LOOK_IMAGE_POOLS[`${look.style}_${g}`];
-    if (stylePool) candidatePools.push(stylePool);
+    // For locked styles (e.g. Old Money), the curated style pool is the
+    // ONLY allowed source. Named editorial overrides are skipped entirely.
+    if (locked) {
+      if (stylePool) candidatePools.push(stylePool);
+    } else {
+      const named = NAMED_LOOK_IMAGES[look.name];
+      if (named) candidatePools.push([named[g]]);
+      if (stylePool) candidatePools.push(stylePool);
+    }
     candidatePools.push(LOOK_IMAGE_POOLS[`default_${g}`]!);
 
     let chosen: { uri: string } | number = look.image;
@@ -455,7 +476,10 @@ const NAMED_LOOK_IMAGES: Record<string, { men: number; women: number }> = {
 // When a look's name has a hand-picked override, use that instead of the pool.
 function getLookImage(style: string, seed: string, gender: string, name?: string): { uri: string } | number {
   const g = gender.toLowerCase() === "men" ? "men" : "women";
-  if (name && NAMED_LOOK_IMAGES[name]) return NAMED_LOOK_IMAGES[name][g];
+  // Locked styles ignore named overrides and always pull from their curated pool.
+  if (name && NAMED_LOOK_IMAGES[name] && !STYLE_LOCKED_TO_POOL.has(style)) {
+    return NAMED_LOOK_IMAGES[name][g];
+  }
   // Strictly same-gender. Never fall through to a mixed pool.
   const pool =
     LOOK_IMAGE_POOLS[`${style}_${g}`] ??
