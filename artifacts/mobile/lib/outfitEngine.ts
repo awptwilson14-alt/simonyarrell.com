@@ -1036,36 +1036,61 @@ export function generateLooks(params: GenerateParams): Look[] {
     return item.occasions.some((o) => allowedOccasions.includes(o));
   }
 
-  // Price filter: individual item should be affordable within budget
-  function matchesBudget(item: CatalogItem): boolean {
-    // An item shouldn't cost more than 80% of total budget on its own
-    return item.price <= budgetMax * 0.8;
-  }
-
-  // Filtered pools per category
-  function pool(cat: CatalogItem["category"]): CatalogItem[] {
-    return CATALOG.filter(
-      (item) =>
-        item.category === cat &&
-        matchesGender(item) &&
-        matchesOccasion(item) &&
-        matchesBudget(item)
-    );
-  }
-
-  const tops = pool("top");
-  const bottoms = pool("bottom");
-  const dresses = pool("dress");
-  const outerwear = pool("outerwear");
-  const shoes = pool("shoes");
-  const bags = pool("bag");
-  const accessories = pool("accessories");
-  const jewelry = pool("jewelry");
-
   const looks: Look[] = [];
-  let attempts = 0;
 
-  while (looks.length < count && attempts < 200) {
+  // ── Tiered generation ──────────────────────────────────────────────────────
+  // To guarantee a non-empty result regardless of how restrictive the user's
+  // budget / occasion / gender filters are, we run the same generator with
+  // progressively relaxed constraints until we collect `count` looks. Pass 1
+  // honors all filters (ideal). Each subsequent pass loosens one more filter
+  // so we ALWAYS return at least one look.
+  type PassOpts = {
+    useBudget: boolean;
+    useOccasion: boolean;
+    useGender: boolean;
+  };
+
+  function runPass(opts: PassOpts): void {
+    const { useBudget, useOccasion, useGender } = opts;
+    // Effective budget cap — Infinity disables every per-piece price gate.
+    const cap = useBudget ? budgetMax : Infinity;
+
+    function matchesBudget(item: CatalogItem): boolean {
+      if (!useBudget) return true;
+      return item.price <= budgetMax * 0.8;
+    }
+    function matchesGenderLocal(item: CatalogItem): boolean {
+      if (!useGender) return true;
+      return matchesGender(item);
+    }
+    function matchesOccasionLocal(item: CatalogItem): boolean {
+      if (!useOccasion) return true;
+      return matchesOccasion(item);
+    }
+
+    function pool(cat: CatalogItem["category"]): CatalogItem[] {
+      return CATALOG.filter(
+        (item) =>
+          item.category === cat &&
+          matchesGenderLocal(item) &&
+          matchesOccasionLocal(item) &&
+          matchesBudget(item)
+      );
+    }
+
+    const tops = pool("top");
+    const bottoms = pool("bottom");
+    const dresses = pool("dress");
+    const outerwear = pool("outerwear");
+    const shoes = pool("shoes");
+    const bags = pool("bag");
+    const accessories = pool("accessories");
+    const jewelry = pool("jewelry");
+
+    let attempts = 0;
+    const maxAttempts = 200;
+
+    while (looks.length < count && attempts < maxAttempts) {
     attempts++;
 
     // Pick a dominant style and color palette for this look
@@ -1132,55 +1157,55 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     if (useDress) {
       // Structure: dress + shoes + (optional bag) + (optional jewelry)
-      const dress = stylePick(dresses.filter((d) => d.price <= budgetMax * 0.7));
+      const dress = stylePick(dresses.filter((d) => d.price <= cap * 0.7));
       if (!dress) continue;
       addPiece(dress);
 
-      const affordableShoes = shoes.filter((s) => s.price + total <= budgetMax * 0.9);
+      const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.9);
       const shoe = pickShoe(affordableShoes);
       if (!shoe) continue;
       addPiece(shoe);
 
       // Optional bag
-      if (total < budgetMax * 0.8 && bags.length > 0) {
-        const affordableBags = bags.filter((b) => b.price + total <= budgetMax);
+      if (total < cap * 0.8 && bags.length > 0) {
+        const affordableBags = bags.filter((b) => b.price + total <= cap);
         const bag = stylePick(affordableBags);
         if (bag) addPiece(bag);
       }
 
       // Optional jewelry
-      if (total < budgetMax * 0.9 && jewelry.length > 0) {
-        const affordableJewels = jewelry.filter((j) => j.price + total <= budgetMax);
+      if (total < cap * 0.9 && jewelry.length > 0) {
+        const affordableJewels = jewelry.filter((j) => j.price + total <= cap);
         const jewel = stylePick(affordableJewels);
         if (jewel) addPiece(jewel);
       }
     } else {
       // Structure: top + bottom + shoes + (optional outerwear) + (optional bag/accessory)
-      const top = stylePick(tops.filter((t) => t.price <= budgetMax * 0.5));
+      const top = stylePick(tops.filter((t) => t.price <= cap * 0.5));
       if (!top) continue;
       addPiece(top);
 
-      const affordableBottoms = bottoms.filter((b) => b.price + total <= budgetMax * 0.7);
+      const affordableBottoms = bottoms.filter((b) => b.price + total <= cap * 0.7);
       const bottom = stylePick(affordableBottoms);
       if (!bottom) continue;
       addPiece(bottom);
 
-      const affordableShoes = shoes.filter((s) => s.price + total <= budgetMax * 0.85);
+      const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.85);
       const shoe = pickShoe(affordableShoes);
       if (!shoe) continue;
       addPiece(shoe);
 
       // Optional outerwear (50% chance, or if budget has room)
-      if (outerwear.length > 0 && total < budgetMax * 0.6 && Math.random() > 0.5) {
-        const affordableOuter = outerwear.filter((o) => o.price + total <= budgetMax * 0.95);
+      if (outerwear.length > 0 && total < cap * 0.6 && Math.random() > 0.5) {
+        const affordableOuter = outerwear.filter((o) => o.price + total <= cap * 0.95);
         const outer = stylePick(affordableOuter);
         if (outer) addPiece(outer);
       }
 
       // Optional bag (for women mostly) or accessories
       const extras = genderKey === "women" ? bags : accessories;
-      if (extras.length > 0 && total < budgetMax * 0.85) {
-        const affordableExtras = extras.filter((e) => e.price + total <= budgetMax);
+      if (extras.length > 0 && total < cap * 0.85) {
+        const affordableExtras = extras.filter((e) => e.price + total <= cap);
         const extra = stylePick(affordableExtras);
         if (extra) addPiece(extra);
       }
@@ -1215,6 +1240,67 @@ export function generateLooks(params: GenerateParams): Look[] {
       style: dominantStyle,
       tags,
     });
+    }
+  }
+
+  // Pass 1: honor every filter the user set (ideal match).
+  runPass({ useBudget: true,  useOccasion: true,  useGender: true  });
+  // Pass 2: budget too tight? Drop the price cap but keep occasion + gender.
+  if (looks.length < count) runPass({ useBudget: false, useOccasion: true,  useGender: true  });
+  // Pass 3: still empty? Drop occasion match too (keep gender).
+  if (looks.length < count) runPass({ useBudget: false, useOccasion: false, useGender: true  });
+  // Pass 4: ultimate fallback — show anything, ignoring every filter.
+  if (looks.length < count) runPass({ useBudget: false, useOccasion: false, useGender: false });
+
+  // Pass 5: still nothing? Dedup memory may be exhausted — clear it and retry.
+  if (looks.length === 0) {
+    _shownFingerprints.clear();
+    runPass({ useBudget: false, useOccasion: false, useGender: false });
+  }
+
+  // HARD GUARANTEE: if even pass 5 produces nothing (tiny catalog, etc.),
+  // hand-assemble a deterministic minimal outfit from whatever the catalog has.
+  if (looks.length === 0) {
+    const anyTop = CATALOG.find((i) => i.category === "top");
+    const anyBottom = CATALOG.find((i) => i.category === "bottom");
+    const anyShoe = CATALOG.find((i) => i.category === "shoes");
+    const anyDress = CATALOG.find((i) => i.category === "dress");
+    const fallbackItems: CatalogItem[] = [];
+    if (anyDress && anyShoe) {
+      fallbackItems.push(anyDress, anyShoe);
+    } else if (anyTop && anyBottom && anyShoe) {
+      fallbackItems.push(anyTop, anyBottom, anyShoe);
+    } else if (anyTop && anyBottom) {
+      fallbackItems.push(anyTop, anyBottom);
+    }
+    if (fallbackItems.length >= 2) {
+      const fallbackStyle = pick(occasionStyles);
+      const fallbackPalette = pick(COLOR_PALETTES);
+      const pieces: OutfitPiece[] = fallbackItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        price: item.price,
+        category: item.category,
+        color: pickPaletteColor(item.colors, fallbackPalette.colors),
+        imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
+        purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
+      }));
+      const total = fallbackItems.reduce((s, i) => s + i.price, 0);
+      const fp = fingerprint(pieces.map((p) => p.id));
+      looks.push({
+        id: `gen_fallback_${Date.now()}`,
+        name: generateLookName(occasion),
+        description: generateDescription(occasion),
+        occasion,
+        season: "All Season",
+        estimatedPrice: total,
+        image: getLookImage(fallbackStyle, fp, genderKey, generateLookName(occasion)),
+        pieces,
+        style: fallbackStyle,
+        tags: [occasion.toLowerCase(), fallbackPalette.name.toLowerCase(), pieces[0].brand.toLowerCase()],
+      });
+    }
   }
 
   return shuffle(looks);
