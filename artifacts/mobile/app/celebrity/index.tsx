@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { CELEBS } from "@/constants/celebrities";
+import { filterCelebsByGender } from "@/constants/heroImages";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 
@@ -27,13 +29,15 @@ export default function CelebrityPickerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { userProfile } = useApp();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [activeVibe, setActiveVibe] = useState("All");
 
+  const genderFiltered = filterCelebsByGender(CELEBS, userProfile.gender);
   const filtered =
     activeVibe === "All"
-      ? CELEBS
-      : CELEBS.filter((c) =>
+      ? genderFiltered
+      : genderFiltered.filter((c) =>
           c.vibes.some((v) =>
             v.toLowerCase().includes(activeVibe.toLowerCase().split(" ")[0].toLowerCase())
           )

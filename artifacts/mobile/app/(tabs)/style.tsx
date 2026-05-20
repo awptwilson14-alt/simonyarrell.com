@@ -22,6 +22,7 @@ import { BUDGETS, GENDERS, Look } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { pickOccasionHero } from "@/constants/heroImages";
 import { generateLooks, resetShownLooks } from "@/lib/outfitEngine";
 
 const { width } = Dimensions.get("window");
@@ -179,7 +180,7 @@ export default function StyleScreen() {
                     onPress={() => selectOccasion(occ.label)}
                     style={({ pressed }) => [s.occasionCard, { width: CARD_W, opacity: pressed ? 0.88 : 1 }]}
                   >
-                    <Image source={occ.image} style={s.occasionImage} resizeMode="cover" />
+                    <Image source={pickOccasionHero(occ.label, userProfile.gender) ?? occ.image} style={s.occasionImage} resizeMode="cover" />
                     <View style={[s.occasionOverlay, active && { backgroundColor: "rgba(198,167,94,0.25)" }]} />
                     {active && (
                       <View style={[s.occasionCheck, { backgroundColor: colors.gold }]}>

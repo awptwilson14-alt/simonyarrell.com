@@ -20,7 +20,7 @@ import { TRENDS } from "@/constants/data";
 import { CELEBS } from "@/constants/celebrities";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
-import { pickStyleHero } from "@/constants/heroImages";
+import { pickStyleHero, filterCelebsByGender } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 
 const { width } = Dimensions.get("window");
@@ -33,6 +33,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userProfile } = useApp();
+  const visibleCelebs = filterCelebsByGender(CELEBS, userProfile.gender);
   const [activeTab, setActiveTab] = useState<Tab>("trends");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const heroFor = (name: string, seed?: string) => pickStyleHero(name, userProfile.gender, seed);
@@ -116,7 +117,7 @@ export default function ExploreScreen() {
             >
               <Feather name="users" size={13} color={colors.gold} />
               <Text style={[styles.viewAllText, { color: colors.gold }]}>
-                BROWSE ALL {CELEBS.length} ICONS
+                BROWSE ALL {visibleCelebs.length} ICONS
               </Text>
               <Feather name="arrow-right" size={13} color={colors.gold} />
             </Pressable>
@@ -130,7 +131,7 @@ export default function ExploreScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.celebRow}
             >
-              {CELEBS.map((celeb) => (
+              {visibleCelebs.map((celeb) => (
                 <Pressable
                   key={celeb.id}
                   onPress={() => {
@@ -172,7 +173,7 @@ export default function ExploreScreen() {
             <Text style={[styles.rowLabel, { color: colors.mutedForeground, marginTop: 4 }]}>
               ALL STYLE ICONS
             </Text>
-            {CELEBS.map((celeb) => (
+            {visibleCelebs.map((celeb) => (
               <Pressable
                 key={celeb.id}
                 onPress={() => {

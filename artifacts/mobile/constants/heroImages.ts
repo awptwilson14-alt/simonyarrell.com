@@ -96,6 +96,56 @@ export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
   },
 };
 
+// ─── Splash / Welcome hero ──────────────────────────────────────────────────
+export const SPLASH_HEROES = {
+  men: require("../assets/images/splash/splash_hero_men.png"),
+  women: require("../assets/images/splash/splash_hero_women.png"),
+  unisex: require("../assets/images/splash_hero.png"),
+};
+
+export function pickSplashHero(gender: string): ImageSourcePropType {
+  const g = (gender || "").toLowerCase();
+  if (g === "men") return SPLASH_HEROES.men;
+  if (g === "women") return SPLASH_HEROES.women;
+  return SPLASH_HEROES.unisex;
+}
+
+// ─── Occasion tiles (Style › What's the occasion?) ──────────────────────────
+type OccasionEntry = { men: ImageSourcePropType; women: ImageSourcePropType; unisex: ImageSourcePropType };
+export const OCCASION_HEROES: Record<string, OccasionEntry> = {
+  Casual:       { men: require("../assets/images/occasions/casual_men.png"),   women: require("../assets/images/occasions/casual_women.png"),   unisex: require("../assets/images/occasion_casual.png") },
+  "Date Night": { men: require("../assets/images/occasions/date_men.png"),     women: require("../assets/images/occasions/date_women.png"),     unisex: require("../assets/images/occasion_date.png") },
+  Work:         { men: require("../assets/images/occasions/work_men.png"),     women: require("../assets/images/occasions/work_women.png"),     unisex: require("../assets/images/occasion_work.png") },
+  Vacation:     { men: require("../assets/images/occasions/vacation_men.png"), women: require("../assets/images/occasions/vacation_women.png"), unisex: require("../assets/images/occasion_vacation.png") },
+  Event:        { men: require("../assets/images/occasions/event_men.png"),    women: require("../assets/images/occasions/event_women.png"),    unisex: require("../assets/images/occasion_event.png") },
+  Streetwear:   { men: require("../assets/images/occasions/street_men.png"),   women: require("../assets/images/occasions/street_women.png"),   unisex: require("../assets/images/occasion_street.png") },
+  Formal:       { men: require("../assets/images/occasions/formal_men.png"),   women: require("../assets/images/occasions/formal_women.png"),   unisex: require("../assets/images/occasion_event.png") },
+};
+
+export function pickOccasionHero(label: string, gender: string): ImageSourcePropType | null {
+  const entry = OCCASION_HEROES[label];
+  if (!entry) return null;
+  const g = (gender || "").toLowerCase();
+  if (g === "men") return entry.men;
+  if (g === "women") return entry.women;
+  return entry.unisex;
+}
+
+// ─── Celebrity gender map (filter feed by profile) ─────────────────────────
+export const CELEB_GENDERS: Record<string, "men" | "women"> = {
+  drake: "men", kanye: "men", travis: "men", fabolous: "men", denzel: "men",
+  snoop: "men", jeezy: "men", harry: "men", pharrell: "men", asap: "men",
+  lewis: "men", sga: "men", nas: "men",
+  rihanna: "women", zendaya: "women", audrey: "women", marilyn: "women",
+  ladygaga: "women", chloe: "women",
+};
+
+export function filterCelebsByGender<T extends { id: string }>(celebs: T[], gender: string): T[] {
+  const g = (gender || "").toLowerCase();
+  if (g !== "men" && g !== "women") return celebs;
+  return celebs.filter((c) => CELEB_GENDERS[c.id] === g);
+}
+
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;

@@ -180,3 +180,57 @@ id = "Zf6Kh5o0szGnuEfaN9x1C"
 uri = "file://artifacts/mobile/assets/images/looks/power_dressing_women.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "PtBneeehlTyKJ8tf_pErY"
+uri = "file://artifacts/mobile/assets/images/occasions/casual_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "A1fNfBBKLlUuA3G5BQwPq"
+uri = "file://artifacts/mobile/assets/images/occasions/date_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Pg_qoXApQpD_WHBijwzfh"
+uri = "file://artifacts/mobile/assets/images/occasions/casual_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "kW77nM_7dIfbZJiomsEiy"
+uri = "file://artifacts/mobile/assets/images/occasions/date_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "6ntxEJ_3IzE5V29c9FxRO"
+uri = "file://artifacts/mobile/assets/images/occasions/event_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "K1RuNXAZdMhTcM_XCq9_g"
+uri = "file://artifacts/mobile/assets/images/occasions/street_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "4zyHjvaR7TaiimcxjuK7j"
+uri = "file://artifacts/mobile/assets/images/occasions/formal_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "VRLymTEtm38GHrpmkginf"
+uri = "file://artifacts/mobile/assets/images/occasions/street_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "KIxa-5bNxFcF20JEMmN8l"
+uri = "file://artifacts/mobile/assets/images/occasions/formal_men.png"
+type = "image"
+title = "generated_image"

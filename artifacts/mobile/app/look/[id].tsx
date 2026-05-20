@@ -19,6 +19,7 @@ import { Feather } from "@expo/vector-icons";
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { LOOKS } from "@/constants/data";
+import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -33,7 +34,7 @@ export default function LookDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook } = useApp();
+  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook, userProfile } = useApp();
   const [panel, setPanel] = useState<PanelView>("details");
 
   const look = findLook(id ?? "");
@@ -75,7 +76,7 @@ export default function LookDetailScreen() {
 
         {/* ── Hero ── */}
         <View style={styles.heroContainer}>
-          <RNImage source={look.image} style={styles.heroImage} resizeMode="cover" />
+          <RNImage source={pickLookHero(look.name, userProfile.gender, look.id) ?? pickStyleHero(look.style, userProfile.gender, look.id) ?? look.image} style={styles.heroImage} resizeMode="cover" />
           <LinearGradient
             colors={["rgba(11,11,12,0.6)", "transparent", "transparent", "#0B0B0C"]}
             locations={[0, 0.25, 0.65, 1]}
@@ -300,7 +301,7 @@ export default function LookDetailScreen() {
             You Might Also Love
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-            {allRelated.map((l) => <LookCard key={l.id} look={l} />)}
+            {allRelated.map((l) => <LookCard key={l.id} look={{ ...l, image: pickLookHero(l.name, userProfile.gender, `rel-${l.id}`) ?? pickStyleHero(l.style, userProfile.gender, `rel-${l.id}`) ?? l.image }} />)}
           </ScrollView>
         </View>
       </ScrollView>

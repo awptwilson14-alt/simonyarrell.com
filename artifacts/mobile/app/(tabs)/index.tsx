@@ -19,7 +19,7 @@ import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { LOOKS, TRENDS } from "@/constants/data";
-import { pickStyleHero, pickLookHero } from "@/constants/heroImages";
+import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -44,7 +44,7 @@ export default function HomeScreen() {
         {/* ── Hero ── */}
         <View style={[styles.hero, { paddingTop: topPad + HEADER_HEIGHT }]}>
           <Image
-            source={require("../../assets/images/splash_hero.png")}
+            source={pickSplashHero(userProfile.gender)}
             style={styles.heroImage}
             resizeMode="cover"
           />
