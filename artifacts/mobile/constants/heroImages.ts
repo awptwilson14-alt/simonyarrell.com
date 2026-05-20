@@ -94,6 +94,14 @@ export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
     men: require("../assets/images/looks/gala_glamour_men.png"),
     women: require("../assets/images/looks/gala_glamour_women.png"),
   },
+  Evening: {
+    men: require("../assets/images/looks/cote_dazur_evening_men.png"),
+    women: require("../assets/images/looks/cote_dazur_evening_women.png"),
+  },
+  Formal: {
+    men: require("../assets/images/occasions/formal_men.png"),
+    women: require("../assets/images/occasions/formal_women.png"),
+  },
 };
 
 // ─── Splash / Welcome hero ──────────────────────────────────────────────────
