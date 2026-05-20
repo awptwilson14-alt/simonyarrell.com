@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Dimensions,
   Image,
@@ -8,12 +8,31 @@ import {
   StyleSheet,
   Text,
   View,
+  type ImageSourcePropType,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Look } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { pickStyleHero } from "@/constants/heroImages";
+
+// Last-resort fallbacks if the look's image source ever fails to load.
+// All current pools are local PNGs so this should be unreachable in practice,
+// but the safety net guarantees a card can never render as a black rectangle.
+const STYLE_FALLBACK: Record<string, ImageSourcePropType> = {
+  "Old Money":         require("../assets/images/looks/old_money_weekend_men.png"),
+  "Luxury Streetwear": require("../assets/images/looks/luxury_streetwear_icon_men.png"),
+  "Vacation Luxe":     require("../assets/images/looks/resort_billionaire_men.png"),
+  Techwear:            require("../assets/images/looks/urban_architect_men.png"),
+  "Clean Minimal":     require("../assets/images/looks/urban_minimalist_men.png"),
+  "Y2K Revival":       require("../assets/images/looks/y2k_soiree_men.png"),
+  Business:            require("../assets/images/looks/power_dressing_men.png"),
+  Evening:             require("../assets/images/looks/gala_glamour_men.png"),
+  Formal:              require("../assets/images/looks/gala_glamour_men.png"),
+  "Avant-garde":       require("../assets/images/looks/gala_glamour_men.png"),
+};
+const UNIVERSAL_FALLBACK: ImageSourcePropType = require("../assets/images/looks/parisian_chic_men.png");
 
 const { width } = Dimensions.get("window");
 
@@ -25,10 +44,16 @@ interface LookCardProps {
 
 export function LookCard({ look, width: cardWidth, showSave = true }: LookCardProps) {
   const colors = useColors();
-  const { isLookSaved, saveLook, unsaveLook } = useApp();
+  const { isLookSaved, saveLook, unsaveLook, userProfile } = useApp();
   const router = useRouter();
   const saved = isLookSaved(look.id);
   const w = cardWidth ?? width * 0.62;
+  const [imgFailed, setImgFailed] = useState(false);
+  const fallback =
+    pickStyleHero(look.style, userProfile.gender, look.id) ??
+    STYLE_FALLBACK[look.style] ??
+    UNIVERSAL_FALLBACK;
+  const source = imgFailed ? fallback : look.image;
 
   const toggleSave = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -45,7 +70,12 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
       ]}
     >
       <View style={styles.imageContainer}>
-        <Image source={look.image} style={[styles.image, { width: w }]} resizeMode="cover" />
+        <Image
+          source={source}
+          style={[styles.image, { width: w, backgroundColor: colors.secondary }]}
+          resizeMode="cover"
+          onError={() => setImgFailed(true)}
+        />
         {showSave && (
           <Pressable onPress={toggleSave} style={styles.saveBtn} hitSlop={12}>
             <Feather name={saved ? "heart" : "heart"} size={18} color={saved ? colors.gold : "#fff"} />
