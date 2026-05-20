@@ -151,20 +151,16 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
 
   // ══ TECHWEAR ═══════════════════════════════════════════════════════════════
   "Techwear_women": [
+    require("../assets/images/trends/techwear_women.png"), // hand-picked techwear editorial
     { uri: uns("1573496359808-0ed5975d9a2a", 600, 900) },  // women's technical
-    { uri: uns("1562886784-0ce878e0dbbc", 600, 900) },     // women's utility
-    { uri: uns("1554412933-d5a313077787", 600, 900) },     // women's functional
-    { uri: uns("1544005313-94ddf0286df2", 600, 900) },     // women's tech look
     { uri: uns("1508214751620-7661e8d2d24c", 600, 900) },  // women's future style
     { uri: uns("1522337360492-f0b819058e50", 600, 900) },  // women's techwear
   ],
   "Techwear_men": [
-    { uri: uns("1531297484001-80022131f5a1", 600, 900) },  // men's technical
+    require("../assets/images/trends/techwear_men.png"),   // hand-picked techwear editorial
     { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },  // men's utility
     { uri: uns("1583744757-f2c17db12c94", 600, 900) },     // men's functional
     { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },  // men's techwear
-    { uri: uns("1578681994506-b8f463906a8f", 600, 900) },  // men's futuristic
-    { uri: uns("1542272054537-4845f1353d17", 600, 900) },  // men's tech editorial
   ],
 
   // ══ VACATION LUXE ══════════════════════════════════════════════════════════
@@ -253,22 +249,17 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
 
   // ══ Y2K REVIVAL ════════════════════════════════════════════════════════════
   "Y2K Revival_women": [
+    require("../assets/images/looks/y2k_soiree_women.png"),// hand-picked Y2K editorial
     { uri: uns("1515886657613-9f3515b0c78f", 600, 900) },  // women's Y2K look
-    { uri: uns("1558618666-fcd25c85cd64", 600, 900) },     // women's 2000s vibe
-    { uri: uns("1554412933-d5a313077787", 600, 900) },     // women's retro fashion
-    { uri: uns("1562886784-0ce878e0dbbc", 600, 900) },     // women's Y2K editorial
     { uri: uns("1481437156560-3205f6a55735", 600, 900) },  // women's nostalgia style
     { uri: uns("1485217988980-cc7283d1da23", 600, 900) },  // women's bold Y2K
     { uri: uns("1539109136090-3bb05fd40e9d", 600, 900) },  // women's millennium look
-    { uri: uns("1516762121899-c04ad64fc6e0", 600, 900) },  // women's throwback
   ],
   "Y2K Revival_men": [
+    require("../assets/images/looks/y2k_soiree_men.png"),  // hand-picked Y2K editorial
     { uri: uns("1542272054537-4845f1353d17", 600, 900) },  // men's Y2K style
     { uri: uns("1556821840-3a63f15732ce", 600, 900) },     // men's 2000s vibe
     { uri: uns("1539008835657-9e8e9680c956", 600, 900) },  // men's retro street
-    { uri: uns("1531297484001-80022131f5a1", 600, 900) },  // men's Y2K editorial
-    { uri: uns("1578681994506-b8f463906a8f", 600, 900) },  // men's millennium drip
-    { uri: uns("1625910776-bc12f0a87e2c", 600, 900) },     // men's throwback look
   ],
 
   // ══ FORMAL ══════════════════════════════════════════════════════════════════
