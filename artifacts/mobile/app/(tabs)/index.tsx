@@ -19,7 +19,7 @@ import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { LOOKS, TRENDS } from "@/constants/data";
-import { pickStyleHero } from "@/constants/heroImages";
+import { pickStyleHero, pickLookHero } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -33,6 +33,7 @@ export default function HomeScreen() {
   const { userProfile } = useApp();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const heroFor = (key: string, seed?: string) => pickStyleHero(key, userProfile.gender, seed);
+  const lookHero = (name: string, seed?: string) => pickLookHero(name, userProfile.gender, seed);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -89,7 +90,7 @@ export default function HomeScreen() {
             {LOOKS.map((look) => (
               <LookCard
                 key={look.id}
-                look={{ ...look, image: heroFor(look.style, look.id) ?? look.image }}
+                look={{ ...look, image: lookHero(look.name, look.id) ?? heroFor(look.style, look.id) ?? look.image }}
               />
             ))}
           </ScrollView>
@@ -155,7 +156,7 @@ export default function HomeScreen() {
             {[...LOOKS].reverse().map((look) => (
               <LookCard
                 key={look.id}
-                look={{ ...look, image: heroFor(look.style, `fy-${look.id}`) ?? look.image }}
+                look={{ ...look, image: lookHero(look.name, `fy-${look.id}`) ?? heroFor(look.style, `fy-${look.id}`) ?? look.image }}
               />
             ))}
           </ScrollView>

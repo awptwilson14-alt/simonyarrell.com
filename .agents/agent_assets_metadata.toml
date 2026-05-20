@@ -90,3 +90,93 @@ id = "ozI7U3v0v8bivX9fHuc88"
 uri = "file://artifacts/mobile/assets/images/streetwear_hero_men.png"
 type = "image"
 title = "streetwear hero men"
+
+[[generated]]
+id = "8hr58zxFGkQselTqr_i16"
+uri = "file://artifacts/mobile/assets/images/looks/cote_dazur_evening_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "GHjlHxqDdRTKdunnTgVXq"
+uri = "file://artifacts/mobile/assets/images/looks/cote_dazur_evening_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "8a3q_vIBUkKYMj05oiBri"
+uri = "file://artifacts/mobile/assets/images/looks/old_money_weekend_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "iHxhmBPf7Dd_LmH1kEwjC"
+uri = "file://artifacts/mobile/assets/images/looks/old_money_weekend_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Y3YTKPD4ze69otcor-xqF"
+uri = "file://artifacts/mobile/assets/images/looks/urban_architect_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "ihrrnn0blpJ_51Nfi88P-"
+uri = "file://artifacts/mobile/assets/images/looks/urban_architect_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "bkkK3rxBPsvF01BYkmCRB"
+uri = "file://artifacts/mobile/assets/images/looks/luxury_streetwear_icon_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "cuEg3W7H9UumjViJSNW2o"
+uri = "file://artifacts/mobile/assets/images/looks/resort_billionaire_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "NfTXPDl4fTfxmZFiX3wxU"
+uri = "file://artifacts/mobile/assets/images/looks/resort_billionaire_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "SKo8mpbAIlvQj-h_4Iade"
+uri = "file://artifacts/mobile/assets/images/looks/galerie_opening_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "6OrRrTWInKLtn0Xcv4v1x"
+uri = "file://artifacts/mobile/assets/images/looks/y2k_soiree_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9nDa74LeJd1fAAVIzYduW"
+uri = "file://artifacts/mobile/assets/images/looks/parisian_chic_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EYSn--ASdk6xE0vyQYtRe"
+uri = "file://artifacts/mobile/assets/images/looks/parisian_chic_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "1uqSf07l4Piok7_a3zV6z"
+uri = "file://artifacts/mobile/assets/images/looks/power_dressing_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Zf6Kh5o0szGnuEfaN9x1C"
+uri = "file://artifacts/mobile/assets/images/looks/power_dressing_women.png"
+type = "image"
+title = "generated_image"

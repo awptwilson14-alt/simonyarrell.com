@@ -1,11 +1,66 @@
 import type { ImageSourcePropType } from "react-native";
 
+type GenderedHero = { men: ImageSourcePropType; women: ImageSourcePropType };
+
 const UNS = (id: string, w = 480, h = 600): { uri: string } => ({
   uri: `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&auto=format&q=80`,
 });
 
-type GenderedHero = { men: ImageSourcePropType; women: ImageSourcePropType };
+// ─── Per-LOOK heroes (used by Home › Trending Looks & For You) ──────────────
+// Every look gets its own unique, on-description, gender-matched editorial.
+export const LOOK_HERO_IMAGES: Record<string, GenderedHero> = {
+  "Côte d'Azur Evening": {
+    men: require("../assets/images/looks/cote_dazur_evening_men.png"),
+    women: require("../assets/images/looks/cote_dazur_evening_women.png"),
+  },
+  "Old Money Weekend": {
+    men: require("../assets/images/looks/old_money_weekend_men.png"),
+    women: require("../assets/images/looks/old_money_weekend_women.png"),
+  },
+  "Urban Architect": {
+    men: require("../assets/images/looks/urban_architect_men.png"),
+    women: require("../assets/images/looks/urban_architect_women.png"),
+  },
+  "Galerie Opening": {
+    men: require("../assets/images/looks/galerie_opening_men.png"),
+    women: require("../assets/images/looks/galerie_opening_women.png"),
+  },
+  "Luxury Streetwear Icon": {
+    men: require("../assets/images/looks/luxury_streetwear_icon_men.png"),
+    women: require("../assets/images/looks/luxury_streetwear_icon_women.png"),
+  },
+  "Y2K Soirée": {
+    men: require("../assets/images/looks/y2k_soiree_men.png"),
+    women: require("../assets/images/looks/y2k_soiree_women.png"),
+  },
+  "Parisian Chic": {
+    men: require("../assets/images/looks/parisian_chic_men.png"),
+    women: require("../assets/images/looks/parisian_chic_women.png"),
+  },
+  "Power Dressing": {
+    men: require("../assets/images/looks/power_dressing_men.png"),
+    women: require("../assets/images/looks/power_dressing_women.png"),
+  },
+  "Resort Billionaire": {
+    men: require("../assets/images/looks/resort_billionaire_men.png"),
+    women: require("../assets/images/looks/resort_billionaire_women.png"),
+  },
+  "Dark Academia": {
+    men: require("../assets/images/looks/dark_academia_men.png"),
+    women: require("../assets/images/looks/dark_academia_women.png"),
+  },
+  "Gala Glamour": {
+    men: require("../assets/images/looks/gala_glamour_men.png"),
+    women: require("../assets/images/looks/gala_glamour_women.png"),
+  },
+  "Urban Minimalist": {
+    men: require("../assets/images/looks/urban_minimalist_men.png"),
+    women: require("../assets/images/looks/urban_minimalist_women.png"),
+  },
+};
 
+// ─── Per-STYLE heroes (used by Explore › Trends and as fallback) ────────────
+// Distinct photos so trend cards don't collide with look cards of the same style.
 export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
   "Old Money": {
     men: UNS("1507003211169-0a1dd7228f2d"),
@@ -36,8 +91,8 @@ export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
     women: UNS("1509631179647-0177331693ae"),
   },
   "Avant-garde": {
-    men: UNS("1517841905240-472988babdf9"),
-    women: UNS("1566174053879-31528523f8ae"),
+    men: UNS("1566174053879-31528523f8ae"),
+    women: UNS("1599643477877-530eb83abc8e"),
   },
 };
 
@@ -47,6 +102,27 @@ function hashString(s: string): number {
   return Math.abs(h);
 }
 
+function resolve(entry: GenderedHero, gender: string, seed?: string): ImageSourcePropType {
+  const g = gender.toLowerCase();
+  if (g === "men") return entry.men;
+  if (g === "women") return entry.women;
+  // Unisex / anything else → alternate per seed so the grid shows both genders
+  const pick = hashString(seed ?? "") % 2 === 0 ? "men" : "women";
+  return entry[pick];
+}
+
+/** Look name → gender-matched editorial (preferred for per-look cards). */
+export function pickLookHero(
+  lookName: string,
+  gender: string,
+  seed?: string
+): ImageSourcePropType | null {
+  const entry = LOOK_HERO_IMAGES[lookName];
+  if (!entry) return null;
+  return resolve(entry, gender, seed ?? lookName);
+}
+
+/** Style/Trend name → gender-matched editorial. */
 export function pickStyleHero(
   styleOrName: string,
   gender: string,
@@ -54,10 +130,5 @@ export function pickStyleHero(
 ): ImageSourcePropType | null {
   const entry = STYLE_HERO_IMAGES[styleOrName];
   if (!entry) return null;
-  const g = gender.toLowerCase();
-  if (g === "men") return entry.men;
-  if (g === "women") return entry.women;
-  // Unisex / anything else → alternate per seed so the grid shows both genders
-  const pick = hashString(seed ?? styleOrName) % 2 === 0 ? "men" : "women";
-  return entry[pick];
+  return resolve(entry, gender, seed ?? styleOrName);
 }
