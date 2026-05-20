@@ -859,6 +859,23 @@ function pickPaletteForStyle(style: string): { name: string; colors: string[] } 
   return allowed.length > 0 ? pick(allowed) : pick(COLOR_PALETTES);
 }
 
+// Season bias per style. Without this, a Vacation Luxe look could land
+// "Winter" under a Riviera hero, or a Techwear utility-shell look could be
+// tagged "Summer". The user sees this on the look detail page as
+// "{occasion} · {season}". Styles not listed get the full season pool.
+const ALL_SEASONS = ["Spring", "Summer", "Autumn", "Winter", "All Season"] as const;
+const STYLE_SEASON_BIAS: Record<string, readonly string[]> = {
+  "Vacation Luxe": ["Spring", "Summer", "All Season"],
+  "Y2K Revival":   ["Spring", "Summer", "All Season"],
+  "Old Money":     ["Autumn", "Winter", "All Season", "Spring"],
+  Techwear:        ["Autumn", "Winter", "All Season"],
+};
+
+function pickSeasonForStyle(style: string): string {
+  const allowed = STYLE_SEASON_BIAS[style];
+  return pick([...(allowed ?? ALL_SEASONS)]);
+}
+
 function paletteMatch(itemColors: string[], paletteColors: string[]): boolean {
   return itemColors.some((c) =>
     paletteColors.some(
@@ -1489,7 +1506,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       name: lookName,
       description: lookDesc,
       occasion,
-      season: ["Spring", "Summer", "Autumn", "Winter", "All Season"][Math.floor(Math.random() * 5)],
+      season: pickSeasonForStyle(dominantStyle),
       estimatedPrice: total,
       image: getLookImage(dominantStyle, fp, genderKey, lookName),
       pieces,
