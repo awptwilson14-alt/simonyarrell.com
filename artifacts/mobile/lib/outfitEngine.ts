@@ -500,6 +500,35 @@ function getPieceImage(category: string, itemId: string): string {
   return pool[hashStr(itemId) % pool.length];
 }
 
+// ─── Shoe-type inference + occasion preference ──────────────────────────────
+// When an existing catalog item doesn't have an explicit `shoeType`, infer one
+// from its name so older items still participate in shoeType-aware matching.
+function inferShoeType(item: CatalogItem): CatalogItem["shoeType"] | undefined {
+  if (item.shoeType) return item.shoeType;
+  if (item.category !== "shoes") return undefined;
+  const n = item.name.toLowerCase();
+  if (/(sneaker|trainer|samba|air force|af1|990|jordan|low-top|high-top|runner|running)/.test(n)) return "sneakers";
+  if (/(oxford|loafer|pump|heel|brogue|derby|monk|slingback|stiletto|mary jane|d'orsay|kitten)/.test(n)) return "dress";
+  if (/(work boot|hiking|moc-toe|moc toe|chukka|timberland|combat)/.test(n)) return "work";
+  if (/(boot|sandal|mule|clog|espadrille|flat|ballet)/.test(n)) return "casual";
+  return undefined;
+}
+
+// Map a normalized occasion to the shoe sub-types we prefer for it.
+function preferredShoeTypes(occasion: string): Array<NonNullable<CatalogItem["shoeType"]>> {
+  switch (occasion) {
+    case "Work":               return ["dress", "casual"];
+    case "Event":
+    case "Evening":
+    case "Party":              return ["dress"];
+    case "Date Night":         return ["dress", "casual", "sneakers"];
+    case "Streetwear":         return ["sneakers", "casual"];
+    case "Vacation":           return ["casual", "sneakers"];
+    case "Casual":             return ["sneakers", "casual"];
+    default:                   return ["sneakers", "casual", "dress"];
+  }
+}
+
 // ─── Purchase URL builder — converts brand homepage to product search page ────
 // So tapping "BUY" on any piece lands the user at a search results page
 // for that exact product on the brand's own website.
@@ -1053,6 +1082,20 @@ export function generateLooks(params: GenerateParams): Look[] {
     let total = 0;
 
     // Helper: pick style + palette-preferring item from a pool
+    // Shoe-aware picker: first try to narrow the pool to shoes whose (explicit
+     // or inferred) shoeType matches the occasion's preferred sub-types, then
+     // run the normal style/palette ranker on that narrowed pool. If nothing
+     // matches, fall back to the full pool so we never fail to place a shoe.
+    const shoeTypePrefs = preferredShoeTypes(occasion);
+    const pickShoe = (pool_: CatalogItem[]): CatalogItem | null => {
+      if (pool_.length === 0) return null;
+      const preferred = pool_.filter((s) => {
+        const t = inferShoeType(s);
+        return t ? shoeTypePrefs.includes(t) : false;
+      });
+      return stylePick(preferred.length > 0 ? preferred : pool_);
+    };
+
     const stylePick = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
       // Best: matches dominant style AND color palette
@@ -1094,7 +1137,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       addPiece(dress);
 
       const affordableShoes = shoes.filter((s) => s.price + total <= budgetMax * 0.9);
-      const shoe = stylePick(affordableShoes);
+      const shoe = pickShoe(affordableShoes);
       if (!shoe) continue;
       addPiece(shoe);
 
@@ -1123,7 +1166,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       addPiece(bottom);
 
       const affordableShoes = shoes.filter((s) => s.price + total <= budgetMax * 0.85);
-      const shoe = stylePick(affordableShoes);
+      const shoe = pickShoe(affordableShoes);
       if (!shoe) continue;
       addPiece(shoe);
 
