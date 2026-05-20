@@ -36,9 +36,11 @@ interface GenerateParams {
 // ─── Session dedup tracker ───────────────────────────────────────────────────
 // Module-level: persists across calls within an app session
 const _shownFingerprints = new Set<string>();
+const _shownNames = new Set<string>();
 
 export function resetShownLooks() {
   _shownFingerprints.clear();
+  _shownNames.clear();
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -125,9 +127,8 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
     { uri: uns("1508214751620-7661e8d2d24c", 600, 900) },  // women's drop culture
   ],
   "Luxury Streetwear_men": [
-    require("../assets/images/streetwear_hero_men.png"),   // custom hero — luxury hip-hop streetwear
-    require("../assets/images/streetwear_hero_men.png"),   // weighted heavier to appear more often
-    require("../assets/images/streetwear_hero_men.png"),
+    require("../assets/images/streetwear_hero_men.png"),         // luxury hip-hop streetwear
+    require("../assets/images/trends/luxury_streetwear_men.png"), // Times Square graphic-tee fit
     { uri: uns("1539008835657-9e8e9680c956", 600, 900) },  // men's urban outerwear
     { uri: uns("1624378441164-f3b5a4ec2a53", 600, 900) },  // men's streetwear
     { uri: uns("1485968579580-fc6f488d40d5", 600, 900) },  // men's hype fashion
@@ -303,10 +304,33 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
   ],
 };
 
+export function hasNamedLookImage(name: string): boolean {
+  return Boolean(NAMED_LOOK_IMAGES[name]);
+}
+
+// Specific named looks get a hand-picked, on-description editorial that overrides
+// the generic style pool. Both gender variants supplied so profile switching works.
+const NAMED_LOOK_IMAGES: Record<string, { men: number; women: number }> = {
+  "Downtown Edit": {
+    men: require("../assets/images/looks_named/downtown_edit_men.png"),
+    women: require("../assets/images/looks_named/downtown_edit_women.png"),
+  },
+  "Concrete Luxe": {
+    men: require("../assets/images/looks_named/concrete_luxe_men.png"),
+    women: require("../assets/images/looks_named/concrete_luxe_women.png"),
+  },
+  "The Culture": {
+    men: require("../assets/images/looks_named/the_culture_men.png"),
+    women: require("../assets/images/looks_named/the_culture_women.png"),
+  },
+};
+
 // Deterministic per look — same outfit fingerprint → same image every time.
 // Gender param ensures men see male models, women see female models.
-function getLookImage(style: string, seed: string, gender: string): { uri: string } | number {
+// When a look's name has a hand-picked override, use that instead of the pool.
+function getLookImage(style: string, seed: string, gender: string, name?: string): { uri: string } | number {
   const g = gender.toLowerCase() === "men" ? "men" : "women";
+  if (name && NAMED_LOOK_IMAGES[name]) return NAMED_LOOK_IMAGES[name][g];
   const pool =
     LOOK_IMAGE_POOLS[`${style}_${g}`] ??
     LOOK_IMAGE_POOLS[style] ??
@@ -626,7 +650,17 @@ function pickPaletteColor(itemColors: string[], paletteColors: string[]): string
 
 function generateLookName(occasion: string): string {
   const names = LOOK_NAMES[occasion] ?? LOOK_NAMES["Casual"];
-  return pick(names);
+  // Prefer names that haven't been shown yet — guarantees no duplicate names
+  // within a session until the pool is exhausted, then resets gracefully.
+  const fresh = names.filter((n) => !_shownNames.has(n));
+  if (fresh.length === 0) {
+    // Pool exhausted for this occasion — clear so future generations rotate.
+    for (const n of names) _shownNames.delete(n);
+  }
+  const pool = fresh.length > 0 ? fresh : names;
+  const chosen = pick(pool);
+  _shownNames.add(chosen);
+  return chosen;
 }
 
 function generateDescription(occasion: string): string {
@@ -1117,7 +1151,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       occasion,
       season: ["Spring", "Summer", "Autumn", "Winter", "All Season"][Math.floor(Math.random() * 5)],
       estimatedPrice: total,
-      image: getLookImage(dominantStyle, fp, genderKey),
+      image: getLookImage(dominantStyle, fp, genderKey, lookName),
       pieces,
       style: dominantStyle,
       tags,

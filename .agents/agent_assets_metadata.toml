@@ -300,3 +300,39 @@ id = "SLb3tuxb62u3sVzni59vF"
 uri = "file://artifacts/mobile/assets/images/trends/y2k_revival_women.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "-EFbO5P4e9qI1XiWzyKwL"
+uri = "file://artifacts/mobile/assets/images/looks_named/downtown_edit_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hU2MgNA1O02xRFiIHzh3d"
+uri = "file://artifacts/mobile/assets/images/looks_named/downtown_edit_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "tgxU6PTDu_TlRac7HUQ39"
+uri = "file://artifacts/mobile/assets/images/looks_named/concrete_luxe_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Q2v-TLMCziglT6He2uYiY"
+uri = "file://artifacts/mobile/assets/images/looks_named/concrete_luxe_women.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "qACqCdGbzYZqs6XfBSsOq"
+uri = "file://artifacts/mobile/assets/images/looks_named/the_culture_men.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Hrqj_4DLInKJE4PmRoN95"
+uri = "file://artifacts/mobile/assets/images/looks_named/the_culture_women.png"
+type = "image"
+title = "generated_image"

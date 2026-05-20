@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -62,6 +62,12 @@ export default function StyleScreen() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Look[]>([]);
   const [generateCount, setGenerateCount] = useState(0);
+
+  // Fresh dedup state every time the Style flow mounts — no duplicate names
+  // or images carrying over from a previous Style session.
+  useEffect(() => {
+    resetShownLooks();
+  }, []);
 
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
