@@ -32,7 +32,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { userProfile } = useApp();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const heroFor = (key: string) => pickStyleHero(key, userProfile.gender);
+  const heroFor = (key: string, seed?: string) => pickStyleHero(key, userProfile.gender, seed);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -89,7 +89,7 @@ export default function HomeScreen() {
             {LOOKS.map((look) => (
               <LookCard
                 key={look.id}
-                look={{ ...look, image: heroFor(look.style) ?? look.image }}
+                look={{ ...look, image: heroFor(look.style, look.id) ?? look.image }}
               />
             ))}
           </ScrollView>
@@ -134,7 +134,7 @@ export default function HomeScreen() {
             {TRENDS.slice(0, 4).map((trend) => (
               <TrendCard
                 key={trend.id}
-                trend={{ ...trend, image: heroFor(trend.name) ?? trend.image }}
+                trend={{ ...trend, image: heroFor(trend.name, trend.id) ?? trend.image }}
                 onPress={() => router.push("/(tabs)/explore")}
               />
             ))}
@@ -155,7 +155,7 @@ export default function HomeScreen() {
             {[...LOOKS].reverse().map((look) => (
               <LookCard
                 key={look.id}
-                look={{ ...look, image: heroFor(look.style) ?? look.image }}
+                look={{ ...look, image: heroFor(look.style, `fy-${look.id}`) ?? look.image }}
               />
             ))}
           </ScrollView>

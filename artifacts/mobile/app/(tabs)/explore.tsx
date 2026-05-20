@@ -20,6 +20,8 @@ import { TRENDS } from "@/constants/data";
 import { CELEBS } from "@/constants/celebrities";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { pickStyleHero } from "@/constants/heroImages";
+import { useApp } from "@/context/AppContext";
 
 const { width } = Dimensions.get("window");
 const CELEB_CARD_W = 130;
@@ -30,8 +32,10 @@ export default function ExploreScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { userProfile } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>("trends");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const heroFor = (name: string, seed?: string) => pickStyleHero(name, userProfile.gender, seed);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -80,7 +84,7 @@ export default function ExploreScreen() {
             {TRENDS.map((trend, i) => (
               <View key={trend.id} style={i % 2 === 0 ? styles.trendLeft : styles.trendRight}>
                 <TrendCard
-                  trend={trend}
+                  trend={{ ...trend, image: heroFor(trend.name, trend.id) ?? trend.image }}
                   onPress={() => router.push("/(tabs)/style")}
                   size={i < 2 ? "large" : "small"}
                 />

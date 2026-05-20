@@ -41,12 +41,23 @@ export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
   },
 };
 
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 export function pickStyleHero(
   styleOrName: string,
-  gender: string
+  gender: string,
+  seed?: string
 ): ImageSourcePropType | null {
   const entry = STYLE_HERO_IMAGES[styleOrName];
   if (!entry) return null;
-  const g = gender.toLowerCase() === "men" ? "men" : "women";
-  return entry[g];
+  const g = gender.toLowerCase();
+  if (g === "men") return entry.men;
+  if (g === "women") return entry.women;
+  // Unisex / anything else → alternate per seed so the grid shows both genders
+  const pick = hashString(seed ?? styleOrName) % 2 === 0 ? "men" : "women";
+  return entry[pick];
 }
