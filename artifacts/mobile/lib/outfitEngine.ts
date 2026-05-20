@@ -7,6 +7,7 @@
  */
 
 import type { Look, OutfitPiece } from "@/constants/data";
+import { isBadUnsId } from "@/constants/badImageIds";
 import { CATALOG_EXTRAS } from "./catalogExtras";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -24,7 +25,9 @@ export interface CatalogItem {
   occasions: string[];
   genders: Array<"women" | "men" | "unisex">;
   colors: string[];
-  imageUrl: string;
+  // Optional: a denylisted Unsplash id resolves to undefined via uns(),
+  // and downstream UI (ResilientImage) renders the editorial fallback tile.
+  imageUrl?: string;
   purchaseUrl: string;
   // ── Real-product enrichment (preferred when present) ──────────────────────
   // productImageUrl: a live photo of the actual item from a brand/retailer CDN.
@@ -56,7 +59,11 @@ export function resetShownLooks() {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function uns(id: string, w = 480, h = 680) {
+function uns(id: string, w = 480, h = 680): string | undefined {
+  // Visual-audit denylist: see constants/badImageIds.ts. Blocked IDs return
+  // undefined so the look-detail ResilientImage renders the editorial
+  // brand-monogram fallback instead of a wrong/broken thumbnail.
+  if (isBadUnsId(id)) return undefined;
   return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&auto=format&q=80`;
 }
 
@@ -521,7 +528,10 @@ function getLookImage(style: string, seed: string, gender: string, name?: string
 // ─── Per-category piece image pools — varies by item id so same category ─────
 //     items all show different thumbnail photos in the detail screen
 
-const PIECE_IMAGE_POOLS: Record<string, string[]> = {
+// Pools contain `string | undefined` entries because `uns()` may return
+// undefined for denylisted IDs. `getPieceImage` filters undefineds before
+// indexing, so consumers receive either a real URL or undefined (→ fallback).
+const PIECE_IMAGE_POOLS: Record<string, Array<string | undefined>> = {
   top: [
     uns("1503342217505-b0a15ec3261c"), uns("1521572163474-6864f9cf17ab"),
     uns("1558618666-fcd25c85cd64"),    uns("1525507119028-ed4c629a60a3"),
@@ -644,7 +654,7 @@ const PIECE_IMAGE_POOLS: Record<string, string[]> = {
   ],
 };
 
-function getPieceImage(category: string, itemId: string): string {
+function getPieceImage(category: string, itemId: string): string | undefined {
   // Route by item ID prefix for contextually matched imagery
   const id = itemId.toLowerCase();
   let poolKey = category;
@@ -661,10 +671,10 @@ function getPieceImage(category: string, itemId: string): string {
   else if (id.startsWith("figs_t")) poolKey = "scrub_top";
   else if (id.startsWith("figs_b")) poolKey = "scrub_bottom";
 
-  const pool = PIECE_IMAGE_POOLS[poolKey] ?? PIECE_IMAGE_POOLS[category] ?? [
-    uns("1507003211169-0a1dd7228f2d"),
-    uns("1515886657613-9f3515b0c78f"),
-  ];
+  const rawPool = PIECE_IMAGE_POOLS[poolKey] ?? PIECE_IMAGE_POOLS[category] ?? [];
+  // Strip denylisted/undefined entries so we never index into a bad slot.
+  const pool = rawPool.filter((u): u is string => typeof u === "string");
+  if (pool.length === 0) return undefined;
   return pool[hashStr(itemId) % pool.length];
 }
 
