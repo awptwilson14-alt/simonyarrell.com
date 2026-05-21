@@ -14,7 +14,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -24,6 +24,23 @@ import { AppProvider } from "@/context/AppContext";
 import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
 
 SplashScreen.preventAutoHideAsync();
+
+// Web-only: expo-font loads Google Fonts via `fontfaceobserver`, which
+// rejects after 6s if the CDN is slow / behind a proxy / blocked by CORS.
+// `useFonts` already returns the [loaded, error] tuple so we render the
+// app with system-font fallbacks on timeout — but fontfaceobserver leaks
+// the rejection out of its promise chain, and React Native Web's LogBox
+// surfaces it as a red "Uncaught Error" overlay that blocks the UI.
+// Swallow ONLY that specific rejection so genuine errors still surface.
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  window.addEventListener("unhandledrejection", (event) => {
+    const msg =
+      (event.reason && (event.reason.message || String(event.reason))) || "";
+    if (typeof msg === "string" && msg.includes("timeout exceeded")) {
+      event.preventDefault();
+    }
+  });
+}
 
 const queryClient = new QueryClient();
 
