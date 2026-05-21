@@ -19,7 +19,7 @@ import { LookCard } from "@/components/LookCard";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldButton } from "@/components/GoldButton";
 import { MultiFilterChips } from "@/components/FilterChips";
-import { STYLE_CATEGORIES, BUDGETS, GENDERS } from "@/constants/data";
+import { STYLE_CATEGORIES, BUDGETS, GENDERS, TRENDS } from "@/constants/data";
 import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -158,9 +158,61 @@ export default function ProfileScreen() {
               {userProfile.gender} · Size {userProfile.size ?? "M"} · {userProfile.budget}
             </Text>
             {userProfile.favoriteStyles.length > 0 && (
-              <Text style={[styles.styleList, { color: colors.mutedForeground }]} numberOfLines={2}>
-                {userProfile.favoriteStyles.join(", ")}
-              </Text>
+              // Favorite styles as chips. When a favorite is a known TREND
+              // name (Old Money, Y2K Revival, etc.) the chip upgrades to a
+              // one-tap jump to /style with trendHint pre-loaded — same
+              // mechanism as batch 51, same visual vocab (trending-up +
+              // chevron) as the look-detail style pill (batch 52). Non-trend
+              // favorites stay as plain chips — no false navigational
+              // affordance. Flat-comma string was unreadable on long lists
+              // and threw away the natural call-to-action surface.
+              <View style={styles.favStyleRow}>
+                {userProfile.favoriteStyles.map((s) => {
+                  const isTrend = TRENDS.some((t) => t.name === s);
+                  if (!isTrend) {
+                    return (
+                      <View
+                        key={s}
+                        style={[styles.favStyleChip, { borderColor: colors.border }]}
+                      >
+                        <Text
+                          style={[styles.favStyleChipText, { color: colors.mutedForeground }]}
+                        >
+                          {s}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  return (
+                    <Pressable
+                      key={s}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        router.push({
+                          pathname: "/(tabs)/style",
+                          params: { trendHint: s },
+                        });
+                      }}
+                      style={({ pressed }) => [
+                        styles.favStyleChip,
+                        styles.favStyleChipTappable,
+                        {
+                          borderColor: colors.gold,
+                          backgroundColor: `${colors.gold}10`,
+                          opacity: pressed ? 0.85 : 1,
+                        },
+                      ]}
+                      hitSlop={6}
+                    >
+                      <Feather name="trending-up" size={9} color={colors.gold} />
+                      <Text style={[styles.favStyleChipText, { color: colors.gold }]}>
+                        {s}
+                      </Text>
+                      <Feather name="chevron-right" size={10} color={colors.gold} />
+                    </Pressable>
+                  );
+                })}
+              </View>
             )}
           </View>
           <Pressable
@@ -466,6 +518,18 @@ const styles = StyleSheet.create({
   name: { fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   styleTag: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 1 },
   styleList: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+  favStyleRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  favStyleChip: {
+    borderWidth: 0.5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  favStyleChipTappable: { flexDirection: "row", alignItems: "center", gap: 5 },
+  favStyleChipText: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.8,
+  },
   editBtn: { borderWidth: 0.5, borderRadius: 20, padding: 8 },
   statsRow: { flexDirection: "row", borderWidth: 0.5, borderRadius: 2 },
   topCelebChip: {
