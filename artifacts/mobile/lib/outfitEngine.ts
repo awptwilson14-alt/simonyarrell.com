@@ -1655,14 +1655,22 @@ export function generateLooks(params: GenerateParams): Look[] {
       }));
       const total = fallbackItems.reduce((s, i) => s + i.price, 0);
       const fp = fingerprint(pieces.map((p) => p.id));
+      // Generate the look name ONCE — passing it through to both the visible
+      // name and the image seed. Previously this called generateLookName twice,
+      // which (a) burned a second name from _shownNames per fallback look and
+      // (b) seeded the image with a name unrelated to the one shown on the card.
+      const fallbackName = generateLookName(occasion, fallbackStyle);
       looks.push({
         id: `gen_fallback_${Date.now()}`,
-        name: generateLookName(occasion, fallbackStyle),
+        name: fallbackName,
         description: generateDescription(occasion, fallbackStyle),
         occasion,
-        season: "All Season",
+        // Honor the style's season bias instead of hardcoding "All Season" —
+        // keeps the season tag aligned with the locked style identity (e.g.
+        // Vacation Luxe → Spring/Summer, Evening → Autumn/Winter).
+        season: pickSeasonForStyle(fallbackStyle),
         estimatedPrice: total,
-        image: getLookImage(fallbackStyle, fp, genderKey, generateLookName(occasion, fallbackStyle)),
+        image: getLookImage(fallbackStyle, fp, genderKey, fallbackName),
         pieces,
         style: fallbackStyle,
         tags: [occasion.toLowerCase(), fallbackPalette.name.toLowerCase(), pieces[0].brand.toLowerCase()],
