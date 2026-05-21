@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@expo-google-fonts/playfair-display": "^0.4.2",
+    "expo-audio": "^55.0.14",
     "expo-camera": "^55.0.18",
     "react-native-purchases": "^10.1.1"
   }

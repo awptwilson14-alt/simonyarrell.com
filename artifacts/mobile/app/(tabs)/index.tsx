@@ -18,6 +18,7 @@ import { LookCard } from "@/components/LookCard";
 import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
+import { HeroAudio } from "@/components/HeroAudio";
 import { LOOKS, TRENDS } from "@/constants/data";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebByName } from "@/lib/celebLookup";
@@ -107,6 +108,10 @@ export default function HomeScreen() {
             locations={[0, 0.3, 0.7, 1]}
             style={StyleSheet.absoluteFill}
           />
+          {/* Floating speaker toggle for the hero ambient track. Positioned
+              below the floating header (topPad + HEADER_HEIGHT + 8) so it
+              never overlaps the bell/profile icons in the top-right. */}
+          <HeroAudio top={topPad + HEADER_HEIGHT + 8} />
           <View style={styles.heroContent}>
             <Text style={styles.heroEyebrow}>AI CURATED LOOKS · INSPIRED BY ICONS</Text>
             <Text style={styles.heroHeadline}>Discover{"\n"}Your Signature{"\n"}Style</Text>
