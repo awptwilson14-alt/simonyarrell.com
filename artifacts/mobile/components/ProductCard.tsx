@@ -12,7 +12,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ResilientImage } from "@/components/ResilientImage";
 import { Product } from "@/constants/data";
-import { CELEBS } from "@/constants/celebrities";
+import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -32,7 +32,7 @@ export function ProductCard({ product }: ProductCardProps) {
   // existing pre-batch-31 behavior for unattributed saves).
   const sourceLook = product.lookId ? findLook(product.lookId) : undefined;
   const linkedCeleb = product.inspiredBy
-    ? CELEBS.find((c) => c.name === product.inspiredBy)
+    ? findCelebByName(product.inspiredBy)
     : undefined;
 
   const toggleSave = () => {

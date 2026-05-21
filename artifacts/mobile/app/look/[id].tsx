@@ -20,7 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
 import { LOOKS } from "@/constants/data";
-import { CELEBS } from "@/constants/celebrities";
+import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
@@ -156,7 +156,7 @@ export default function LookDetailScreen() {
             // the look→celeb edge of the loop). If unresolved (legacy data,
             // typo, etc) we fall back to a non-interactive label so the
             // attribution still shows correctly.
-            const linkedCeleb = CELEBS.find((c) => c.name === look.inspiredBy);
+            const linkedCeleb = findCelebByName(look.inspiredBy);
             const Inner = (
               <>
                 <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>

@@ -19,7 +19,8 @@ import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { LOOKS, TRENDS } from "@/constants/data";
-import { CELEBS } from "@/constants/celebrities";
+import { type CelebFull } from "@/constants/celebrities";
+import { findCelebByName } from "@/lib/celebLookup";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
 import { assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
@@ -80,10 +81,10 @@ export default function HomeScreen() {
     }
     return Array.from(counts.entries())
       .map(([name, count]) => {
-        const celeb = CELEBS.find((c) => c.name === name);
+        const celeb = findCelebByName(name);
         return celeb ? { celeb, count } : null;
       })
-      .filter((x): x is { celeb: typeof CELEBS[number]; count: number } => x !== null)
+      .filter((x): x is { celeb: CelebFull; count: number } => x !== null)
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
   })();

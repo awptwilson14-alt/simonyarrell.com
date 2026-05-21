@@ -20,7 +20,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { GoldButton } from "@/components/GoldButton";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { STYLE_CATEGORIES, BUDGETS, GENDERS } from "@/constants/data";
-import { CELEBS } from "@/constants/celebrities";
+import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -104,9 +104,7 @@ export default function ProfileScreen() {
   // Skips silently when no attributed saves exist OR when the top name no
   // longer matches a CELEBS entry (renamed/removed icon — defensive).
   const topCeleb = savedCelebs[0];
-  const topCelebRecord = topCeleb
-    ? CELEBS.find((c) => c.name === topCeleb.name)
-    : undefined;
+  const topCelebRecord = findCelebByName(topCeleb?.name);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

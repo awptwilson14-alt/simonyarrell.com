@@ -13,10 +13,10 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 import { Look } from "@/constants/data";
-import { CELEBS } from "@/constants/celebrities";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { pickStyleHero } from "@/constants/heroImages";
+import { findCelebByName } from "@/lib/celebLookup";
 
 // Last-resort fallbacks if the look's image source ever fails to load.
 // All current pools are local PNGs so this should be unreachable in practice,
@@ -97,9 +97,8 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
           // Resolve celeb record to tint the INSPIRED BY tag in the icon's
           // accentColor — visual continuity with batches 22/26/28/32/33/34.
           // Falls back to gold when the inspiredBy name isn't a CELEBS entry
-          // (legacy / removed icons). The same name-key attribution contract
-          // (`inspiredBy === celeb.name`) used everywhere else in the app.
-          const linked = CELEBS.find((c) => c.name === look.inspiredBy);
+          // (legacy / removed icons). Single-sourced via findCelebByName.
+          const linked = findCelebByName(look.inspiredBy);
           const tint = linked?.accentColor ?? colors.gold;
           return (
             <View

@@ -24,7 +24,8 @@ import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero } from "@/constants/heroImages";
 import { generateLooks, resetShownLooks, assignUniqueLookImages } from "@/lib/outfitEngine";
-import { CELEBS, type CelebFull } from "@/constants/celebrities";
+import { type CelebFull } from "@/constants/celebrities";
+import { findCelebById } from "@/lib/celebLookup";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48 - 12) / 2;
@@ -93,7 +94,7 @@ export default function StyleScreen() {
   // back doesn't silently re-apply the celeb brand bias.
   useEffect(() => {
     if (!celebrityId) return;
-    const celeb = CELEBS.find((c) => c.id === celebrityId);
+    const celeb = findCelebById(celebrityId);
     if (celeb) setActiveCeleb(celeb);
     // Deterministic set — when a celeb param arrives WITHOUT a look hint
     // (generic "GENERATE MY <CELEB> LOOK" CTA), explicitly clear any stale

@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
-import { CELEBS } from "@/constants/celebrities";
+import { findCelebById } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -30,7 +30,7 @@ export default function CelebrityDetailScreen() {
   const { isCelebritySaved, toggleCelebrity, savedLooks } = useApp();
   const [activeTab, setActiveTab] = useState<"story" | "looks" | "brands">("story");
 
-  const celeb = CELEBS.find((c) => c.id === id);
+  const celeb = findCelebById(id);
   if (!celeb) {
     return (
       <View style={[styles.notFound, { backgroundColor: colors.background }]}>
