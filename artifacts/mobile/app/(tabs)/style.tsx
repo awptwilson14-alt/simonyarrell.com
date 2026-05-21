@@ -194,6 +194,19 @@ export default function StyleScreen() {
               <Text style={[s.subtitle, { color: colors.mutedForeground }]}>
                 {selectedOccasion} · {selectedGender} · {selectedBudget}
               </Text>
+              {activeCeleb && (
+                <View
+                  style={[
+                    s.inspiredPill,
+                    { borderColor: activeCeleb.accentColor, backgroundColor: activeCeleb.accentColor + "1A" },
+                  ]}
+                >
+                  <Feather name="star" size={10} color={activeCeleb.accentColor} />
+                  <Text style={[s.inspiredPillText, { color: activeCeleb.accentColor }]}>
+                    INSPIRED BY {activeCeleb.name.toUpperCase()}
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </View>
@@ -316,10 +329,14 @@ export default function StyleScreen() {
           <View style={s.section}>
             {loading && results.length === 0 ? (
               <View style={s.loadingBox}>
-                <ActivityIndicator color={colors.gold} size="large" />
-                <Text style={[s.loadingTitle, { color: colors.foreground }]}>Curating your looks...</Text>
+                <ActivityIndicator color={activeCeleb?.accentColor ?? colors.gold} size="large" />
+                <Text style={[s.loadingTitle, { color: colors.foreground }]}>
+                  {activeCeleb ? `Channeling ${activeCeleb.name.split(" ")[0]}...` : "Curating your looks..."}
+                </Text>
                 <Text style={[s.loadingText, { color: colors.mutedForeground }]}>
-                  Consulting {SOURCE_COUNT} premium brands
+                  {activeCeleb
+                    ? `Pulling from ${activeCeleb.signatureBrands.slice(0, 3).join(", ")} & more`
+                    : `Consulting ${SOURCE_COUNT} premium brands`}
                 </Text>
                 <View style={s.loadingMeta}>
                   <Text style={[s.loadingMetaText, { color: "rgba(198,167,94,0.6)" }]}>
@@ -379,6 +396,8 @@ const s = StyleSheet.create({
   headerBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   title: { fontSize: 36, fontFamily: "PlayfairDisplay_700Bold", lineHeight: 44, letterSpacing: -0.3 },
   subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  inspiredPill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 0.5, paddingHorizontal: 10, paddingVertical: 5, marginTop: 6 },
+  inspiredPillText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
 
   section: { gap: 24 },
 
