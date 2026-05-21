@@ -59,6 +59,16 @@ export default function ShopScreen() {
   const { savedProducts } = useApp();
 
   const tierBrands = getBrandsByTier(activeTier);
+  // Per-tier counts powering inline chip badges. Single pass over BRANDS
+  // (vs filtering per chip) keeps the row O(n+k) instead of O(n·k). Same
+  // chip-count pattern shipped to closet category chips in batch 47 — both
+  // surfaces now communicate distribution at a glance so the user knows
+  // what they're stepping into BEFORE tapping a tier.
+  const tierBrandCounts = (() => {
+    const m = new Map<string, number>();
+    for (const b of BRANDS) m.set(b.tier, (m.get(b.tier) ?? 0) + 1);
+    return m;
+  })();
   const accent = TIER_ACCENT[activeTier];
 
   // Saved products carrying celeb attribution — the only honest source of
@@ -164,6 +174,17 @@ export default function ShopScreen() {
                       ]}
                     >
                       {tier.label.toUpperCase()}
+                      <Text
+                        style={[
+                          styles.tierChipCount,
+                          {
+                            color: active ? tierAccent : colors.mutedForeground,
+                            opacity: active ? 0.75 : 0.55,
+                          },
+                        ]}
+                      >
+                        {"  "}{tierBrandCounts.get(tier.id) ?? 0}
+                      </Text>
                     </Text>
                   </Pressable>
                 );
@@ -417,6 +438,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Inter_700Bold",
     letterSpacing: 1.5,
+  },
+  tierChipCount: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
   },
   tierHeader: {
     flexDirection: "row",
