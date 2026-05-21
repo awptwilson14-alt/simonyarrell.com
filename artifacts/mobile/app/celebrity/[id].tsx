@@ -20,6 +20,7 @@ import { useColors } from "@/hooks/useColors";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { LookCard } from "@/components/LookCard";
+import { TRENDS } from "@/constants/data";
 
 const { width, height } = Dimensions.get("window");
 
@@ -121,13 +122,56 @@ export default function CelebrityDetailScreen() {
         </View>
 
         {/* ── Style pill ── */}
+        {/* When celeb.style exactly matches a TREND name (e.g. Hailey
+            Bieber → "Clean Minimal", ASAP Rocky → "Luxury Streetwear"), the
+            style chip upgrades to a one-tap jump to /style with trendHint
+            pre-loaded — same handoff as LookCard styleTag (batch 68) and
+            look-detail style pill (batch 52). Fail-closed gate: 7/9 celebs
+            today have close-but-not-equal styles ("Y2K Streetwear" vs
+            "Y2K Revival", "Old Money Indie" vs "Old Money") and stay as
+            plain chips rather than promising a destination we can't honor.
+            No fuzzy matching — silent mismatches would be worse than no
+            affordance. Distinct from accentColor (used throughout this page
+            for celeb identity) — the trend handoff stays in the celeb's
+            accent palette so it reads as part of the hero, not as a foreign
+            element. Chevron-right + selection haptic = same vocab as the
+            other trend handoffs across the app. */}
         <View style={[styles.stylePillRow, { borderBottomColor: colors.border }]}>
-          <View style={[styles.styleTag, { backgroundColor: celeb.accentColor + "22", borderColor: celeb.accentColor }]}>
-            <Feather name="star" size={10} color={celeb.accentColor} />
-            <Text style={[styles.styleTagText, { color: celeb.accentColor }]}>
-              {celeb.style.toUpperCase()}
-            </Text>
-          </View>
+          {TRENDS.some((t) => t.name === celeb.style) ? (
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push({
+                  pathname: "/(tabs)/style",
+                  params: { trendHint: celeb.style },
+                });
+              }}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`Explore ${celeb.style} trend`}
+              style={({ pressed }) => [
+                styles.styleTag,
+                {
+                  backgroundColor: celeb.accentColor + "22",
+                  borderColor: celeb.accentColor,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Feather name="star" size={10} color={celeb.accentColor} />
+              <Text style={[styles.styleTagText, { color: celeb.accentColor }]}>
+                {celeb.style.toUpperCase()}
+              </Text>
+              <Feather name="chevron-right" size={11} color={celeb.accentColor} />
+            </Pressable>
+          ) : (
+            <View style={[styles.styleTag, { backgroundColor: celeb.accentColor + "22", borderColor: celeb.accentColor }]}>
+              <Feather name="star" size={10} color={celeb.accentColor} />
+              <Text style={[styles.styleTagText, { color: celeb.accentColor }]}>
+                {celeb.style.toUpperCase()}
+              </Text>
+            </View>
+          )}
           {celeb.vibes.slice(0, 2).map((v) => (
             <View key={v} style={[styles.vibeTag, { borderColor: colors.border }]}>
               <Text style={[styles.vibeTagText, { color: colors.mutedForeground }]}>
