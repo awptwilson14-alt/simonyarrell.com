@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -56,6 +56,33 @@ export default function ShopScreen() {
   const [mainTab, setMainTab] = useState<MainTab>("brands");
   const [activeTier, setActiveTier] = useState<BrandTier>("ultra-luxury");
   const [expandedBrand, setExpandedBrand] = useState<string | null>(null);
+
+  // Brand-handoff from external surfaces (closet WARDROBE SIGNATURE, batch 62).
+  // Case-insensitive lookup since closet items are user-entered ("Gucci")
+  // while BRANDS catalog uses canonical casing ("GUCCI"). On a hit: pin the
+  // mainTab to brands, set the matching tier, expand the brand. Clear the
+  // param via setParams after consuming so a re-render doesn't re-fire the
+  // effect — same snapshot-then-clear pattern the /style screen uses for
+  // celebrity/trendHint params (batches 51/52).
+  const { brand: brandParam } = useLocalSearchParams<{ brand?: string | string[] }>();
+  React.useEffect(() => {
+    if (!brandParam) return;
+    // useLocalSearchParams can return string | string[] for repeated keys.
+    // We only handle the single-value case; arrays are ambiguous intent here.
+    const name = Array.isArray(brandParam) ? brandParam[0] : brandParam;
+    if (!name) return;
+    const match = BRANDS.find((b) => b.name.toLowerCase() === name.toLowerCase());
+    if (match) {
+      setMainTab("brands");
+      setActiveTier(match.tier);
+      // Expansion state is keyed by brand.id (matches the interactive tap
+      // handler in the brand drawer below). Passing match.name would land
+      // the user on the right tier but leave the brand card collapsed —
+      // architect-flagged in batch 62 review.
+      setExpandedBrand(match.id);
+    }
+    router.setParams({ brand: undefined });
+  }, [brandParam, router]);
   // Shop products tab trend filter — ninth surface in the trend-hint loop
   // (batches 50/51/52/53/54/55/56/58/60 + this). Closes the asymmetry where
   // saved products could be filtered by trend (profile, batch 60) but the

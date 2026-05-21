@@ -205,18 +205,36 @@ export default function ClosetScreen() {
 
         {/* Wardrobe Signature — derived intel about the user's closet shape.
             Suppressed for sparse closets (<3 items) so it doesn't read as
-            speculative. Tapping does nothing — purely an editorial overview. */}
+            speculative. MOST WORN brand is tappable (batch 62) → jumps to
+            shop with that brand pre-expanded inside its tier; closes a clear
+            dead-end where the user's strongest closet signal had no follow-
+            through. Palette stays passive — colors aren't navigable today
+            (no /shop?color=X surface). chevron-right + gold hover state
+            communicate the navigable affordance without disturbing the
+            editorial overview feel of the card. */}
         {signature && (
           <View style={[styles.signatureCard, { borderColor: colors.gold + "40", backgroundColor: colors.card }]}>
             <Text style={[styles.signatureLabel, { color: colors.gold }]}>WARDROBE SIGNATURE</Text>
             <View style={styles.signatureRow}>
               {signature.brand && (
-                <View style={styles.signatureBlock}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push({
+                      pathname: "/(tabs)/shop",
+                      params: { brand: signature.brand },
+                    });
+                  }}
+                  style={({ pressed }) => [styles.signatureBlock, { opacity: pressed ? 0.6 : 1 }]}
+                >
                   <Text style={[styles.signatureKey, { color: colors.mutedForeground }]}>MOST WORN</Text>
-                  <Text style={[styles.signatureVal, { color: colors.foreground }]} numberOfLines={1}>
-                    {signature.brand}
-                  </Text>
-                </View>
+                  <View style={styles.signatureBrandRow}>
+                    <Text style={[styles.signatureVal, { color: colors.gold }]} numberOfLines={1}>
+                      {signature.brand}
+                    </Text>
+                    <Feather name="chevron-right" size={14} color={colors.gold} />
+                  </View>
+                </Pressable>
               )}
               {signature.colors.length > 0 && (
                 <View style={styles.signatureBlock}>
@@ -333,6 +351,7 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, textAlign: "center", maxWidth: 280 },
   closetActions: { marginTop: 8 },
   signatureCard: { borderWidth: 0.5, borderRadius: 2, padding: 16, gap: 12 },
+  signatureBrandRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   signatureLabel: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   signatureRow: { flexDirection: "row", gap: 24 },
   signatureBlock: { gap: 6, flex: 1 },
