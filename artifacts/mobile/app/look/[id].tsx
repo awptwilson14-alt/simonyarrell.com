@@ -20,6 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
 import { LOOKS, TRENDS } from "@/constants/data";
+import { BRANDS } from "@/constants/brands";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
@@ -41,6 +42,25 @@ export default function LookDetailScreen() {
   const [panel, setPanel] = useState<PanelView>("details");
 
   const look = findLook(id ?? "");
+  // Batch 63 — extend the batch-62 closet→shop brand handoff to look-detail
+  // piece brands. Build a lowercased name set once per render for O(1)
+  // membership checks (BRANDS is ~100 entries; useMemo deps are stable).
+  // Look pieces include collabs and variants ("Nike x Off-White", "Ralph
+  // Lauren Purple Label") that intentionally won't match — we fail closed
+  // and render those as plain text rather than risk false positives from
+  // substring matching. Clean brand strings ("The Row", "Bottega Veneta",
+  // "Gucci") match exactly and become tappable.
+  const brandCatalog = React.useMemo(
+    () => new Set(BRANDS.map((b) => b.name.toLowerCase())),
+    []
+  );
+  const goShopBrand = React.useCallback(
+    (b: string) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.push({ pathname: "/(tabs)/shop", params: { brand: b } });
+    },
+    [router]
+  );
   // Context-aware related strip with a four-tier waterfall:
   //   1. SAME ICON (savedLooks) — when the current look has inspiredBy, other
   //      saved looks channeling the same celeb are the strongest "more like
@@ -300,7 +320,18 @@ export default function LookDetailScreen() {
                   />
                 </View>
                 <View style={styles.pieceInfo}>
-                  <Text style={[styles.pieceBrand, { color: colors.gold }]}>{piece.brand.toUpperCase()}</Text>
+                  {brandCatalog.has(piece.brand.toLowerCase()) ? (
+                    <Pressable
+                      onPress={() => goShopBrand(piece.brand)}
+                      hitSlop={6}
+                      style={({ pressed }) => [styles.brandLinkRow, { opacity: pressed ? 0.6 : 1 }]}
+                    >
+                      <Text style={[styles.pieceBrand, { color: colors.gold }]}>{piece.brand.toUpperCase()}</Text>
+                      <Feather name="chevron-right" size={11} color={colors.gold} />
+                    </Pressable>
+                  ) : (
+                    <Text style={[styles.pieceBrand, { color: colors.gold }]}>{piece.brand.toUpperCase()}</Text>
+                  )}
                   <Text style={[styles.pieceName, { color: colors.foreground }]}>{piece.name}</Text>
                   <Text style={[styles.pieceCategory, { color: colors.mutedForeground }]}>{piece.category} · {piece.color}</Text>
                 </View>
@@ -354,9 +385,29 @@ export default function LookDetailScreen() {
 
                   <View style={styles.shopInfo}>
                     <View style={styles.shopBrandRow}>
-                      <Text style={[styles.shopBrand, { color: colors.gold }]}>
-                        {piece.brand.toUpperCase()}
-                      </Text>
+                      {brandCatalog.has(piece.brand.toLowerCase()) ? (
+                        // Nested Pressable: outer row handles purchase URL,
+                        // this inner handles brand→shop handoff. RN's
+                        // Pressable doesn't bubble when the inner handles
+                        // the tap (same pattern as the heart-save Pressable
+                        // a few lines below). hitSlop kept tight so the
+                        // outer purchase intent still wins for most of the
+                        // row's surface area.
+                        <Pressable
+                          onPress={() => goShopBrand(piece.brand)}
+                          hitSlop={4}
+                          style={({ pressed }) => [styles.brandLinkRow, { opacity: pressed ? 0.6 : 1 }]}
+                        >
+                          <Text style={[styles.shopBrand, { color: colors.gold }]}>
+                            {piece.brand.toUpperCase()}
+                          </Text>
+                          <Feather name="chevron-right" size={11} color={colors.gold} />
+                        </Pressable>
+                      ) : (
+                        <Text style={[styles.shopBrand, { color: colors.gold }]}>
+                          {piece.brand.toUpperCase()}
+                        </Text>
+                      )}
                       {piece.signature ? (
                         <View style={styles.sigBadge}>
                           <Feather name="star" size={8} color={colors.gold} />
@@ -610,6 +661,7 @@ const styles = StyleSheet.create({
   pieceDot: { width: 18, height: 18, borderRadius: 9 },
   pieceInfo: { flex: 1, gap: 3 },
   pieceBrand: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  brandLinkRow: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start" },
   pieceName: { fontSize: 13, fontFamily: "Inter_500Medium", lineHeight: 19 },
   pieceCategory: { fontSize: 11, fontFamily: "Inter_400Regular" },
   piecePrice: { fontSize: 15, fontFamily: "Inter_700Bold" },
