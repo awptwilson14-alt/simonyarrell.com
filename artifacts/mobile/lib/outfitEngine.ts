@@ -875,10 +875,22 @@ function pickPaletteForStyle(style: string): { name: string; colors: string[] } 
 // "{occasion} · {season}". Styles not listed get the full season pool.
 const ALL_SEASONS = ["Spring", "Summer", "Autumn", "Winter", "All Season"] as const;
 const STYLE_SEASON_BIAS: Record<string, readonly string[]> = {
-  "Vacation Luxe": ["Spring", "Summer", "All Season"],
-  "Y2K Revival":   ["Spring", "Summer", "All Season"],
-  "Old Money":     ["Autumn", "Winter", "All Season", "Spring"],
-  Techwear:        ["Autumn", "Winter", "All Season"],
+  "Vacation Luxe":     ["Spring", "Summer", "All Season"],
+  "Y2K Revival":       ["Spring", "Summer", "All Season"],
+  "Old Money":         ["Autumn", "Winter", "All Season", "Spring"],
+  Techwear:            ["Autumn", "Winter", "All Season"],
+  // Streetwear leans cooler — hoodies, layers, leather. Summer reads off-brand.
+  "Luxury Streetwear": ["Autumn", "Winter", "Spring", "All Season"],
+  // Architectural minimalism is season-agnostic but reads strongest in cooler tones.
+  "Clean Minimal":     ["All Season", "Autumn", "Winter", "Spring"],
+  // Dramatic volume + velvet/leather rarely scan as "Summer" on an editorial.
+  "Avant-garde":       ["Autumn", "Winter", "All Season"],
+  // Tailored wool/suiting — never tag as "Summer" beach look.
+  Business:            ["Autumn", "Winter", "Spring", "All Season"],
+  // Black-tie/velvet evening — overwhelmingly Autumn/Winter coded.
+  Evening:             ["Autumn", "Winter", "All Season"],
+  // Formal gowns/tuxedos — same cool-weather + all-season weighting.
+  Formal:              ["Autumn", "Winter", "All Season", "Spring"],
 };
 
 function pickSeasonForStyle(style: string): string {
@@ -931,6 +943,36 @@ const STYLE_LOOK_NAMES: Record<string, string[]> = {
     "Architectural Drama", "Beyond Form", "Avant Hour", "The Manifesto",
     "Wearable Art", "Couture Edge",
   ],
+  "Luxury Streetwear": [
+    "The Drop", "Block Royalty", "Concrete Couture", "Downtown Edit",
+    "The Culture", "Street Archives", "Heritage Hype", "Off-Block Luxe",
+    "City Frequency", "Premium Drip",
+  ],
+  "Y2K Revival": [
+    "Millennium Glow", "Mall Couture", "Butterfly Hour", "Low-Rise Royalty",
+    "Crystal Mesh", "Sparkle Decade", "The Throwback", "Disco Reboot",
+    "Pop Princess", "Frosted Era",
+  ],
+  "Vacation Luxe": [
+    "Côte d'Azur", "Amalfi Hour", "Riviera Royalty", "Yacht Club",
+    "Bougainvillea", "Salt & Linen", "Capri Afternoon", "Mediterranean Edit",
+    "Sun-Drenched", "Resort Money",
+  ],
+  Evening: [
+    "Noir Elegance", "Midnight Garden", "The Velvet Hour", "Soirée Supreme",
+    "Candlelit Allure", "Starlit Glamour", "After Dark Luxe", "The Black Pearl",
+    "Opulent Evening", "Champagne Hour",
+  ],
+  Business: [
+    "Corner Office", "Boardroom Presence", "Executive Edit", "The Power Play",
+    "Quiet Authority", "C-Suite", "The Negotiator", "Tailored Command",
+    "Dressed for Impact", "The Principal",
+  ],
+  Formal: [
+    "The Black Tie", "White Tie & Tails", "Grande Ceremony", "Gala Royale",
+    "The Tuxedo Edit", "Floor-Length Moment", "Couture Formality",
+    "Champagne & Silk", "The Invitation", "Old-World Formality",
+  ],
 };
 
 function generateLookName(occasion: string, style?: string): string {
@@ -982,6 +1024,48 @@ const STYLE_LOOK_DESCRIPTIONS: Record<string, string[]> = {
     "Form pushed past function. The room reorganizes around it.",
     "Conceptual cuts, dramatic volume, couture-edge fearlessness.",
     "Dressed like a manifesto. The rest of the room is footnotes.",
+  ],
+  "Luxury Streetwear": [
+    "Heritage logos, fresh-out-the-box energy — the street is the runway.",
+    "Premium drip engineered for concrete. Every label earns its place.",
+    "Block-to-runway crossover — high fashion, higher altitude.",
+    "Hoodies cut like couture, sneakers chosen like jewelry.",
+    "Where the culture meets the atelier. Loud on purpose, never accidental.",
+  ],
+  "Y2K Revival": [
+    "Mall couture reborn — sparkle, mesh, and a low-rise renaissance.",
+    "Butterflies, crystal, and the unapologetic shine of the 2000s.",
+    "Pop princess energy — every surface catches light, on purpose.",
+    "Frosted, glossed, and entirely too much. Exactly the point.",
+    "Disco reboot meets early-aughts mall — maximalism, glittered.",
+  ],
+  "Vacation Luxe": [
+    "Linen, salt air, and the soft authority of money on holiday.",
+    "Dressed like the rosé is cold and the schedule is short.",
+    "Riviera-light — gold trim, white cotton, and sun on bare skin.",
+    "Yacht-to-villa wardrobe — effortless, untucked, entirely considered.",
+    "Bougainvillea hours — Mediterranean ease cut in silk and crisp linen.",
+  ],
+  Evening: [
+    "Candlelit confidence — velvet, silk, and the perfect amount of drama.",
+    "Black tie reborn — opulent, restrained, impossible to look away from.",
+    "Dressed for an evening that should never end.",
+    "Noir glamour — the room dims so the look can speak.",
+    "Champagne hour distilled into a silhouette.",
+  ],
+  Business: [
+    "Authority cut and pressed — the suit speaks before you do.",
+    "Boardroom power, dressed in impeccable restraint.",
+    "Executive tailoring with nothing left to negotiate.",
+    "Sharp shoulders, precise lapels, the quiet language of command.",
+    "Corner-office uniform — proven, polished, entirely unbothered.",
+  ],
+  Formal: [
+    "Black tie is a promise. This look keeps it.",
+    "Floor-length, precision-cut, and impossible to ignore.",
+    "White-tie grandeur for the ceremonies that demand everything.",
+    "Heritage tailoring meets modern gala — every seam decided.",
+    "Old-world formality, modern presence. Dressed for the photographs.",
   ],
 };
 
