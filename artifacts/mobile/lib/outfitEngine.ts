@@ -45,6 +45,13 @@ interface GenerateParams {
   prompt?: string;
   favoriteStyles?: string[];
   count?: number;       // how many looks to generate (default 6)
+  // When the generation was triggered by tapping "GENERATE MY <CELEB> LOOK"
+  // on a celebrity profile, the celeb's signatureBrands list is forwarded
+  // here so the catalog picker can prefer those houses (mirrors batch 15's
+  // style-based brand bias). Celeb-unique styles (e.g. "Houston Hip-Hop")
+  // have no entry in STYLE_SIGNATURE_BRANDS, so this is the only way to
+  // make a Drake-look actually feel Drake-coded.
+  celebSignatureBrands?: string[];
 }
 
 // ─── Session dedup tracker ───────────────────────────────────────────────────
@@ -1404,7 +1411,7 @@ const STYLE_TAGS: Record<string, string[]> = {
 // ─── Core engine ──────────────────────────────────────────────────────────────
 
 export function generateLooks(params: GenerateParams): Look[] {
-  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6 } = params;
+  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [] } = params;
   const { max: budgetMax } = parseBudget(budget);
   const genderKey = gender.toLowerCase() as "women" | "men" | "unisex";
 
@@ -1494,8 +1501,12 @@ export function generateLooks(params: GenerateParams): Look[] {
     // the shop panel actually reflects the "SIGNATURE HOUSES" label shown on
     // the look detail. Empty for styles without a curated list (e.g. celeb-
     // unique styles), which makes the bias a no-op for those.
+    // Celebrity bias takes precedence: when the user tapped "GENERATE MY <CELEB>
+    // LOOK", the celeb's own signatureBrands lead the union so the picker
+    // prefers those over the generic style houses. Both layers fall through
+    // to the legacy ranker if no catalog item matches.
     const sigBrandList = getSignatureBrands(dominantStyle, 8);
-    const sigBrands = new Set<string>(sigBrandList);
+    const sigBrands = new Set<string>([...celebSignatureBrands, ...sigBrandList]);
 
     // Decide outfit structure
     const useDress =

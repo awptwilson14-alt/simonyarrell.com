@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero } from "@/constants/heroImages";
 import { generateLooks, resetShownLooks, assignUniqueLookImages } from "@/lib/outfitEngine";
+import { CELEBS, type CelebFull } from "@/constants/celebrities";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48 - 12) / 2;
@@ -52,6 +53,17 @@ export default function StyleScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userProfile, registerGeneratedLooks } = useApp();
+  // Optional celeb context — set when the user came from
+  // "GENERATE MY <CELEB> LOOK" on /celebrity/[id]. Drives the editorial
+  // brand bias inside generateLooks via celebSignatureBrands.
+  // Snapshotted to local state on mount so it survives within this Style
+  // session, then the route params are immediately cleared so the bias
+  // does NOT leak the next time the user opens the Style tab.
+  const { celebrity: celebrityId } = useLocalSearchParams<{
+    celebrity?: string;
+    celebName?: string;
+  }>();
+  const [activeCeleb, setActiveCeleb] = useState<CelebFull | undefined>(undefined);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [step, setStep] = useState<Step>("occasion");
@@ -68,6 +80,16 @@ export default function StyleScreen() {
   useEffect(() => {
     resetShownLooks();
   }, []);
+
+  // One-shot capture of the celeb route param. Snapshot into local state
+  // for this Style session, then clear the URL so navigating away and
+  // back doesn't silently re-apply the celeb brand bias.
+  useEffect(() => {
+    if (!celebrityId) return;
+    const celeb = CELEBS.find((c) => c.id === celebrityId);
+    if (celeb) setActiveCeleb(celeb);
+    router.setParams({ celebrity: undefined, celebName: undefined });
+  }, [celebrityId, router]);
 
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -96,6 +118,7 @@ export default function StyleScreen() {
           prompt,
           favoriteStyles: userProfile.favoriteStyles,
           count: 6,
+          celebSignatureBrands: activeCeleb?.signatureBrands,
         })
       ),
       new Promise((r) => setTimeout(r, 1800)),
@@ -114,6 +137,7 @@ export default function StyleScreen() {
     setPrompt("");
     setResults([]);
     setGenerateCount(0);
+    setActiveCeleb(undefined);
   };
 
   return (
