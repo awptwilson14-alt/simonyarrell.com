@@ -1770,6 +1770,65 @@ export function generateLooks(params: GenerateParams): Look[] {
   // When brandLock is set and the brand has no items in the required
   // categories, we skip the fallback entirely and return whatever looks
   // were generated (possibly empty) — an honest sparse result beats lying.
+  // Brand-lock safety net (batch 90). Guarantee ≥1 look whenever the locked
+  // brand has ANY catalog items for the user's gender. Relaxes occasion +
+  // price + style constraints, but KEEPS brand and gender locks intact —
+  // never wrong-brand, never wrong-gender. This makes the "ONLY {BRAND}"
+  // chip a true promise rather than producing an empty Curated Looks page
+  // for thinly-stocked houses.
+  if (looks.length === 0 && brandLock) {
+    const brandPool = CATALOG.filter(
+      (i) =>
+        i.brand === brandLock &&
+        (i.genders.includes(genderKey) || i.genders.includes("unisex")),
+    );
+    const bTop = brandPool.find((i) => i.category === "top");
+    const bBottom = brandPool.find((i) => i.category === "bottom");
+    const bShoe = brandPool.find((i) => i.category === "shoes");
+    const bDress = brandPool.find((i) => i.category === "dress");
+    const bOuter = brandPool.find((i) => i.category === "outerwear");
+    const bFb: CatalogItem[] = [];
+    if (bDress && bShoe) bFb.push(bDress, bShoe);
+    else if (bTop && bBottom && bShoe) bFb.push(bTop, bBottom, bShoe);
+    else if (bTop && bBottom) bFb.push(bTop, bBottom);
+    else if (bTop && bShoe) bFb.push(bTop, bShoe);
+    else if (bBottom && bShoe) bFb.push(bBottom, bShoe);
+    else if (bOuter && bBottom) bFb.push(bOuter, bBottom);
+    if (bFb.length >= 2) {
+      const bStyle = pick(occasionStyles);
+      const bPalette = pickPaletteForStyle(bStyle);
+      const sigSet = new Set(celebSignatureBrands ?? []);
+      const bPieces: OutfitPiece[] = bFb.map((item) => ({
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        price: item.price,
+        category: item.category,
+        color: pickPaletteColor(item.colors, bPalette.colors),
+        imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
+        purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
+        signature: sigSet.has(item.brand),
+      }));
+      const bTotal = bFb.reduce((s, i) => s + i.price, 0);
+      const bFp = fingerprint(bPieces.map((p) => p.id));
+      const bName = generateLookName(occasion, bStyle);
+      looks.push({
+        id: `gen_brandlock_fb_${Date.now()}`,
+        name: bName,
+        description: generateDescription(occasion, bStyle),
+        occasion,
+        inspiredBy: celebName,
+        season: pickSeasonForStyle(bStyle),
+        estimatedPrice: bTotal,
+        image: getLookImage(bStyle, bFp, genderKey, bName),
+        pieces: bPieces,
+        style: bStyle,
+        tags: [occasion.toLowerCase(), bPalette.name.toLowerCase(), bPieces[0].brand.toLowerCase()],
+        colorPalette: bPalette.name,
+      });
+    }
+  }
+
   if (looks.length === 0 && !brandLock) {
     const anyTop = CATALOG.find((i) => i.category === "top");
     const anyBottom = CATALOG.find((i) => i.category === "bottom");
