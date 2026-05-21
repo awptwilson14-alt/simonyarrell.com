@@ -18,6 +18,7 @@ import { CELEBS } from "@/constants/celebrities";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { LookCard } from "@/components/LookCard";
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,7 +27,7 @@ export default function CelebrityDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isCelebritySaved, toggleCelebrity } = useApp();
+  const { isCelebritySaved, toggleCelebrity, savedLooks } = useApp();
   const [activeTab, setActiveTab] = useState<"story" | "looks" | "brands">("story");
 
   const celeb = CELEBS.find((c) => c.id === id);
@@ -44,6 +45,14 @@ export default function CelebrityDetailScreen() {
   }
 
   const saved = isCelebritySaved(celeb.id);
+
+  // User's own savedLooks attributed to this celeb via inspiredBy === celeb.name
+  // (the source-of-truth key used across batches 22, 24, 25, 28, 32). saveLook
+  // prepends (`[look, ...prev]` in AppContext), so savedLooks is already
+  // newest-first — no reverse needed; filter preserves order. When empty, the
+  // YOUR LOOKS block doesn't render — keeps the LOOKS tab visually consistent
+  // for users who haven't generated yet.
+  const myLooksForCeleb = savedLooks.filter((l) => l.inspiredBy === celeb.name);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -176,6 +185,38 @@ export default function CelebrityDetailScreen() {
         {/* ── Looks tab ── */}
         {activeTab === "looks" && (
           <View style={styles.looksSection}>
+            {/* User's own saved looks attributed to this celeb. Personal
+                grounding rendered ABOVE the editorial iconic grid so the
+                user sees their own creations first. Tap → /look/[id]
+                (LookCard handles routing). Section hidden entirely when
+                no attributed saves exist. */}
+            {myLooksForCeleb.length > 0 && (
+              <View style={styles.mySavedBlock}>
+                <View style={styles.mySavedHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                      Your {celeb.name.split(" ")[0]} Looks
+                    </Text>
+                    <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+                      {myLooksForCeleb.length} saved · channeling this icon
+                    </Text>
+                  </View>
+                  <View style={[styles.mySavedCountBadge, { backgroundColor: celeb.accentColor }]}>
+                    <Feather name="star" size={10} color="#0B0B0C" />
+                    <Text style={styles.mySavedCountText}>{myLooksForCeleb.length}</Text>
+                  </View>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.mySavedScroll}
+                >
+                  {myLooksForCeleb.map((look) => (
+                    <LookCard key={look.id} look={look} width={170} />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
             <View style={styles.looksSectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
                 Signature Looks
@@ -506,6 +547,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 2,
+  },
+  mySavedBlock: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  mySavedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  mySavedCountBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 2,
+  },
+  mySavedCountText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: "#0B0B0C",
+  },
+  mySavedScroll: {
+    gap: 10,
+    paddingRight: 20,
   },
   lookGridCta: {
     flexDirection: "row",
