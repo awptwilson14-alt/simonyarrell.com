@@ -51,6 +51,19 @@ export default function ExploreScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const heroFor = (name: string, seed?: string) => pickStyleHero(name, userProfile.gender, seed);
 
+  // "Your Icons" — celebs the user has actually channeled, ranked by saved
+  // count desc. Stable secondary sort by celeb.id keeps ordering deterministic
+  // when two celebs have equal counts (avoids the avatar row reshuffling on
+  // every re-render). Capped at 6 — beyond that we want the user pulled into
+  // the full directory rather than scrolling a personalized rail.
+  const yourIcons = visibleCelebs
+    .filter((c) => (savedCountByCeleb.get(c.name) ?? 0) > 0)
+    .sort((a, b) => {
+      const diff = (savedCountByCeleb.get(b.name) ?? 0) - (savedCountByCeleb.get(a.name) ?? 0);
+      return diff !== 0 ? diff : a.id.localeCompare(b.id);
+    })
+    .slice(0, 6);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── Header ── */}
@@ -110,6 +123,61 @@ export default function ExploreScreen() {
         {/* ══════════════════ CELEBRITIES TAB ══════════════════ */}
         {activeTab === "celebrities" && (
           <View style={styles.celebSection}>
+            {/* YOUR ICONS — personalized rail of celebs the user has channeled.
+                Pinned above the generic "Style Icons" intro so returning users
+                see their own history first. Hidden silently for new users so
+                the original celeb-discovery flow is preserved. Tap routes to
+                /celebrity/[id] — same destination as the directory cards. */}
+            {yourIcons.length > 0 && (
+              <View style={styles.yourIconsBlock}>
+                <View style={styles.yourIconsHead}>
+                  <Text style={[styles.yourIconsLabel, { color: colors.gold }]}>
+                    YOUR ICONS
+                  </Text>
+                  <Text style={[styles.yourIconsMeta, { color: colors.mutedForeground }]}>
+                    {yourIcons.length} CHANNELED
+                  </Text>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.yourIconsScroll}
+                >
+                  {yourIcons.map((celeb) => {
+                    const count = savedCountByCeleb.get(celeb.name) ?? 0;
+                    return (
+                      <Pressable
+                        key={celeb.id}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                          router.push(`/celebrity/${celeb.id}`);
+                        }}
+                        style={({ pressed }) => [
+                          styles.yourIconAvatar,
+                          { opacity: pressed ? 0.82 : 1 },
+                        ]}
+                      >
+                        <View style={[styles.yourIconRing, { borderColor: celeb.accentColor }]}>
+                          <Image
+                            source={celeb.image}
+                            style={styles.yourIconImg}
+                            contentFit="cover"
+                            transition={250}
+                          />
+                        </View>
+                        <Text style={[styles.yourIconName, { color: colors.foreground }]} numberOfLines={1}>
+                          {celeb.name.split(" ")[0]}
+                        </Text>
+                        <Text style={[styles.yourIconCount, { color: celeb.accentColor }]}>
+                          {count} {count === 1 ? "look" : "looks"}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
             {/* Section header */}
             <View style={styles.celebHeader}>
               <Text style={[styles.celebHeaderTitle, { color: colors.foreground }]}>
@@ -307,6 +375,56 @@ const styles = StyleSheet.create({
 
   /* ── Celebrities ── */
   celebSection: { gap: 16 },
+  yourIconsBlock: { gap: 10 },
+  yourIconsHead: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+  },
+  yourIconsLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2,
+  },
+  yourIconsMeta: {
+    fontSize: 9,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 1.5,
+  },
+  yourIconsScroll: {
+    paddingHorizontal: 20,
+    gap: 14,
+    paddingRight: 30,
+  },
+  yourIconAvatar: {
+    width: 72,
+    alignItems: "center",
+    gap: 6,
+  },
+  yourIconRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1.5,
+    padding: 2,
+    overflow: "hidden",
+  },
+  yourIconImg: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 28,
+  },
+  yourIconName: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
+  },
+  yourIconCount: {
+    fontSize: 9,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 1,
+  },
   celebHeader: { gap: 6 },
   celebHeaderTitle: {
     fontSize: 24,
