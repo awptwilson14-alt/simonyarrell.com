@@ -23,6 +23,8 @@ import {
 } from "@/constants/brands";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { useApp } from "@/context/AppContext";
+import { findCelebByName } from "@/lib/celebLookup";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48) / 2;
@@ -54,9 +56,19 @@ export default function ShopScreen() {
   const [mainTab, setMainTab] = useState<MainTab>("brands");
   const [activeTier, setActiveTier] = useState<BrandTier>("ultra-luxury");
   const [expandedBrand, setExpandedBrand] = useState<string | null>(null);
+  const { savedProducts } = useApp();
 
   const tierBrands = getBrandsByTier(activeTier);
   const accent = TIER_ACCENT[activeTier];
+
+  // Saved products carrying celeb attribution — the only honest source of
+  // "icon-channeled shopping" intel. Generic shop saves leave inspiredBy
+  // undefined per the Product type comment in data.ts. Capped at 8 so the
+  // rail never dominates the products grid below.
+  const iconChanneled = savedProducts.filter((p) => p.inspiredBy).slice(0, 8);
+  // Resolve the unique celebs represented in the rail — used for the eyebrow
+  // count ("3 ICONS · 5 PIECES"). Set-of-names keeps the dedupe trivial.
+  const iconNames = new Set(iconChanneled.map((p) => p.inspiredBy!));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -288,11 +300,52 @@ export default function ShopScreen() {
 
         {/* ══════════════════════════════ PRODUCTS TAB ══════════════════ */}
         {mainTab === "products" && (
-          <View style={styles.productsSection}>
-            {PRODUCTS.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </View>
+          <>
+            {/* From Your Icons — surfaces saved products that carry
+                inspiredBy attribution. Hidden silently when empty so the
+                products subtab still leads with the full PRODUCTS grid for
+                new users; appears once the user has saved at least one
+                celeb-channeled product. Per-card celeb tinting is already
+                handled inside ProductCard (batch 35/36 chain). */}
+            {iconChanneled.length > 0 && (
+              <View style={styles.iconRail}>
+                <View style={styles.iconRailHead}>
+                  <Text style={[styles.iconRailLabel, { color: colors.gold }]}>
+                    FROM YOUR ICONS
+                  </Text>
+                  <Text style={[styles.iconRailMeta, { color: colors.mutedForeground }]}>
+                    {iconNames.size} {iconNames.size === 1 ? "ICON" : "ICONS"} · {iconChanneled.length} {iconChanneled.length === 1 ? "PIECE" : "PIECES"}
+                  </Text>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.iconRailScroll}
+                >
+                  {iconChanneled.map((product) => {
+                    // Resolve celeb for the tiny accent bar at the bottom of
+                    // each rail card. Falls back to gold when name can't be
+                    // resolved (defensive; matches LookCard fallback from
+                    // batch 35).
+                    const celeb = findCelebByName(product.inspiredBy);
+                    const accentColor = celeb?.accentColor ?? colors.gold;
+                    return (
+                      <View key={product.id} style={styles.iconRailCardWrap}>
+                        <ProductCard product={product} />
+                        <View style={[styles.iconRailAccent, { backgroundColor: accentColor }]} />
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
+            <View style={styles.productsSection}>
+              {PRODUCTS.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </View>
+          </>
         )}
       </ScrollView>
     </View>
@@ -484,5 +537,39 @@ const styles = StyleSheet.create({
   productsSection: {
     padding: 20,
     gap: 0,
+  },
+  iconRail: {
+    paddingTop: 18,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  iconRailHead: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+  },
+  iconRailLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2,
+  },
+  iconRailMeta: {
+    fontSize: 9,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 1.5,
+  },
+  iconRailScroll: {
+    paddingHorizontal: 20,
+    gap: 12,
+    paddingRight: 30,
+  },
+  iconRailCardWrap: {
+    width: 160,
+  },
+  iconRailAccent: {
+    height: 2,
+    marginTop: 8,
+    borderRadius: 1,
   },
 });
