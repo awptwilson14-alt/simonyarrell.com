@@ -40,6 +40,32 @@ export default function ClosetScreen() {
     (i) => activeCategory === "All" || i.category === activeCategory
   );
 
+  // Derived "wardrobe signature" — mode of brand and color across the full
+  // closet (NOT the active-category filter; signature should reflect the
+  // whole wardrobe, not whatever view the user is currently scoped to).
+  // Cheap O(n) reduction; closets are small so no memoization needed.
+  // "Unknown" brand is excluded — it's the placeholder for items added
+  // without a brand and shouldn't dominate the signature.
+  const signature = (() => {
+    if (closetItems.length < 3) return null;
+    const brandCount = new Map<string, number>();
+    const colorCount = new Map<string, number>();
+    for (const it of closetItems) {
+      if (it.brand && it.brand !== "Unknown") {
+        brandCount.set(it.brand, (brandCount.get(it.brand) ?? 0) + 1);
+      }
+      colorCount.set(it.color, (colorCount.get(it.color) ?? 0) + 1);
+    }
+    const topBrand = [...brandCount.entries()].sort((a, b) => b[1] - a[1])[0];
+    const topColors = [...colorCount.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    // Only render if we have either a real top brand OR enough color data.
+    // Empty signature would just be visual noise.
+    if (!topBrand && topColors.length === 0) return null;
+    return { brand: topBrand?.[0], colors: topColors.map(([c]) => c) };
+  })();
+
   const handleAdd = () => {
     if (!newName.trim()) return;
     addClosetItem({ name: newName.trim(), brand: newBrand.trim() || "Unknown", category: newCategory, color: newColor });
@@ -148,6 +174,38 @@ export default function ClosetScreen() {
           </View>
         )}
 
+        {/* Wardrobe Signature — derived intel about the user's closet shape.
+            Suppressed for sparse closets (<3 items) so it doesn't read as
+            speculative. Tapping does nothing — purely an editorial overview. */}
+        {signature && (
+          <View style={[styles.signatureCard, { borderColor: colors.gold + "40", backgroundColor: colors.card }]}>
+            <Text style={[styles.signatureLabel, { color: colors.gold }]}>WARDROBE SIGNATURE</Text>
+            <View style={styles.signatureRow}>
+              {signature.brand && (
+                <View style={styles.signatureBlock}>
+                  <Text style={[styles.signatureKey, { color: colors.mutedForeground }]}>MOST WORN</Text>
+                  <Text style={[styles.signatureVal, { color: colors.foreground }]} numberOfLines={1}>
+                    {signature.brand}
+                  </Text>
+                </View>
+              )}
+              {signature.colors.length > 0 && (
+                <View style={styles.signatureBlock}>
+                  <Text style={[styles.signatureKey, { color: colors.mutedForeground }]}>PALETTE</Text>
+                  <View style={styles.paletteRow}>
+                    {signature.colors.map((c) => (
+                      <View
+                        key={c}
+                        style={[styles.paletteDot, { backgroundColor: dotColor[c] ?? "#888", borderColor: colors.border }]}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Category Filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
           <View style={styles.chipRow}>
@@ -235,4 +293,12 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, textAlign: "center", maxWidth: 280 },
   closetActions: { marginTop: 8 },
+  signatureCard: { borderWidth: 0.5, borderRadius: 2, padding: 16, gap: 12 },
+  signatureLabel: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2 },
+  signatureRow: { flexDirection: "row", gap: 24 },
+  signatureBlock: { gap: 6, flex: 1 },
+  signatureKey: { fontSize: 9, fontFamily: "Inter_500Medium", letterSpacing: 1.5 },
+  signatureVal: { fontSize: 14, fontFamily: "Inter_600SemiBold", letterSpacing: 0.2 },
+  paletteRow: { flexDirection: "row", gap: 6, marginTop: 2 },
+  paletteDot: { width: 16, height: 16, borderRadius: 8, borderWidth: 0.5 },
 });
