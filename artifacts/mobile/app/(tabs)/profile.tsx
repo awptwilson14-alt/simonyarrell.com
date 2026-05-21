@@ -40,6 +40,11 @@ export default function ProfileScreen() {
   // name match. Auto-clears below when the active celeb is no longer present
   // in the saved list (e.g. user unsaved their last Drake-coded look).
   const [celebFilter, setCelebFilter] = useState<string | null>(null);
+  // Independent product-side celeb filter. Looks and products are filtered
+  // separately because a user channeling Audrey may have saved many looks
+  // but few inspiredBy products (or vice versa) — sharing one filter would
+  // silently empty the inactive section when switching tabs.
+  const [productCelebFilter, setProductCelebFilter] = useState<string | null>(null);
 
   // Derived list of distinct celebs that appear in saved looks, sorted by
   // descending count so the most-saved celeb leads. Drives the filter pills.
@@ -54,6 +59,21 @@ export default function ProfileScreen() {
       .map(([name, count]) => ({ name, count }));
   })();
 
+  // Same derivation as savedCelebs but over savedProducts — products carry
+  // inspiredBy when they came from a celeb-biased generation (batch 42
+  // FROM YOUR ICONS rail) or via the per-look shop drawer (line 360 in
+  // look/[id].tsx stamps look.inspiredBy onto each saved piece).
+  const savedProductCelebs = (() => {
+    const counts = new Map<string, number>();
+    for (const p of savedProducts) {
+      if (!p.inspiredBy) continue;
+      counts.set(p.inspiredBy, (counts.get(p.inspiredBy) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
+  })();
+
   // Auto-clear stale filter if its celeb no longer exists in saved looks
   // (e.g. user unsaved their last Drake-coded look). Effect, not render-time
   // setState, to avoid React's "Cannot update during render" anti-pattern.
@@ -62,10 +82,18 @@ export default function ProfileScreen() {
       setCelebFilter(null);
     }
   }, [celebFilter, savedCelebs]);
+  useEffect(() => {
+    if (productCelebFilter && !savedProductCelebs.some((c) => c.name === productCelebFilter)) {
+      setProductCelebFilter(null);
+    }
+  }, [productCelebFilter, savedProductCelebs]);
 
   const visibleSavedLooks = celebFilter
     ? savedLooks.filter((l) => l.inspiredBy === celebFilter)
     : savedLooks;
+  const visibleSavedProducts = productCelebFilter
+    ? savedProducts.filter((p) => p.inspiredBy === productCelebFilter)
+    : savedProducts;
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(userProfile.name);
   const [editGender, setEditGender] = useState(userProfile.gender);
@@ -348,11 +376,42 @@ export default function ProfileScreen() {
 
         {activeSection === "products" && (
           savedProducts.length > 0 ? (
-            <View style={styles.productsGrid}>
-              {savedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </View>
+            <>
+              {savedProductCelebs.length >= 2 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.celebFilterRow}
+                >
+                  {[{ name: null as string | null, count: savedProducts.length, label: "ALL" }, ...savedProductCelebs.map((c) => ({ name: c.name as string | null, count: c.count, label: c.name.toUpperCase() }))].map((c) => {
+                    const active = productCelebFilter === c.name;
+                    return (
+                      <Pressable
+                        key={c.name ?? "__all"}
+                        onPress={() => { Haptics.selectionAsync(); setProductCelebFilter(c.name); }}
+                        style={[
+                          styles.celebFilterChip,
+                          {
+                            borderColor: active ? colors.gold : colors.border,
+                            backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                          },
+                        ]}
+                      >
+                        {c.name && <Feather name="star" size={9} color={active ? colors.gold : colors.mutedForeground} />}
+                        <Text style={[styles.celebFilterText, { color: active ? colors.gold : colors.mutedForeground }]}>
+                          {c.label} · {c.count}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+              <View style={styles.productsGrid}>
+                {visibleSavedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </View>
+            </>
           ) : (
             <View style={styles.emptySection}>
               <Feather name="shopping-bag" size={32} color={colors.border} />
