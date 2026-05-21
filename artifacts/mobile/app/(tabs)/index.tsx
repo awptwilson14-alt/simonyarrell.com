@@ -137,7 +137,7 @@ export default function HomeScreen() {
           {/* Floating speaker toggle for the hero ambient track. Positioned
               below the floating header (topPad + HEADER_HEIGHT + 8) so it
               never overlaps the bell/profile icons in the top-right. */}
-          <HeroAudio top={topPad + HEADER_HEIGHT + 8} />
+          <HeroAudio top={topPad + HEADER_HEIGHT + 8} defaultMuted={false} />
           <View style={styles.heroContent}>
             <Text style={styles.heroEyebrow}>AI CURATED LOOKS · INSPIRED BY ICONS</Text>
             <Text style={styles.heroHeadline}>Discover{"\n"}Your Signature{"\n"}Style</Text>

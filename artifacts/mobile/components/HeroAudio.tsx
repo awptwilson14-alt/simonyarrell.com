@@ -106,10 +106,17 @@ function HeroAudioInner({
   // returning users see the correct state.
   useEffect(() => {
     let cancelled = false;
+    // Web browsers reject audible autoplay without a user gesture, so we
+    // must start muted on web regardless of intent. On native (iOS/Android)
+    // the app context allows immediate audible playback, so we honor
+    // `defaultMuted` at frame 1 — that's what eliminates the perceived
+    // "delay" returning users used to hear (audio used to start muted,
+    // then unmute only after the async AsyncStorage read resolved).
+    const startMuted = Platform.OS === "web" ? true : defaultMuted;
     try {
       player.loop = true;
-      player.muted = true;
       player.volume = 0.6;
+      player.muted = startMuted;
       player.play();
     } catch {
       // Defensive — autoplay rejection or platform quirk shouldn't crash
@@ -122,18 +129,16 @@ function HeroAudioInner({
         // raw === "true"  → user previously muted
         // raw === "false" → user previously unmuted
         const shouldBeMuted = raw === null ? defaultMuted : raw === "true";
-        if (!shouldBeMuted) {
-          setMuted(false);
-          try {
-            player.muted = false;
-            player.play();
-          } catch {
-            /* swallow — see above */
-          }
-        } else if (!muted) {
-          // Edge case: defaultMuted=false but saved pref is "true". Sync the
-          // UI state down to match (initial useState used defaultMuted).
-          setMuted(true);
+        // Always sync BOTH UI and player to the resolved preference —
+        // covers every case (first-launch agreeing with frame-1 intent,
+        // returning user who changed their mind, web overriding native
+        // intent back to muted-by-policy, etc).
+        setMuted(shouldBeMuted);
+        try {
+          player.muted = shouldBeMuted;
+          if (!shouldBeMuted) player.play();
+        } catch {
+          /* swallow — see above */
         }
       })
       .catch(() => {
@@ -142,9 +147,6 @@ function HeroAudioInner({
     return () => {
       cancelled = true;
     };
-    // muted intentionally omitted: we only read it once on AsyncStorage
-    // resolve and don't want this effect to re-run when the toggle flips.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player, mutePrefKey, defaultMuted]);
 
   const toggle = () => {
