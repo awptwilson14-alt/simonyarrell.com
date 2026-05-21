@@ -50,7 +50,40 @@ interface HeroAudioProps {
 
 const HERO_AUDIO_SRC = require("../assets/audio/hero.mp4");
 
-export function HeroAudio({
+/**
+ * Crash-safe wrapper. `useAudioPlayer` calls into a native module whose JS
+ * binding has, in practice, gotten out of sync with the installed iOS native
+ * binary at least once ("Received 4 arguments, but 3 was expected"), which
+ * surfaces as a full-screen Render Error and blocks the user from the app.
+ * The audio feature is ambient and non-essential; if it ever fails to
+ * construct, we'd rather render nothing than take down the parent screen.
+ */
+class HeroAudioBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: unknown) {
+    // Surface in dev console but never escalate to the UI tree.
+    if (__DEV__) console.warn("[HeroAudio] suppressed render error:", error);
+  }
+  render() {
+    return this.state.hasError ? null : this.props.children;
+  }
+}
+
+export function HeroAudio(props: HeroAudioProps) {
+  return (
+    <HeroAudioBoundary>
+      <HeroAudioInner {...props} />
+    </HeroAudioBoundary>
+  );
+}
+
+function HeroAudioInner({
   top,
   source = HERO_AUDIO_SRC,
   mutePrefKey = DEFAULT_MUTE_PREF_KEY,
