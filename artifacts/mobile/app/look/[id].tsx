@@ -165,6 +165,12 @@ export default function LookDetailScreen() {
           {(() => {
             const brands = getSignatureBrands(look.style, 4);
             if (brands.length === 0) return null;
+            // Quantify the editorial bias: how many of this look's actual
+            // pieces were pulled from the style's signature houses. Relies on
+            // engine-stamped piece.signature (batch 21) — never display-time
+            // string matching. Hidden when 0 (e.g. legacy static looks).
+            const sigCount = look.pieces.filter((p) => p.signature).length;
+            const totalCount = look.pieces.length;
             return (
               <View style={styles.brandsBlock}>
                 <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
@@ -173,6 +179,14 @@ export default function LookDetailScreen() {
                 <Text style={[styles.brandsList, { color: colors.foreground }]}>
                   {brands.join("  ·  ")}
                 </Text>
+                {sigCount > 0 && (
+                  <View style={styles.sigCountRow}>
+                    <Feather name="star" size={10} color={colors.gold} />
+                    <Text style={[styles.sigCountText, { color: colors.gold }]}>
+                      {sigCount} OF {totalCount} PIECES FROM SIGNATURE HOUSES
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           })()}
@@ -413,6 +427,8 @@ const styles = StyleSheet.create({
   brandsList: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.5, lineHeight: 18 },
   inspiredRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   inspiredName: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 1.2 },
+  sigCountRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
+  sigCountText: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 1.4 },
   panelToggle: { flexDirection: "row", borderBottomWidth: 0.5 },
   panelTab: { flex: 1, paddingVertical: 16, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   panelTabText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 2 },
