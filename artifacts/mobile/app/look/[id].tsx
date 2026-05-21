@@ -251,9 +251,50 @@ export default function LookDetailScreen() {
                 <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
                   SIGNATURE HOUSES
                 </Text>
-                <Text style={[styles.brandsList, { color: colors.foreground }]}>
-                  {brands.join("  ·  ")}
-                </Text>
+                {/* Batch 67: switched from inline `·`-joined Text to a chip
+                    grid matching the celebrity signatureBrands chips vocab
+                    from batch 64. SIGNATURE HOUSES on the look page and
+                    `Brands They Wear` on the celebrity page are the SAME
+                    concept (signature houses of a style) — same visual
+                    treatment removes the inconsistency. Dropped the celeb-
+                    specific accent special-case (look has no celeb
+                    context — pure style brands, no brand-of-record). */}
+                <View style={styles.brandsGrid}>
+                  {brands.map((brand) => {
+                    const linkable = brandCatalog.has(brand.toLowerCase());
+                    const fg = linkable ? colors.gold : colors.foreground;
+                    const chipBase = [
+                      styles.brandChip,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: linkable ? colors.gold + "55" : colors.border,
+                      },
+                    ];
+                    const inner = (
+                      <>
+                        <Text style={[styles.brandChipText, { color: fg }]}>
+                          {brand}
+                        </Text>
+                        {linkable && (
+                          <Feather name="chevron-right" size={11} color={fg} />
+                        )}
+                      </>
+                    );
+                    return linkable ? (
+                      <Pressable
+                        key={brand}
+                        onPress={() => goShopBrand(brand)}
+                        style={({ pressed }) => [...chipBase, { opacity: pressed ? 0.6 : 1 }]}
+                      >
+                        {inner}
+                      </Pressable>
+                    ) : (
+                      <View key={brand} style={chipBase}>
+                        {inner}
+                      </View>
+                    );
+                  })}
+                </View>
                 {sigCount > 0 && (
                   <View style={styles.sigCountRow}>
                     <Feather name="star" size={10} color={colors.gold} />
@@ -631,7 +672,22 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   brandsLabel: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2 },
+  // brandsList retained for backward-compat reference but no longer rendered
+  // (batch 67 replaced the inline `·`-joined text with the chip grid below).
   brandsList: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.5, lineHeight: 18 },
+  // Chip grid for SIGNATURE HOUSES — mirrors celebrity `Brands They Wear`
+  // styles (batch 64) so the same concept reads the same across both pages.
+  brandsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
+  brandChip: {
+    borderWidth: 0.5,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  brandChipText: { fontSize: 12, fontFamily: "Inter_600SemiBold", letterSpacing: 0.3 },
   inspiredRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   inspiredName: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 1.2 },
   sigCountRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },

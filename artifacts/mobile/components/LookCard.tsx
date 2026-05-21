@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { Look } from "@/constants/data";
+import { Look, TRENDS } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { pickStyleHero } from "@/constants/heroImages";
@@ -90,27 +90,70 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
             <Feather name={saved ? "heart" : "heart"} size={18} color={saved ? colors.gold : "#fff"} />
           </Pressable>
         )}
-        <View style={styles.styleTag}>
-          <Text style={styles.styleTagText}>{look.style}</Text>
-        </View>
+        {/* Batch 68: styleTag is tappable when look.style is a TREND →
+            /(tabs)/style with trendHint pre-loaded (mirrors look-detail
+            style pill from batch 45). Nested Pressable inside the outer
+            card Pressable is the same proven pattern as the saveBtn at
+            line 89 — RN doesn't bubble when the inner handles the tap.
+            Non-trend styles render the existing plain View (fail-closed,
+            no false affordance). chevron size 9 matches the tag's tight
+            10pt typography. */}
+        {TRENDS.some((t) => t.name === look.style) ? (
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push({ pathname: "/(tabs)/style", params: { trendHint: look.style } });
+            }}
+            hitSlop={6}
+            style={({ pressed }) => [styles.styleTag, { opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Text style={styles.styleTagText}>{look.style}</Text>
+            <Feather name="chevron-right" size={9} color="#080808" />
+          </Pressable>
+        ) : (
+          <View style={styles.styleTag}>
+            <Text style={styles.styleTagText}>{look.style}</Text>
+          </View>
+        )}
         {look.inspiredBy ? (() => {
           // Resolve celeb record to tint the INSPIRED BY tag in the icon's
           // accentColor — visual continuity with batches 22/26/28/32/33/34.
           // Falls back to gold when the inspiredBy name isn't a CELEBS entry
           // (legacy / removed icons). Single-sourced via findCelebByName.
+          // Batch 68: also gates tappability — when linked resolves, the
+          // tag becomes a Pressable → /celebrity/[id] (mirrors look-detail
+          // INSPIRED BY chip from batch 26). When linked is null (legacy
+          // celeb removed from CELEBS), renders the existing plain View
+          // — fail-closed, no false affordance. Same outer-card nested-
+          // Pressable pattern as styleTag above and saveBtn at line 89.
           const linked = findCelebByName(look.inspiredBy);
           const tint = linked?.accentColor ?? colors.gold;
-          return (
-            <View
-              style={[
-                styles.inspiredTag,
-                { borderColor: `${tint}80` },
-              ]}
-            >
+          const inner = (
+            <>
               <Feather name="star" size={9} color={tint} />
               <Text style={[styles.inspiredTagText, { color: tint }]} numberOfLines={1}>
                 {look.inspiredBy.split(" ")[0].toUpperCase()}
               </Text>
+              {linked && <Feather name="chevron-right" size={9} color={tint} />}
+            </>
+          );
+          return linked ? (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/celebrity/${linked.id}`);
+              }}
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.inspiredTag,
+                { borderColor: `${tint}80`, opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              {inner}
+            </Pressable>
+          ) : (
+            <View style={[styles.inspiredTag, { borderColor: `${tint}80` }]}>
+              {inner}
             </View>
           );
         })() : null}
@@ -157,6 +200,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(201,168,76,0.9)",
     paddingHorizontal: 10,
     paddingVertical: 4,
+    // flexDirection added in batch 68 so the optional chevron sits inline
+    // with the style name on tappable (TREND-matching) tags. No-op for
+    // single-child non-trend tags.
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
   styleTagText: {
     fontSize: 10,
