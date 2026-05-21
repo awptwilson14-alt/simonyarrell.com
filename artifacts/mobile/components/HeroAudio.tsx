@@ -1,8 +1,11 @@
 import * as Haptics from "expo-haptics";
 import { useAudioPlayer } from "expo-audio";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+
+const MUTE_PREF_KEY = "maisonSimon:heroAudioMuted";
 
 /**
  * Ambient hero audio with a floating speaker toggle. Loops a short bed track
@@ -24,12 +27,16 @@ export function HeroAudio({ top }: HeroAudioProps) {
   const player = useAudioPlayer(AUDIO_SRC);
   const [muted, setMuted] = useState(true);
 
-  // Configure loop + initial muted playback on mount. We start playing
-  // immediately so the audio buffer is warm; the user just hears nothing
-  // until they unmute. On web, calling play() before any gesture may be
-  // blocked silently — that's fine, the unmute tap will both unmute AND
-  // resume playback as a user-gesture-driven action.
+  // Configure loop + warm playback on mount, then restore the user's last
+  // mute preference from AsyncStorage. We always START muted to satisfy web
+  // autoplay policy (which rejects unsolicited sound), then — if the user
+  // previously chose to unmute — flip muted=false. On native, this results
+  // in seamless ambient sound on cold-start for returning users. On web, the
+  // browser will keep playback paused until the next user gesture even if
+  // muted=false; the speaker icon still reflects the saved preference so
+  // returning users see the correct state.
   useEffect(() => {
+    let cancelled = false;
     try {
       player.loop = true;
       player.muted = true;
@@ -39,6 +46,27 @@ export function HeroAudio({ top }: HeroAudioProps) {
       // Defensive — autoplay rejection or platform quirk shouldn't crash
       // the home screen. The toggle still works on subsequent user taps.
     }
+    AsyncStorage.getItem(MUTE_PREF_KEY)
+      .then((raw) => {
+        if (cancelled) return;
+        // Default to muted (raw === null on first launch). Only explicit
+        // "false" string flips it. Keeps cold-start respectful.
+        if (raw === "false") {
+          setMuted(false);
+          try {
+            player.muted = false;
+            player.play();
+          } catch {
+            /* swallow — see above */
+          }
+        }
+      })
+      .catch(() => {
+        // Storage read failure is non-fatal; default muted state stands.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [player]);
 
   const toggle = () => {
@@ -56,6 +84,11 @@ export function HeroAudio({ top }: HeroAudioProps) {
     } catch {
       // Same defensive swallow — UI state still flips so the user sees feedback.
     }
+    // Persist preference (fire-and-forget). String form so a future v2 of
+    // the key can encode richer state (volume, last track) without breaking.
+    AsyncStorage.setItem(MUTE_PREF_KEY, next ? "true" : "false").catch(() => {
+      // Storage write failure is non-fatal — UI/audio already updated.
+    });
   };
 
   return (
