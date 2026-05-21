@@ -20,6 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
 import { LOOKS } from "@/constants/data";
+import { CELEBS } from "@/constants/celebrities";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
@@ -149,19 +150,43 @@ export default function LookDetailScreen() {
           <Text style={[styles.description, { color: colors.mutedForeground }]}>
             {look.description}
           </Text>
-          {look.inspiredBy ? (
-            <View style={styles.brandsBlock}>
-              <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
-                INSPIRED BY
-              </Text>
-              <View style={styles.inspiredRow}>
-                <Feather name="star" size={11} color={colors.gold} />
-                <Text style={[styles.inspiredName, { color: colors.gold }]}>
-                  {look.inspiredBy.toUpperCase()}
+          {look.inspiredBy ? (() => {
+            // Resolve the inspiredBy name to a real celeb so we can make the
+            // chip tappable (pivot back to the icon's full profile — closes
+            // the look→celeb edge of the loop). If unresolved (legacy data,
+            // typo, etc) we fall back to a non-interactive label so the
+            // attribution still shows correctly.
+            const linkedCeleb = CELEBS.find((c) => c.name === look.inspiredBy);
+            const Inner = (
+              <>
+                <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
+                  INSPIRED BY
                 </Text>
-              </View>
-            </View>
-          ) : null}
+                <View style={styles.inspiredRow}>
+                  <Feather name="star" size={11} color={colors.gold} />
+                  <Text style={[styles.inspiredName, { color: colors.gold }]}>
+                    {look.inspiredBy!.toUpperCase()}
+                  </Text>
+                  {linkedCeleb && (
+                    <Feather name="chevron-right" size={13} color={colors.gold} />
+                  )}
+                </View>
+              </>
+            );
+            return linkedCeleb ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  router.push(`/celebrity/${linkedCeleb.id}`);
+                }}
+                style={({ pressed }) => [styles.brandsBlock, { opacity: pressed ? 0.7 : 1 }]}
+              >
+                {Inner}
+              </Pressable>
+            ) : (
+              <View style={styles.brandsBlock}>{Inner}</View>
+            );
+          })() : null}
           {(() => {
             const brands = getSignatureBrands(look.style, 4);
             if (brands.length === 0) return null;
