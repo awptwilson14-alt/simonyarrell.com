@@ -1719,6 +1719,13 @@ export function generateLooks(params: GenerateParams): Look[] {
     if (fallbackItems.length >= 2) {
       const fallbackStyle = pick(occasionStyles);
       const fallbackPalette = pickPaletteForStyle(fallbackStyle);
+      // Ultra-fallback ignores every brand filter, so by construction no
+      // piece can be a signature-house item. Stamp signature:false explicitly
+      // (rather than leaving it undefined) so downstream consumers — most
+      // notably the look detail "★ N OF M PIECES FROM SIGNATURE HOUSES" line
+      // — see a deterministic 0/N count instead of undefined-counts-as-zero
+      // legacy-fallback behavior. Matches the main path stamp at line 1591.
+      const sigBrandsForFallback = new Set(celebSignatureBrands ?? []);
       const pieces: OutfitPiece[] = fallbackItems.map((item) => ({
         id: item.id,
         name: item.name,
@@ -1728,6 +1735,11 @@ export function generateLooks(params: GenerateParams): Look[] {
         color: pickPaletteColor(item.colors, fallbackPalette.colors),
         imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
         purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
+        // In ultra-fallback we have NO style/brand filtering, but if the
+        // catalog happens to surface a signature-house piece we still want
+        // it stamped truthfully — keeps the trifecta promise honest even
+        // here. When no celeb context, sigBrandsForFallback is empty → false.
+        signature: sigBrandsForFallback.has(item.brand),
       }));
       const total = fallbackItems.reduce((s, i) => s + i.price, 0);
       const fp = fingerprint(pieces.map((p) => p.id));
@@ -1741,6 +1753,11 @@ export function generateLooks(params: GenerateParams): Look[] {
         name: fallbackName,
         description: generateDescription(occasion, fallbackStyle),
         occasion,
+        // Attribution parity with the main path (line 1684) — if the user
+        // arrived from a celeb CTA, even an ultra-fallback look stamps the
+        // celeb so it shows up in Saved Looks filters, /celebrity badges,
+        // home Continue Exploring, and Look detail INSPIRED BY pill.
+        inspiredBy: celebName,
         // Honor the style's season bias instead of hardcoding "All Season" —
         // keeps the season tag aligned with the locked style identity (e.g.
         // Vacation Luxe → Spring/Summer, Evening → Autumn/Winter).
