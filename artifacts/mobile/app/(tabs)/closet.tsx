@@ -28,7 +28,15 @@ export default function ClosetScreen() {
   const insets = useSafeAreaInsets();
   const { closetItems, addClosetItem, removeClosetItem } = useApp();
   const router = useRouter();
-  const { goShopBrand } = useShopBrandHandoff();
+  // Batch 64 surfaced goShopBrand for the WARDROBE SIGNATURE MOST WORN
+  // brand (which skipped the catalog gate — the user's own most-worn brand
+  // is a trusted single signal). Batch 66 also pulls brandCatalog because
+  // individual closet items carry user-entered brand strings that may not
+  // match a canonical BRANDS catalog entry (e.g. "MyVintageStore"). Gate
+  // here so each item card only shows the chevron affordance when the
+  // brand actually resolves in /shop — fail-closed matches the affordance
+  // contract used by look pieces, celebrity chips, and ProductCard.
+  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [activeCategory, setActiveCategory] = useState("All");
@@ -298,7 +306,26 @@ export default function ClosetScreen() {
                 <View style={[styles.itemColorBlock, { backgroundColor: dotColor[item.color] ?? "#333" }]} />
                 <View style={styles.itemInfo}>
                   <Text style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>{item.name}</Text>
-                  <Text style={[styles.itemBrand, { color: colors.gold }]} numberOfLines={1}>{item.brand}</Text>
+                  {brandCatalog.has(item.brand.toLowerCase()) ? (
+                    // Item-level closet→shop handoff (batch 66). Symmetric
+                    // to the WARDROBE SIGNATURE handoff (batch 62) but at
+                    // single-item granularity: tap a piece's brand to jump
+                    // straight to that brand's drawer in /shop. itemCard is
+                    // a View (not Pressable) so this nested Pressable is
+                    // safe; alignSelf:flex-start keeps the tap target snug
+                    // around the text+chevron rather than swallowing the
+                    // whole column width (matches look-piece-brand vocab).
+                    <Pressable
+                      onPress={() => goShopBrand(item.brand)}
+                      hitSlop={4}
+                      style={({ pressed }) => [styles.itemBrandLinkRow, { opacity: pressed ? 0.6 : 1 }]}
+                    >
+                      <Text style={[styles.itemBrand, { color: colors.gold }]} numberOfLines={1}>{item.brand}</Text>
+                      <Feather name="chevron-right" size={11} color={colors.gold} />
+                    </Pressable>
+                  ) : (
+                    <Text style={[styles.itemBrand, { color: colors.gold }]} numberOfLines={1}>{item.brand}</Text>
+                  )}
                   <Text style={[styles.itemMeta, { color: colors.mutedForeground }]}>{item.category} · {item.color}</Text>
                 </View>
                 <Pressable onPress={() => handleDelete(item.id, item.name)} hitSlop={12}>
@@ -347,6 +374,7 @@ const styles = StyleSheet.create({
   itemInfo: { flex: 1, paddingVertical: 14, gap: 2 },
   itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", letterSpacing: 0.2 },
   itemBrand: { fontSize: 11, fontFamily: "Inter_500Medium", letterSpacing: 1 },
+  itemBrandLinkRow: { flexDirection: "row", alignItems: "center", gap: 3, alignSelf: "flex-start" },
   itemMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
   empty: { alignItems: "center", paddingVertical: 60, gap: 16 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
