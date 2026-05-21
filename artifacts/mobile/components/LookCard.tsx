@@ -92,6 +92,14 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
         <View style={styles.styleTag}>
           <Text style={styles.styleTagText}>{look.style}</Text>
         </View>
+        {look.inspiredBy ? (
+          <View style={styles.inspiredTag}>
+            <Feather name="star" size={9} color={colors.gold} />
+            <Text style={[styles.inspiredTagText, { color: colors.gold }]} numberOfLines={1}>
+              {look.inspiredBy.split(" ")[0].toUpperCase()}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <View style={[styles.info, { borderTopColor: colors.border }]}>
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
@@ -142,6 +150,25 @@ const styles = StyleSheet.create({
     color: "#080808",
     letterSpacing: 1.5,
     textTransform: "uppercase",
+  },
+  inspiredTag: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(11,11,12,0.78)",
+    borderWidth: 0.5,
+    borderColor: "rgba(198,167,94,0.5)",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    maxWidth: 130,
+  },
+  inspiredTagText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.2,
   },
   info: {
     padding: 12,
