@@ -11,6 +11,7 @@ import {
   PlayfairDisplay_700Bold,
 } from "@expo-google-fonts/playfair-display";
 import { Feather } from "@expo/vector-icons";
+import { setAudioModeAsync } from "expo-audio";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -50,6 +51,19 @@ try {
 } catch (err: any) {
   Alert.alert("RevenueCat Unavailable", err?.message ?? "Unknown error");
 }
+
+// Configure the iOS audio session so the hero ambient track and the
+// onboarding welcome cue both play with the device on silent (ringer
+// switch off). Without this, expo-audio defaults to the "ambient"
+// AVAudioSession category, which is silenced by the hardware mute switch
+// — so a user with their phone on silent (the default for most iPhones)
+// would mount the home screen, see <HeroAudio defaultMuted={false}/>
+// fire player.play(), and hear nothing. Fire-and-forget; if the native
+// module is unavailable in dev (Expo Go quirk) we don't want to crash
+// the app — the speaker toggle still works as a manual fallback.
+setAudioModeAsync({ playsInSilentMode: true }).catch(() => {
+  // Non-fatal — audio simply remains in the default category.
+});
 
 function RootLayoutNav() {
   return (
