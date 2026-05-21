@@ -422,11 +422,51 @@ export default function LookDetailScreen() {
 
         {/* ── Related ── */}
         <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, paddingHorizontal: 24, marginBottom: 16 }]}>
-            {relatedDrivenByCeleb && look.inspiredBy
-              ? `More from ${look.inspiredBy}`
-              : "You Might Also Love"}
-          </Text>
+          {(() => {
+            // When the related rail is icon-driven (batch 41), surface a
+            // one-tap CHANNEL CTA next to the title. Previously the only way
+            // from this rail back into a {Celeb}-biased generation was:
+            //   inspired pill → /celebrity/[id] → GENERATE MY <CELEB> LOOK → /style
+            // — three taps even though we already know the icon. This pushes
+            // straight to /(tabs)/style with the celebrity param (same shape
+            // used by /celebrity/[id]'s GENERATE buttons), so style.tsx's
+            // useEffect snapshots activeCeleb and shows the CHANNELING chip
+            // (batch 44). Resolved-only — silently absent if findCelebByName
+            // can't link the name (legacy data / typo).
+            const relCeleb = relatedDrivenByCeleb && look.inspiredBy
+              ? findCelebByName(look.inspiredBy)
+              : undefined;
+            return (
+              <View style={styles.relatedHeaderRow}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {relatedDrivenByCeleb && look.inspiredBy
+                    ? `More from ${look.inspiredBy}`
+                    : "You Might Also Love"}
+                </Text>
+                {relCeleb && (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      router.push({
+                        pathname: "/(tabs)/style",
+                        params: { celebrity: relCeleb.id, celebName: relCeleb.name },
+                      });
+                    }}
+                    style={({ pressed }) => [
+                      styles.channelCta,
+                      { borderColor: relCeleb.accentColor, opacity: pressed ? 0.75 : 1 },
+                    ]}
+                    hitSlop={6}
+                  >
+                    <Feather name="refresh-cw" size={10} color={relCeleb.accentColor} />
+                    <Text style={[styles.channelCtaText, { color: relCeleb.accentColor }]}>
+                      CHANNEL
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            );
+          })()}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
             {assignUniqueLookImages(
               allRelated.map((l) => ({ ...l, image: hasNamedLookImageForStyle(l.name, l.style) ? l.image : (pickStyleHero(l.style, userProfile.gender, `rel-${l.id}`) ?? pickLookHero(l.name, userProfile.gender, `rel-${l.id}`) ?? l.image) })),
@@ -467,6 +507,28 @@ const styles = StyleSheet.create({
   descSection: { padding: 24, borderBottomWidth: 0.5 },
   description: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22, letterSpacing: 0.2 },
   brandsBlock: { marginTop: 18, gap: 6 },
+  relatedHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    gap: 12,
+  },
+  channelCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  channelCtaText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.5,
+  },
   brandsLabel: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   brandsList: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.5, lineHeight: 18 },
   inspiredRow: { flexDirection: "row", alignItems: "center", gap: 6 },
