@@ -97,16 +97,28 @@ export default function ProfileScreen() {
       .sort((a, b) => b.count - a.count);
   })();
 
-  // Auto-clear stale filter if its celeb no longer exists in saved looks
-  // (e.g. user unsaved their last Drake-coded look). Effect, not render-time
-  // setState, to avoid React's "Cannot update during render" anti-pattern.
+  // Auto-clear stale filter — two recovery paths, both required to
+  // prevent silent stranded-filter state. Effect, not render-time setState,
+  // to avoid React's "Cannot update during render" anti-pattern.
+  //   1. Selected celeb disappears (last Drake-coded look unsaved).
+  //   2. savedCelebs collapses to <2, which hides the row (threshold
+  //      `length >= 2` below). A stranded celebFilter would keep filtering
+  //      silently with no UI affordance to clear it. Same row-visibility/
+  //      auto-clear coupling pattern batch 56 introduced for trendFilter.
   useEffect(() => {
-    if (celebFilter && !savedCelebs.some((c) => c.name === celebFilter)) {
+    if (
+      celebFilter &&
+      (savedCelebs.length < 2 || !savedCelebs.some((c) => c.name === celebFilter))
+    ) {
       setCelebFilter(null);
     }
   }, [celebFilter, savedCelebs]);
   useEffect(() => {
-    if (productCelebFilter && !savedProductCelebs.some((c) => c.name === productCelebFilter)) {
+    if (
+      productCelebFilter &&
+      (savedProductCelebs.length < 2 ||
+        !savedProductCelebs.some((c) => c.name === productCelebFilter))
+    ) {
       setProductCelebFilter(null);
     }
   }, [productCelebFilter, savedProductCelebs]);
