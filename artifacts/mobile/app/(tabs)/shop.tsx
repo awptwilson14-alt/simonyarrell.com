@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { ProductCard } from "@/components/ProductCard";
-import { PRODUCTS } from "@/constants/data";
+import { PRODUCTS, TRENDS, isLookInTrend } from "@/constants/data";
 import {
   BRANDS,
   BRAND_TIERS,
@@ -56,6 +56,14 @@ export default function ShopScreen() {
   const [mainTab, setMainTab] = useState<MainTab>("brands");
   const [activeTier, setActiveTier] = useState<BrandTier>("ultra-luxury");
   const [expandedBrand, setExpandedBrand] = useState<string | null>(null);
+  // Shop products tab trend filter — ninth surface in the trend-hint loop
+  // (batches 50/51/52/53/54/55/56/58/60 + this). Closes the asymmetry where
+  // saved products could be filtered by trend (profile, batch 60) but the
+  // global shop grid couldn't — same Product.style ∈ TRENDS membership, two
+  // different filterability stories. Hidden when <2 distinct trends are
+  // represented in PRODUCTS, same row-visibility/auto-clear coupling pattern
+  // batches 56/57/60 established for the four profile filter guards.
+  const [productTrendFilter, setProductTrendFilter] = useState<string | null>(null);
   const { savedProducts } = useApp();
 
   const tierBrands = getBrandsByTier(activeTier);
@@ -79,6 +87,42 @@ export default function ShopScreen() {
   // Resolve the unique celebs represented in the rail — used for the eyebrow
   // count ("3 ICONS · 5 PIECES"). Set-of-names keeps the dedupe trivial.
   const iconNames = new Set(iconChanneled.map((p) => p.inspiredBy!));
+
+  // Which TRENDS are actually represented in PRODUCTS, counted via the
+  // canonical isLookInTrend helper (constants/data.ts) — same predicate that
+  // powers all eight other trend surfaces. Hide the row at <2 so we never
+  // render a single-chip "filter" (not actually a choice). Sort desc by
+  // count so the most-stocked trends lead, matching profile savedTrends
+  // sort order.
+  const shopProductTrends = (() => {
+    return TRENDS
+      .map((t) => ({
+        name: t.name,
+        count: PRODUCTS.reduce((n, p) => (isLookInTrend(p, t.name) ? n + 1 : n), 0),
+      }))
+      .filter(({ count }) => count > 0)
+      .sort((a, b) => b.count - a.count);
+  })();
+  // Same coupling pattern as the four profile filter guards: clear when the
+  // selected trend disappears entirely OR when the row would hide (length<2).
+  // Single source of truth — row-visibility threshold and auto-clear threshold
+  // can never disagree.
+  React.useEffect(() => {
+    if (
+      productTrendFilter &&
+      (shopProductTrends.length < 2 ||
+        !shopProductTrends.some((t) => t.name === productTrendFilter))
+    ) {
+      setProductTrendFilter(null);
+    }
+  }, [productTrendFilter, shopProductTrends]);
+  // AND-composed with no other axes today, but keeping the filter shape
+  // consistent with profile.visibleSavedProducts so future axes (category,
+  // brand) can stack via early-return per axis.
+  const visibleProducts = PRODUCTS.filter((p) => {
+    if (productTrendFilter && !isLookInTrend(p, productTrendFilter)) return false;
+    return true;
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -361,8 +405,41 @@ export default function ShopScreen() {
               </View>
             )}
 
+            {/* Trend filter row — same chip grammar as profile saved-products
+                row (batch 60): trending-up icon, gold active state, non-
+                uppercased trend names, "ALL TRENDS" pill. Hidden at <2 to
+                preserve the editorial flat-grid feel for thin catalogs. */}
+            {shopProductTrends.length >= 2 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.shopTrendRow}
+              >
+                {[{ name: null as string | null, count: PRODUCTS.length, label: "ALL TRENDS" }, ...shopProductTrends.map((t) => ({ name: t.name as string | null, count: t.count, label: t.name }))].map((t) => {
+                  const active = productTrendFilter === t.name;
+                  return (
+                    <Pressable
+                      key={t.name ?? "__all"}
+                      onPress={() => { Haptics.selectionAsync(); setProductTrendFilter(t.name); }}
+                      style={[
+                        styles.shopTrendChip,
+                        {
+                          borderColor: active ? colors.gold : colors.border,
+                          backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                        },
+                      ]}
+                    >
+                      {t.name && <Feather name="trending-up" size={9} color={active ? colors.gold : colors.mutedForeground} />}
+                      <Text style={[styles.shopTrendChipText, { color: active ? colors.gold : colors.mutedForeground }]}>
+                        {t.label} · {t.count}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )}
             <View style={styles.productsSection}>
-              {PRODUCTS.map((product) => (
+              {visibleProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </View>
@@ -564,6 +641,14 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 0,
   },
+  // Trend chip row sits ABOVE the productsSection padding, so it gets its
+  // own paddingLeft to line up with the grid (matches the 20px section pad).
+  // paddingRight extends so the trailing chip clears comfortably during
+  // horizontal scroll. Values mirror profile.celebFilterRow but with the
+  // shop's 20px gutter instead of profile's 24px.
+  shopTrendRow: { gap: 8, paddingLeft: 20, paddingRight: 24, marginTop: 14, marginBottom: 6 },
+  shopTrendChip: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 0.5, paddingHorizontal: 11, paddingVertical: 6 },
+  shopTrendChipText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.2 },
   iconRail: {
     paddingTop: 18,
     paddingBottom: 8,
