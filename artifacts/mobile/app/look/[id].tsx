@@ -340,7 +340,7 @@ export default function LookDetailScreen() {
                   <Pressable
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      saveProduct({ id: pid, name: piece.name, brand: piece.brand, price: piece.price, category: piece.category, style: look.style, description: "", imageUrl: piece.imageUrl ?? "", purchaseUrl: piece.purchaseUrl ?? "" });
+                      saveProduct({ id: pid, name: piece.name, brand: piece.brand, price: piece.price, category: piece.category, style: look.style, description: "", imageUrl: piece.imageUrl ?? "", purchaseUrl: piece.purchaseUrl ?? "", inspiredBy: look.inspiredBy, lookId: look.id });
                     }}
                     hitSlop={12}
                     style={styles.heartBtn}

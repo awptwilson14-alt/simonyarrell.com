@@ -64,6 +64,13 @@ export interface Product {
   description: string;
   imageUrl?: string;
   purchaseUrl: string;
+  // Celeb attribution carried over from the parent Look when the user saved
+  // this piece from a celeb-inspired generation. Optional — catalog PRODUCTS
+  // and generic shop saves leave it undefined. Matches Look.inspiredBy shape.
+  inspiredBy?: string;
+  // Back-reference to the source Look so the user can tap a saved piece and
+  // jump back to the full outfit it came from. Optional for the same reason.
+  lookId?: string;
 }
 
 // ─── Unsplash helpers ───────────────────────────────────────────────────────

@@ -73,6 +73,18 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </Text>
 
+        {/* Celeb attribution carries over from the parent Look (batch 31).
+            Only shown when the piece was saved from a celeb-inspired
+            generation — generic catalog/shop saves stay clean. */}
+        {product.inspiredBy && (
+          <View style={[styles.inspiredChip, { borderColor: colors.gold, backgroundColor: colors.gold + "18" }]}>
+            <Feather name="star" size={9} color={colors.gold} />
+            <Text style={[styles.inspiredText, { color: colors.gold }]} numberOfLines={1}>
+              INSPIRED BY {product.inspiredBy.toUpperCase()}
+            </Text>
+          </View>
+        )}
+
         <Text style={[styles.desc, { color: colors.mutedForeground }]} numberOfLines={2}>
           {product.description}
         </Text>
@@ -189,5 +201,21 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     letterSpacing: 1.5,
     color: "#0B0B0C",
+  },
+  inspiredChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 2,
+    borderWidth: 0.5,
+    marginTop: 2,
+  },
+  inspiredText: {
+    fontSize: 8,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.2,
   },
 });
