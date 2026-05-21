@@ -40,6 +40,11 @@ export default function ClosetScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [activeCategory, setActiveCategory] = useState("All");
+  // In-page color filter driven by the WARDROBE SIGNATURE palette dots
+  // (batch 69). Null = no color filter active. Kept here rather than in
+  // AppContext because it's a transient view-state, not a persisted
+  // preference — same lifecycle treatment as activeCategory.
+  const [activeColor, setActiveColor] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newBrand, setNewBrand] = useState("");
@@ -76,7 +81,9 @@ export default function ClosetScreen() {
   }, [activeCategory, categoryCounts]);
 
   const filtered = closetItems.filter(
-    (i) => activeCategory === "All" || i.category === activeCategory
+    (i) =>
+      (activeCategory === "All" || i.category === activeCategory) &&
+      (activeColor === null || i.color === activeColor)
   );
 
   // Derived "wardrobe signature" — mode of brand and color across the full
@@ -104,6 +111,26 @@ export default function ClosetScreen() {
     if (!topBrand && topColors.length === 0) return null;
     return { brand: topBrand?.[0], colors: topColors.map(([c]) => c) };
   })();
+
+  // Self-healing color filter — clears activeColor whenever the matching
+  // palette dot is no longer rendered, NOT just when the color is absent
+  // from the closet. Two scenarios this guards against:
+  //   1. User deletes the last item of activeColor → color drops out of
+  //      colorCount entirely → dot vanishes.
+  //   2. User adds enough items of OTHER colors that activeColor falls out
+  //      of the top-3 slice → color still exists in closet, but its dot
+  //      vanishes from the palette row.
+  // Both cases produce the same dead-end: a hidden active filter the user
+  // can't toggle off. Guard reads from signature?.colors — the same source
+  // of truth the dot-row renders from — so behavior and UI cannot diverge.
+  // closetItems is the dep (signature is derived from it; depending on the
+  // recomputed signature object would loop). Architect-corrected (batch 69
+  // first pass used closetItems.some which missed scenario 2).
+  useEffect(() => {
+    if (activeColor !== null && !signature?.colors.includes(activeColor)) {
+      setActiveColor(null);
+    }
+  }, [activeColor, closetItems]);
 
   const handleAdd = () => {
     if (!newName.trim()) return;
@@ -218,10 +245,12 @@ export default function ClosetScreen() {
             speculative. MOST WORN brand is tappable (batch 62) → jumps to
             shop with that brand pre-expanded inside its tier; closes a clear
             dead-end where the user's strongest closet signal had no follow-
-            through. Palette stays passive — colors aren't navigable today
-            (no /shop?color=X surface). chevron-right + gold hover state
-            communicate the navigable affordance without disturbing the
-            editorial overview feel of the card. */}
+            through. PALETTE dots are tappable (batch 69) as an in-page color
+            filter — closes the prior dead-end without inventing a fictional
+            /shop?color=X surface. Distinct vocab from the shop handoff: no
+            chevron, gold ring + thicker border on active = "filter this view"
+            (sibling to the activeCategory chip pattern below), NOT "navigate
+            away". Selection haptic mirrors the category chips. */}
         {signature && (
           <View style={[styles.signatureCard, { borderColor: colors.gold + "40", backgroundColor: colors.card }]}>
             <Text style={[styles.signatureLabel, { color: colors.gold }]}>WARDROBE SIGNATURE</Text>
@@ -248,14 +277,35 @@ export default function ClosetScreen() {
               )}
               {signature.colors.length > 0 && (
                 <View style={styles.signatureBlock}>
-                  <Text style={[styles.signatureKey, { color: colors.mutedForeground }]}>PALETTE</Text>
+                  <Text style={[styles.signatureKey, { color: colors.mutedForeground }]}>
+                    {activeColor && signature.colors.includes(activeColor)
+                      ? `PALETTE · ${activeColor.toUpperCase()}`
+                      : "PALETTE"}
+                  </Text>
                   <View style={styles.paletteRow}>
-                    {signature.colors.map((c) => (
-                      <View
-                        key={c}
-                        style={[styles.paletteDot, { backgroundColor: dotColor[c] ?? "#888", borderColor: colors.border }]}
-                      />
-                    ))}
+                    {signature.colors.map((c) => {
+                      const active = activeColor === c;
+                      return (
+                        <Pressable
+                          key={c}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setActiveColor(active ? null : c);
+                          }}
+                          hitSlop={6}
+                          accessibilityRole="button"
+                          accessibilityLabel={active ? `Clear ${c} filter` : `Filter closet by ${c}`}
+                          style={[
+                            styles.paletteDot,
+                            {
+                              backgroundColor: dotColor[c] ?? "#888",
+                              borderColor: active ? colors.gold : colors.border,
+                              borderWidth: active ? 1.5 : 0.5,
+                            },
+                          ]}
+                        />
+                      );
+                    })}
                   </View>
                 </View>
               )}
@@ -292,7 +342,11 @@ export default function ClosetScreen() {
           <View style={styles.empty}>
             <Feather name="shopping-bag" size={40} color={colors.border} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {closetItems.length === 0 ? "Your closet is empty" : "No items in this category"}
+              {closetItems.length === 0
+                ? "Your closet is empty"
+                : activeColor
+                ? `No ${activeColor.toLowerCase()} items${activeCategory !== "All" ? ` in ${activeCategory}` : ""}`
+                : "No items in this category"}
             </Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
               Add pieces from your wardrobe to get personalized outfit recommendations using items you already own.
