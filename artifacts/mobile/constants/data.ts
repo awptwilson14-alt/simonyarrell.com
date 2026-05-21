@@ -77,6 +77,7 @@ export const CELEBRITIES: Celebrity[] = [
   { id: "c6", name: "Rihanna", style: "Bold Avant-garde", description: "Fearless, maximum-impact fashion statements", looks: ["Maternity Glam", "Street Couture", "Power Dressing"] },
   { id: "c7", name: "Kendall Jenner", style: "Model Off-Duty", description: "Relaxed luxury with supermodel proportions in mind", looks: ["Model Off-Duty", "Vacation Luxe", "Gala Formal"] },
   { id: "c8", name: "Harry Styles", style: "Gender-Fluid Glam", description: "Flamboyant, playful, rule-breaking luxury", looks: ["Gucci Glam", "Vintage Eclectic", "Stage Luxe"] },
+  { id: "c9", name: "Shai Gilgeous-Alexander", style: "Unique NBA Editorial", description: "Quiet luxury and editorial styling from the NBA's most original dresser", looks: ["Tunnel Walk", "OKC Quiet", "Japanese Edit"] },
 ];
 
 // ─── Trends ─────────────────────────────────────────────────────────────────
