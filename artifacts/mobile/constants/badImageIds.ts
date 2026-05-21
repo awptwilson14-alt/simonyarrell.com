@@ -24,6 +24,7 @@ export const KNOWN_BAD_UNS_IDS = new Set<string>([
   "1507003211169-0a1dd7228f2d", // man's portrait — wrong for "Cream Oversized Blazer"
   "1503342217505-b0a15ec3261c", // person in dark shirt — wrong for "White Knit Tank"
   "1515347619252-60a4bf4fff4f", // chunky sneaker — wrong for Chanel "Two-Tone Slingback" + other lx_* heels
+  "1491553895911-0055eca6402d", // man with broom — wrong for Hermès "Oran Leather Sandal" (men)
 ]);
 
 export function isBadUnsId(id: string): boolean {
