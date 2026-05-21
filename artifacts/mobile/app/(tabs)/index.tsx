@@ -19,10 +19,12 @@ import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { LOOKS, TRENDS } from "@/constants/data";
+import { CELEBS } from "@/constants/celebrities";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
 import { assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import * as Haptics from "expo-haptics";
 
 const { width } = Dimensions.get("window");
 const HEADER_HEIGHT = 64;
@@ -31,10 +33,30 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { userProfile } = useApp();
+  const { userProfile, savedLooks } = useApp();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const heroFor = (key: string, seed?: string) => pickStyleHero(key, userProfile.gender, seed);
   const lookHero = (name: string, seed?: string) => pickLookHero(name, userProfile.gender, seed);
+
+  // Top celebs the user has saved looks from, joined back to the CELEBS record
+  // so we can render with photo + accentColor. Only icons present in CELEBS
+  // survive — drops any orphan names from legacy data. Sorted by save count
+  // desc; capped at 6 to keep the strip readable.
+  const continueExploring = (() => {
+    const counts = new Map<string, number>();
+    for (const l of savedLooks) {
+      if (!l.inspiredBy) continue;
+      counts.set(l.inspiredBy, (counts.get(l.inspiredBy) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([name, count]) => {
+        const celeb = CELEBS.find((c) => c.name === name);
+        return celeb ? { celeb, count } : null;
+      })
+      .filter((x): x is { celeb: typeof CELEBS[number]; count: number } => x !== null)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  })();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -96,6 +118,58 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         </View>
+
+        {/* ── Continue Exploring (personalized celeb strip) ── */}
+        {continueExploring.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader
+              title="Continue Exploring"
+              subtitle="Icons you keep coming back to"
+              onSeeAll={() => router.push("/celebrity")}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hList}
+            >
+              {continueExploring.map(({ celeb, count }) => (
+                <Pressable
+                  key={celeb.id}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push(`/celebrity/${celeb.id}`);
+                  }}
+                  style={({ pressed }) => [
+                    styles.continueCard,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: celeb.accentColor,
+                      opacity: pressed ? 0.82 : 1,
+                    },
+                  ]}
+                >
+                  <Image source={celeb.image} style={styles.continueImg} />
+                  <LinearGradient
+                    colors={["transparent", "rgba(11,11,12,0.92)"]}
+                    locations={[0.4, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.continueOverlay}>
+                    <Text style={styles.continueName} numberOfLines={1}>
+                      {celeb.name}
+                    </Text>
+                    <View style={styles.continueCountRow}>
+                      <Feather name="star" size={9} color={celeb.accentColor} />
+                      <Text style={[styles.continueCount, { color: celeb.accentColor }]}>
+                        {count} SAVED
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* ── Feature Pills ── */}
         <View style={styles.featurePills}>
@@ -234,6 +308,12 @@ const styles = StyleSheet.create({
   tryOnHeroBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 2, borderWidth: 0.5, borderColor: "rgba(198,167,94,0.5)", backgroundColor: "rgba(198,167,94,0.08)" },
   tryOnHeroBtnText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#C6A75E" },
   section: { marginBottom: 36 },
+  continueCard: { width: 130, height: 170, marginRight: 10, borderRadius: 4, borderWidth: 0.5, overflow: "hidden", position: "relative" },
+  continueImg: { width: "100%", height: "100%" },
+  continueOverlay: { position: "absolute", left: 10, right: 10, bottom: 10, gap: 4 },
+  continueName: { fontSize: 13, fontFamily: "Inter_700Bold", color: "#F5F5F0", letterSpacing: 0.2 },
+  continueCountRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  continueCount: { fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 1.4 },
   hList: { paddingHorizontal: 20, paddingRight: 8 },
   featurePills: {
     flexDirection: "row",
