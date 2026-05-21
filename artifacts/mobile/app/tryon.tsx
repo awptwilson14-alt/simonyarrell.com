@@ -19,8 +19,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
-import { LOOKS } from "@/constants/data";
+import { LOOKS, TRENDS } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
+import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,6 +39,17 @@ const OPACITY_VALUES: Record<OpacityLevel, number> = { sheer: 0.35, blend: 0.65,
 
 export default function TryOnScreen() {
   const colors = useColors();
+  // Brand + trend handoffs for the bottom panel (batch 73). The piece.brand
+  // micro-label under each piece thumb routes to /shop with the brand
+  // filter pre-applied — same primitive used everywhere else (closet,
+  // look-detail, celebrity, ProductCard, home strip batch 72). The
+  // activeLook.style label in the look navigator routes to /style with
+  // trendHint pre-loaded when the style matches a known TREND — same
+  // primitive used by LookCard styleTag (batch 68), look-detail style
+  // pill (52), profile favStyleChips (51), celebrity styleTag (70). Both
+  // are fail-closed: non-catalog brand or non-TREND style stays a flat
+  // muted Text so the camera UI never reveals a broken nav.
+  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { lookId } = useLocalSearchParams<{ lookId?: string }>();
@@ -309,7 +321,29 @@ export default function TryOnScreen() {
           </Pressable>
           <View style={s.lookMeta}>
             <Text style={s.lookNavName} numberOfLines={1}>{activeLook.name}</Text>
-            <Text style={s.lookNavStyle}>{activeLook.style}</Text>
+            {/* Style label is tappable when it matches a known TREND →
+                /style with trendHint pre-loaded (batch 73). Fail-closed:
+                if the look's style isn't in TRENDS (legacy/free-form
+                strings), it stays a flat Text — same mesh contract as
+                LookCard styleTag (batch 68) and look-detail style pill. */}
+            {TRENDS.some((t) => t.name === activeLook.style) ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  router.push({ pathname: "/(tabs)/style", params: { trendHint: activeLook.style } });
+                }}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={`Explore ${activeLook.style} trend`}
+                style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
+              >
+                <Text style={[s.lookNavStyle, { color: "rgba(245,245,240,0.85)" }]}>
+                  {activeLook.style}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={s.lookNavStyle}>{activeLook.style}</Text>
+            )}
           </View>
           <Pressable onPress={() => switchLook("next")} style={s.navArrow}>
             <Feather name="chevron-right" size={20} color="#F5F5F0" />
@@ -334,19 +368,42 @@ export default function TryOnScreen() {
         {/* Pieces strip */}
         <Animated.View style={{ opacity: lookFade }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pieces}>
-            {activeLook.pieces.map((piece) => (
-              <View key={piece.id} style={s.piece}>
-                <View style={s.pieceThumb}>
-                  {piece.imageUrl ? (
-                    <Image source={{ uri: piece.imageUrl }} style={s.pieceImg} resizeMode="cover" />
+            {activeLook.pieces.map((piece) => {
+              // Brand micro-label is tappable when in catalog → shop with
+              // brand filter (batch 73). Fail-closed: out-of-catalog brand
+              // stays a flat muted Text — never a broken nav from the
+              // camera UI. Brightness shift (0.45 → 0.85) + pressed
+              // opacity is the affordance signal; no chevron because the
+              // pieces strip is dense and chrome would crowd it.
+              const shoppable = brandCatalog.has(piece.brand.toLowerCase());
+              return (
+                <View key={piece.id} style={s.piece}>
+                  <View style={s.pieceThumb}>
+                    {piece.imageUrl ? (
+                      <Image source={{ uri: piece.imageUrl }} style={s.pieceImg} resizeMode="cover" />
+                    ) : (
+                      <Feather name="tag" size={14} color="rgba(245,245,240,0.3)" />
+                    )}
+                  </View>
+                  <Text style={s.pieceName} numberOfLines={2}>{piece.name}</Text>
+                  {shoppable ? (
+                    <Pressable
+                      onPress={() => goShopBrand(piece.brand)}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Shop ${piece.brand}`}
+                      style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
+                    >
+                      <Text style={[s.pieceBrand, { color: "rgba(245,245,240,0.85)" }]} numberOfLines={1}>
+                        {piece.brand}
+                      </Text>
+                    </Pressable>
                   ) : (
-                    <Feather name="tag" size={14} color="rgba(245,245,240,0.3)" />
+                    <Text style={s.pieceBrand} numberOfLines={1}>{piece.brand}</Text>
                   )}
                 </View>
-                <Text style={s.pieceName} numberOfLines={2}>{piece.name}</Text>
-                <Text style={s.pieceBrand} numberOfLines={1}>{piece.brand}</Text>
-              </View>
-            ))}
+              );
+            })}
           </ScrollView>
         </Animated.View>
 
