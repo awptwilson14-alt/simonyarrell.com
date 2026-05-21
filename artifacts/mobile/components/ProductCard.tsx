@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   Pressable,
@@ -11,6 +12,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { ResilientImage } from "@/components/ResilientImage";
 import { Product } from "@/constants/data";
+import { CELEBS } from "@/constants/celebrities";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -20,8 +22,18 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const colors = useColors();
-  const { isProductSaved, saveProduct, unsaveProduct } = useApp();
+  const router = useRouter();
+  const { isProductSaved, saveProduct, unsaveProduct, findLook } = useApp();
   const saved = isProductSaved(product.id);
+
+  // Resolve back-references staged in batch 31. Both are optional — when
+  // the product was saved from a non-celeb generic catalog source, both
+  // resolve to undefined and the card stays non-tappable (preserves the
+  // existing pre-batch-31 behavior for unattributed saves).
+  const sourceLook = product.lookId ? findLook(product.lookId) : undefined;
+  const linkedCeleb = product.inspiredBy
+    ? CELEBS.find((c) => c.name === product.inspiredBy)
+    : undefined;
 
   const toggleSave = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -34,8 +46,31 @@ export function ProductCard({ product }: ProductCardProps) {
     Linking.openURL(product.purchaseUrl).catch(() => {});
   };
 
+  const openSourceLook = () => {
+    if (!sourceLook) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/look/${sourceLook.id}`);
+  };
+
+  const openLinkedCeleb = () => {
+    if (!linkedCeleb) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/celebrity/${linkedCeleb.id}`);
+  };
+
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <Pressable
+      onPress={sourceLook ? openSourceLook : undefined}
+      disabled={!sourceLook}
+      style={({ pressed }) => [
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          opacity: pressed && sourceLook ? 0.9 : 1,
+        },
+      ]}
+    >
       {/* ── Product Image (with editorial brand-monogram fallback) ── */}
       <View style={[styles.imageWrapper, { backgroundColor: colors.secondary }]}>
         <ResilientImage
@@ -77,12 +112,31 @@ export function ProductCard({ product }: ProductCardProps) {
             Only shown when the piece was saved from a celeb-inspired
             generation — generic catalog/shop saves stay clean. */}
         {product.inspiredBy && (
-          <View style={[styles.inspiredChip, { borderColor: colors.gold, backgroundColor: colors.gold + "18" }]}>
-            <Feather name="star" size={9} color={colors.gold} />
-            <Text style={[styles.inspiredText, { color: colors.gold }]} numberOfLines={1}>
-              INSPIRED BY {product.inspiredBy.toUpperCase()}
-            </Text>
-          </View>
+          // Pressable when the name resolves to a CELEBS entry — same
+          // pattern as Look detail INSPIRED BY pill (batch 26). Falls back
+          // to a non-interactive label when unresolved (legacy data).
+          // Inner Pressable swallows the gesture so the outer card tap
+          // (→ source look) is not also triggered.
+          linkedCeleb ? (
+            <Pressable
+              onPress={openLinkedCeleb}
+              hitSlop={6}
+              style={[styles.inspiredChip, { borderColor: linkedCeleb.accentColor, backgroundColor: linkedCeleb.accentColor + "18" }]}
+            >
+              <Feather name="star" size={9} color={linkedCeleb.accentColor} />
+              <Text style={[styles.inspiredText, { color: linkedCeleb.accentColor }]} numberOfLines={1}>
+                INSPIRED BY {product.inspiredBy.toUpperCase()}
+              </Text>
+              <Feather name="chevron-right" size={9} color={linkedCeleb.accentColor} />
+            </Pressable>
+          ) : (
+            <View style={[styles.inspiredChip, { borderColor: colors.gold, backgroundColor: colors.gold + "18" }]}>
+              <Feather name="star" size={9} color={colors.gold} />
+              <Text style={[styles.inspiredText, { color: colors.gold }]} numberOfLines={1}>
+                INSPIRED BY {product.inspiredBy.toUpperCase()}
+              </Text>
+            </View>
+          )
         )}
 
         <Text style={[styles.desc, { color: colors.mutedForeground }]} numberOfLines={2}>
@@ -102,7 +156,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </Pressable>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
