@@ -15,6 +15,7 @@ import { Product } from "@/constants/data";
 import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 
 interface ProductCardProps {
   product: Product;
@@ -25,6 +26,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const { isProductSaved, saveProduct, unsaveProduct, findLook } = useApp();
   const saved = isProductSaved(product.id);
+  // Brand-tap → shop brand drawer (batch 65 — 4th/5th/6th surfaces in the
+  // closet→shop signals track via the single shared ProductCard render path
+  // used by profile saved products, shop iconChanneled rail, and shop main
+  // grid). Gated on brandCatalog membership: canonical brands link with a
+  // chevron cue, collabs/variants render plain (no false affordance). Shop
+  // brand drawer renders products inline (not via ProductCard), so no
+  // tap-into-the-same-brand no-op risk; no opt-out prop needed.
+  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
+  const brandLinkable = brandCatalog.has(product.brand.toLowerCase());
 
   // Resolve back-references staged in batch 31. Both are optional — when
   // the product was saved from a non-celeb generic catalog source, both
@@ -92,9 +102,26 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* ── Info ── */}
       <View style={styles.info}>
         <View style={styles.topRow}>
-          <Text style={[styles.brand, { color: colors.gold }]} numberOfLines={1}>
-            {product.brand.toUpperCase()}
-          </Text>
+          {brandLinkable ? (
+            // Nested Pressable inside the outer card Pressable — same proven
+            // pattern as the heart-toggle and BUY NOW buttons in this card.
+            // hitSlop kept tight (6) so the outer card tap (→ sourceLook
+            // when present) still dominates most of the card surface.
+            <Pressable
+              onPress={() => goShopBrand(product.brand)}
+              hitSlop={6}
+              style={({ pressed }) => [styles.brandLinkRow, { opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Text style={[styles.brand, { color: colors.gold, flex: 1 }]} numberOfLines={1}>
+                {product.brand.toUpperCase()}
+              </Text>
+              <Feather name="chevron-right" size={11} color={colors.gold} />
+            </Pressable>
+          ) : (
+            <Text style={[styles.brand, { color: colors.gold, flex: 1, marginRight: 8 }]} numberOfLines={1}>
+              {product.brand.toUpperCase()}
+            </Text>
+          )}
           <Pressable onPress={toggleSave} hitSlop={12}>
             <Feather
               name="heart"
@@ -214,11 +241,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   brand: {
+    // flex:1 + marginRight:8 moved inline so the linkable branch can carry
+    // them on its Pressable wrapper instead, while the non-linkable Text
+    // branch carries them directly — both branches preserve the original
+    // truncation + heart-spacing behavior.
     fontSize: 10,
     fontFamily: "Inter_700Bold",
     letterSpacing: 2,
+  },
+  brandLinkRow: {
     flex: 1,
     marginRight: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   name: {
     fontSize: 15,
