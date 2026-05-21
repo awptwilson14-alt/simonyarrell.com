@@ -462,14 +462,30 @@ export default function LookDetailScreen() {
             const relCeleb = relatedDrivenByCeleb && look.inspiredBy
               ? findCelebByName(look.inspiredBy)
               : undefined;
+            // Parallel to relCeleb: when the rail is NOT celeb-driven AND
+            // look.style is a known TREND, upgrade the header to "More
+            // {Trend}" with a one-tap MORE CTA that pushes /style with
+            // trendHint pre-loaded. Mutual exclusion (celeb → trend →
+            // neutral) mirrors the chip-slot priority on the style screen
+            // (batch 51). Visually parallel to CHANNEL: reuses
+            // channelCta/channelCtaText styles, swaps icon (trending-up vs
+            // refresh-cw) and color (gold vs accentColor) to match the
+            // trend-bias visual vocab from batches 51-54. Seventh surface
+            // for the trend-hint loop.
+            const relTrendName =
+              !relatedDrivenByCeleb && TRENDS.some((t) => t.name === look.style)
+                ? look.style
+                : null;
             return (
               <View style={styles.relatedHeaderRow}>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
                   {relatedDrivenByCeleb && look.inspiredBy
                     ? `More from ${look.inspiredBy}`
+                    : relTrendName
+                    ? `More ${relTrendName}`
                     : "You Might Also Love"}
                 </Text>
-                {relCeleb && (
+                {relCeleb ? (
                   <Pressable
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -489,7 +505,27 @@ export default function LookDetailScreen() {
                       CHANNEL
                     </Text>
                   </Pressable>
-                )}
+                ) : relTrendName ? (
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      router.push({
+                        pathname: "/(tabs)/style",
+                        params: { trendHint: relTrendName },
+                      });
+                    }}
+                    style={({ pressed }) => [
+                      styles.channelCta,
+                      { borderColor: colors.gold, opacity: pressed ? 0.75 : 1 },
+                    ]}
+                    hitSlop={6}
+                  >
+                    <Feather name="trending-up" size={10} color={colors.gold} />
+                    <Text style={[styles.channelCtaText, { color: colors.gold }]}>
+                      MORE
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
             );
           })()}
