@@ -24,6 +24,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "sparkles", selected: "sparkles" }} />
         <Label>Style</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="shop">
+        <Icon sf={{ default: "bag", selected: "bag.fill" }} />
+        <Label>Shop</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="closet">
         <Icon sf={{ default: "hanger", selected: "hanger" }} />
         <Label>Closet</Label>
