@@ -32,9 +32,22 @@ export default function ExploreScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { userProfile } = useApp();
+  const { userProfile, savedLooks } = useApp();
   const visibleCelebs = filterCelebsByGender(CELEBS, userProfile.gender);
   const [activeTab, setActiveTab] = useState<Tab>("trends");
+
+  // Saved-look counts per celeb NAME — same source-of-truth used on
+  // /celebrity directory (batch 24) and home "Continue Exploring" (batch 25).
+  // Drives the engagement badge on both featured strip and list cards so
+  // every surface that lists celebs agrees on what the user has saved.
+  const savedCountByCeleb = (() => {
+    const counts = new Map<string, number>();
+    for (const l of savedLooks) {
+      if (!l.inspiredBy) continue;
+      counts.set(l.inspiredBy, (counts.get(l.inspiredBy) ?? 0) + 1);
+    }
+    return counts;
+  })();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const heroFor = (name: string, seed?: string) => pickStyleHero(name, userProfile.gender, seed);
 
@@ -131,7 +144,9 @@ export default function ExploreScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.celebRow}
             >
-              {visibleCelebs.map((celeb) => (
+              {visibleCelebs.map((celeb) => {
+                const savedCount = savedCountByCeleb.get(celeb.name) ?? 0;
+                return (
                 <Pressable
                   key={celeb.id}
                   onPress={() => {
@@ -155,6 +170,12 @@ export default function ExploreScreen() {
                       colors={["transparent", "rgba(11,11,12,0.82)"]}
                       style={StyleSheet.absoluteFill}
                     />
+                    {savedCount > 0 && (
+                      <View style={[styles.savedBadge, { backgroundColor: celeb.accentColor }]}>
+                        <Feather name="star" size={8} color="#0B0B0C" />
+                        <Text style={styles.savedBadgeText}>{savedCount}</Text>
+                      </View>
+                    )}
                     {/* Name overlay */}
                     <View style={styles.celebNameOverlay}>
                       <Text style={styles.celebNameText} numberOfLines={1}>
@@ -166,14 +187,17 @@ export default function ExploreScreen() {
                     </View>
                   </View>
                 </Pressable>
-              ))}
+                );
+              })}
             </ScrollView>
 
             {/* All celebs list */}
             <Text style={[styles.rowLabel, { color: colors.mutedForeground, marginTop: 4 }]}>
               ALL STYLE ICONS
             </Text>
-            {visibleCelebs.map((celeb) => (
+            {visibleCelebs.map((celeb) => {
+              const savedCount = savedCountByCeleb.get(celeb.name) ?? 0;
+              return (
               <Pressable
                 key={celeb.id}
                 onPress={() => {
@@ -184,7 +208,7 @@ export default function ExploreScreen() {
                   styles.listCard,
                   {
                     backgroundColor: colors.card,
-                    borderColor: colors.border,
+                    borderColor: savedCount > 0 ? celeb.accentColor : colors.border,
                     opacity: pressed ? 0.85 : 1,
                   },
                 ]}
@@ -221,10 +245,17 @@ export default function ExploreScreen() {
                   </View>
                 </View>
 
-                {/* Arrow */}
+                {/* Saved count + arrow */}
+                {savedCount > 0 && (
+                  <View style={[styles.listSavedChip, { backgroundColor: celeb.accentColor + "22", borderColor: celeb.accentColor }]}>
+                    <Feather name="star" size={9} color={celeb.accentColor} />
+                    <Text style={[styles.listSavedText, { color: celeb.accentColor }]}>{savedCount}</Text>
+                  </View>
+                )}
                 <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
               </Pressable>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -395,5 +426,34 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: "Inter_500Medium",
     letterSpacing: 0.8,
+  },
+  savedBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 2,
+  },
+  savedBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#0B0B0C",
+  },
+  listSavedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 0.5,
+    borderRadius: 2,
+  },
+  listSavedText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
   },
 });
