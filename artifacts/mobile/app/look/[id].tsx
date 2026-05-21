@@ -20,7 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
 import { LOOKS, TRENDS } from "@/constants/data";
-import { BRANDS } from "@/constants/brands";
+import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
@@ -42,25 +42,12 @@ export default function LookDetailScreen() {
   const [panel, setPanel] = useState<PanelView>("details");
 
   const look = findLook(id ?? "");
-  // Batch 63 — extend the batch-62 closet→shop brand handoff to look-detail
-  // piece brands. Build a lowercased name set once per render for O(1)
-  // membership checks (BRANDS is ~100 entries; useMemo deps are stable).
-  // Look pieces include collabs and variants ("Nike x Off-White", "Ralph
-  // Lauren Purple Label") that intentionally won't match — we fail closed
-  // and render those as plain text rather than risk false positives from
-  // substring matching. Clean brand strings ("The Row", "Bottega Veneta",
-  // "Gucci") match exactly and become tappable.
-  const brandCatalog = React.useMemo(
-    () => new Set(BRANDS.map((b) => b.name.toLowerCase())),
-    []
-  );
-  const goShopBrand = React.useCallback(
-    (b: string) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      router.push({ pathname: "/(tabs)/shop", params: { brand: b } });
-    },
-    [router]
-  );
+  // Look-detail piece brands tap → shop brand drawer (batch 63 → batch 64
+  // extracted to shared hook so closet, look, and celebrity all share one
+  // contract). brandCatalog gates the affordance — look pieces include
+  // collabs/variants ("Nike x Off-White", "Ralph Lauren Purple Label") that
+  // intentionally won't match BRANDS canonical names and render plain.
+  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
   // Context-aware related strip with a four-tier waterfall:
   //   1. SAME ICON (savedLooks) — when the current look has inspiredBy, other
   //      saved looks channeling the same celeb are the strongest "more like

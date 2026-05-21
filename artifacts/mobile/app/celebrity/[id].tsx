@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { findCelebById } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { LookCard } from "@/components/LookCard";
 
@@ -29,6 +30,14 @@ export default function CelebrityDetailScreen() {
   const router = useRouter();
   const { isCelebritySaved, toggleCelebrity, savedLooks } = useApp();
   const [activeTab, setActiveTab] = useState<"story" | "looks" | "brands">("story");
+  // Brands They Wear chips → shop brand drawer (batch 64 — third surface
+  // in the closet→shop signals track after closet signature [62] and
+  // look-detail pieces [63]). Gated by brandCatalog: collabs and personal
+  // labels ("OVO", "Yeezy", "Nike / Nocta", "Cactus Jack") intentionally
+  // won't match BRANDS canonical names — those render as plain chips
+  // (existing behavior), canonical brands ("Louis Vuitton", "Hermès",
+  // "Balenciaga", "Bottega Veneta") become tappable with a chevron cue.
+  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
 
   const celeb = findCelebById(id);
   if (!celeb) {
@@ -294,27 +303,51 @@ export default function CelebrityDetailScreen() {
               Shop directly from their wardrobe
             </Text>
             <View style={styles.brandsGrid}>
-              {celeb.signatureBrands.map((brand, idx) => (
-                <View
-                  key={brand}
-                  style={[
-                    styles.brandChip,
-                    {
-                      backgroundColor: idx === 0 ? celeb.accentColor + "22" : colors.card,
-                      borderColor: idx === 0 ? celeb.accentColor : colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.brandChipText,
-                      { color: idx === 0 ? celeb.accentColor : colors.foreground },
-                    ]}
+              {celeb.signatureBrands.map((brand, idx) => {
+                const linkable = brandCatalog.has(brand.toLowerCase());
+                const accent = idx === 0;
+                // Chip foreground contract (text + chevron read as one):
+                //   - accent chip (idx 0): celeb.accentColor — special-cased
+                //     even when not linkable so the brand-of-record still pops.
+                //   - linkable non-accent chip: gold — the established
+                //     "navigable" color across the app's affordance vocab.
+                //   - non-linkable non-accent chip: foreground — plain,
+                //     no false affordance.
+                // Architect-flagged in batch 64 review (criterion f): text
+                // and chevron must use the same color so they read as one
+                // chip foreground, not text+separate accent icon.
+                const fg = accent ? celeb.accentColor : linkable ? colors.gold : colors.foreground;
+                const chipBase = [
+                  styles.brandChip,
+                  {
+                    backgroundColor: accent ? celeb.accentColor + "22" : colors.card,
+                    borderColor: accent ? celeb.accentColor : colors.border,
+                  },
+                ];
+                const inner = (
+                  <>
+                    <Text style={[styles.brandChipText, { color: fg }]}>
+                      {brand}
+                    </Text>
+                    {linkable && (
+                      <Feather name="chevron-right" size={11} color={fg} />
+                    )}
+                  </>
+                );
+                return linkable ? (
+                  <Pressable
+                    key={brand}
+                    onPress={() => goShopBrand(brand)}
+                    style={({ pressed }) => [...chipBase, { opacity: pressed ? 0.6 : 1 }]}
                   >
-                    {brand}
-                  </Text>
-                </View>
-              ))}
+                    {inner}
+                  </Pressable>
+                ) : (
+                  <View key={brand} style={chipBase}>
+                    {inner}
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -620,6 +653,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    // Row layout so the optional chevron sits inline with the brand text.
+    // Non-linkable chips have a single Text child so flexDirection is a
+    // no-op for them — keeps one style block for both cases.
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   brandChipText: {
     fontSize: 12,

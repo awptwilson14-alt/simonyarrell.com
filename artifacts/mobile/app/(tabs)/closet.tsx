@@ -16,6 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import { GoldButton } from "@/components/GoldButton";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { useRouter } from "expo-router";
 import { BrandWordmark } from "@/components/BrandWordmark";
 
@@ -27,6 +28,7 @@ export default function ClosetScreen() {
   const insets = useSafeAreaInsets();
   const { closetItems, addClosetItem, removeClosetItem } = useApp();
   const router = useRouter();
+  const { goShopBrand } = useShopBrandHandoff();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [activeCategory, setActiveCategory] = useState("All");
@@ -218,13 +220,13 @@ export default function ClosetScreen() {
             <View style={styles.signatureRow}>
               {signature.brand && (
                 <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push({
-                      pathname: "/(tabs)/shop",
-                      params: { brand: signature.brand },
-                    });
-                  }}
+                  // Closet WARDROBE SIGNATURE → shop brand drawer (batch 62,
+                  // refactored to shared hook batch 64). NOT gated by
+                  // brandCatalog — user's most-worn brand is a trusted single
+                  // signal, gating would be a UX regression if a niche brand
+                  // they actually own isn't in the BRANDS catalog. Shop side
+                  // handles miss silently (param cleared, no state change).
+                  onPress={() => goShopBrand(signature.brand)}
                   style={({ pressed }) => [styles.signatureBlock, { opacity: pressed ? 0.6 : 1 }]}
                 >
                   <Text style={[styles.signatureKey, { color: colors.mutedForeground }]}>MOST WORN</Text>
