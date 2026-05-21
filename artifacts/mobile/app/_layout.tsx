@@ -10,6 +10,7 @@ import {
   PlayfairDisplay_600SemiBold,
   PlayfairDisplay_700Bold,
 } from "@expo-google-fonts/playfair-display";
+import { Feather } from "@expo/vector-icons";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -65,6 +66,12 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // Preload Feather's font at the root so it registers exactly once.
+  // Without this, the icon font auto-loads lazily the first time each
+  // screen mounts a <Feather /> — if two screens mount in the same tick
+  // (e.g. tab swap during route transition) iOS CoreText returns
+  // CTFontManagerError 104 ("font already registered") and the
+  // expo-font loadAsync promise rejects with an uncaught error overlay.
   const [interLoaded, interError] = useInterFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -73,6 +80,7 @@ export default function RootLayout() {
     PlayfairDisplay_400Regular,
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
+    ...Feather.font,
   });
 
   const fontsLoaded = interLoaded;
