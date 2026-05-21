@@ -37,22 +37,28 @@ export default function LookDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook, userProfile } = useApp();
+  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook, userProfile, savedLooks } = useApp();
   const [panel, setPanel] = useState<PanelView>("details");
 
   const look = findLook(id ?? "");
-  // Context-aware related strip: prefer same-style first, then same-occasion,
-  // then fall back to the rest of the catalog. Using a Set keyed by id keeps
-  // the tiered fill deduped and stable even when style + occasion overlap.
-  // For celeb-inspired generated looks (LOOKS has no inspiredBy data), the
-  // dominantStyle match is the strongest available proxy for cohesion.
-  const allRelated = (() => {
-    if (!look) return LOOKS.slice(0, 3);
-    const pool = LOOKS.filter((l) => l.id !== id);
+  // Context-aware related strip with a four-tier waterfall:
+  //   1. SAME ICON (savedLooks) — when the current look has inspiredBy, other
+  //      saved looks channeling the same celeb are the strongest "more like
+  //      this" signal. Drawn from live user state, not the static catalog.
+  //   2. Same style (LOOKS catalog).
+  //   3. Same occasion (LOOKS catalog).
+  //   4. Anything else (LOOKS catalog).
+  // Set-keyed dedupe keeps the fill stable across tier overlaps and prevents
+  // a savedLook from re-appearing if it also lives in LOOKS.
+  // `relatedDrivenByCeleb` reflects whether tier-1 contributed anything, so
+  // the section header can switch to "More from {Icon}" only when celeb is
+  // actually the driver — never mislabel a pure style-tier rail.
+  const { allRelated, relatedDrivenByCeleb } = (() => {
+    if (!look) return { allRelated: LOOKS.slice(0, 3), relatedDrivenByCeleb: false };
     const picked: Look[] = [];
-    const seen = new Set<string>();
-    const take = (predicate: (l: Look) => boolean) => {
-      for (const l of pool) {
+    const seen = new Set<string>([id ?? ""]);
+    const take = (source: Look[], predicate: (l: Look) => boolean) => {
+      for (const l of source) {
         if (picked.length >= 3) return;
         if (seen.has(l.id)) continue;
         if (!predicate(l)) continue;
@@ -60,10 +66,21 @@ export default function LookDetailScreen() {
         seen.add(l.id);
       }
     };
-    take((l) => l.style === look.style);
-    take((l) => l.occasion === look.occasion);
-    take(() => true);
-    return picked;
+    let celebDriven = false;
+    if (look.inspiredBy) {
+      const before = picked.length;
+      // savedLooks first (recency-ordered live user history), then the static
+      // catalog (only the few LOOKS that carry inspiredBy will match). Two
+      // passes via the same `take` helper share the seen-set so a savedLook
+      // and its catalog twin can't double-fill.
+      take(savedLooks, (l) => l.inspiredBy === look.inspiredBy);
+      take(LOOKS, (l) => l.inspiredBy === look.inspiredBy);
+      if (picked.length > before) celebDriven = true;
+    }
+    take(LOOKS, (l) => l.style === look.style);
+    take(LOOKS, (l) => l.occasion === look.occasion);
+    take(LOOKS, () => true);
+    return { allRelated: picked, relatedDrivenByCeleb: celebDriven };
   })();
 
   if (!look) {
@@ -406,7 +423,9 @@ export default function LookDetailScreen() {
         {/* ── Related ── */}
         <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground, paddingHorizontal: 24, marginBottom: 16 }]}>
-            You Might Also Love
+            {relatedDrivenByCeleb && look.inspiredBy
+              ? `More from ${look.inspiredBy}`
+              : "You Might Also Love"}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
             {assignUniqueLookImages(
