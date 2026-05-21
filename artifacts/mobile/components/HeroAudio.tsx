@@ -31,7 +31,10 @@ const DEFAULT_MUTE_PREF_KEY = "maisonSimon:heroAudioMuted";
  */
 interface HeroAudioProps {
   top: number;
-  /** Audio asset (require()-style module ref). Defaults to hero.mp4. */
+  /** Audio asset (require()-style module ref). Defaults to hero.m4a (1.6MB
+   *  mono AAC, re-encoded from the original 18.8MB mp4 so Metro can serve
+   *  it in <1s on dev wifi and the ambient bed starts the instant the home
+   *  screen mounts instead of after a multi-second download). */
   source?: number;
   /**
    * AsyncStorage key for persisted mute pref. Each mount site uses its own
@@ -48,7 +51,7 @@ interface HeroAudioProps {
   defaultMuted?: boolean;
 }
 
-const HERO_AUDIO_SRC = require("../assets/audio/hero.mp4");
+const HERO_AUDIO_SRC = require("../assets/audio/hero.m4a");
 
 /**
  * Crash-safe wrapper. `useAudioPlayer` calls into a native module whose JS
