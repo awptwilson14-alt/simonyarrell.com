@@ -15,10 +15,20 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GoldButton } from "@/components/GoldButton";
+import { HeroAudio } from "@/components/HeroAudio";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { BUDGETS, GENDERS, STYLE_CATEGORIES } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+
+// Featured music cue for the splash only — Kenny G, "My Favorite Things".
+// User explicitly asked for it to play on this welcome screen. Loaded as a
+// require()-style module ref so Metro bundles it as a static asset. The
+// HeroAudio component handles loop/volume/autoplay-policy/mute toggle and
+// unmounts naturally when the user taps GET STARTED (which advances `step`
+// past 0 and conditionally renders out this splash branch).
+const WELCOME_AUDIO_SRC = require("../assets/audio/welcome.mp4");
+const WELCOME_AUDIO_MUTE_KEY = "maisonSimon:welcomeAudioMuted";
 
 const { width, height } = Dimensions.get("window");
 const STEPS = 5;
@@ -69,6 +79,16 @@ export default function OnboardingScreen() {
         <LinearGradient
           colors={["rgba(11,11,12,0.15)", "rgba(11,11,12,0.55)", "#0B0B0C"]}
           style={StyleSheet.absoluteFill}
+        />
+
+        {/* Featured welcome music. Mounted inside the step===0 branch so it
+            unmounts (and audio stops) the moment the user taps GET STARTED
+            or Continue as guest and advances past the splash. */}
+        <HeroAudio
+          top={insets.top + 16}
+          source={WELCOME_AUDIO_SRC}
+          mutePrefKey={WELCOME_AUDIO_MUTE_KEY}
+          defaultMuted={false}
         />
 
         <View style={[splash.content, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 48 }]}>
