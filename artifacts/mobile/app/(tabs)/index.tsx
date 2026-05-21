@@ -26,6 +26,7 @@ import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroIma
 import { assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import * as Haptics from "expo-haptics";
 
 const { width } = Dimensions.get("window");
@@ -33,6 +34,13 @@ const HEADER_HEIGHT = 64;
 
 export default function HomeScreen() {
   const colors = useColors();
+  // Brand strip handoff (batch 72) — see footer Brand Strip below. Hook
+  // returns a lowercased Set of shoppable BRANDS for O(1) catalog check
+  // plus a goShopBrand(name) that fires the Light haptic + routes to
+  // /(tabs)/shop with the brand filter pre-applied. Same primitive used
+  // by closet sig brands (batch 64), look-detail piece brands, and
+  // celebrity signatureBrands.
+  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userProfile, savedLooks } = useApp();
@@ -382,12 +390,46 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Brand Strip ── */}
+        {/*
+          Editorial partner wordmark row (batch 72). Each brand is tappable
+          when present in the shop catalog → /(tabs)/shop with brand filter
+          pre-applied (same handoff used everywhere else in the app: closet
+          sig brands batch 64, look-detail piece brands, celebrity
+          signatureBrands, ProductCard).
+
+          Visual affordance: tappable brands shift to colors.foreground
+          (slightly brighter than the muted base) plus pressed-opacity, so
+          users can tell at a glance which wordmarks are interactive without
+          cluttering this editorial footer with chevrons or chrome.
+          Fail-closed: if a brand is NOT in the catalog (legacy strip data
+          drifts from BRANDS), it stays a flat Text in mutedForeground —
+          never a broken nav.
+        */}
         <View style={[styles.brandStrip, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
-          {["GUCCI", "PRADA", "AMIRI", "BALENCIAGA", "SAINT LAURENT", "OFF-WHITE"].map((brand) => (
-            <Text key={brand} style={[styles.brandName, { color: colors.mutedForeground }]}>
-              {brand}
-            </Text>
-          ))}
+          {["GUCCI", "PRADA", "AMIRI", "BALENCIAGA", "SAINT LAURENT", "OFF-WHITE"].map((brand) => {
+            const shoppable = brandCatalog.has(brand.toLowerCase());
+            if (!shoppable) {
+              return (
+                <Text key={brand} style={[styles.brandName, { color: colors.mutedForeground }]}>
+                  {brand}
+                </Text>
+              );
+            }
+            return (
+              <Pressable
+                key={brand}
+                onPress={() => goShopBrand(brand)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={`Shop ${brand}`}
+                style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
+              >
+                <Text style={[styles.brandName, { color: colors.foreground }]}>
+                  {brand}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
 
