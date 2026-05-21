@@ -60,11 +60,12 @@ export default function StyleScreen() {
   // Snapshotted to local state on mount so it survives within this Style
   // session, then the route params are immediately cleared so the bias
   // does NOT leak the next time the user opens the Style tab.
-  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam } = useLocalSearchParams<{
+  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam } = useLocalSearchParams<{
     celebrity?: string;
     celebName?: string;
     lookHint?: string;
     trendHint?: string;
+    brand?: string;
   }>();
   const [activeCeleb, setActiveCeleb] = useState<CelebFull | undefined>(undefined);
   // Optional iconic-look hint when the user tapped a specific Signature Look
@@ -81,6 +82,16 @@ export default function StyleScreen() {
   // is also pre-filled into the prompt so generateLooks's prompt-bias picks
   // it up downstream — closes the loop end-to-end.
   const [activeTrendHint, setActiveTrendHint] = useState<string | undefined>(undefined);
+  // Optional brand-lock context (batch 83) — set when the user tapped
+  // "STYLE WITH <BRAND>" on a designer card in /shop. When set, the
+  // generator filters the CATALOG to ONLY this brand for every piece slot,
+  // so the look reflects exactly the designer the user selected — no
+  // cross-brand pollution. Snapshotted on mount and the route param is
+  // cleared so cold-opening the Style tab later does NOT silently re-apply
+  // the lock. Brand-lock is mutually exclusive with celeb/trend bias —
+  // when brand arrives, those are cleared to keep the header chip slot
+  // unambiguous.
+  const [activeBrand, setActiveBrand] = useState<string | undefined>(undefined);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [step, setStep] = useState<Step>("occasion");
@@ -124,6 +135,19 @@ export default function StyleScreen() {
     router.setParams({ trendHint: undefined });
   }, [trendHintParam, router]);
 
+  // One-shot capture of the brand-lock route param. Same snapshot-then-clear
+  // pattern as celeb/trend above. Clears celeb + trend so the header chip
+  // slot has ONE source-of-bias label at a time (brand wins, since the
+  // user's intent was explicit "only this designer").
+  useEffect(() => {
+    if (!brandParam) return;
+    setActiveBrand(brandParam);
+    setActiveCeleb(undefined);
+    setActiveLookHint(undefined);
+    setActiveTrendHint(undefined);
+    router.setParams({ brand: undefined });
+  }, [brandParam, router]);
+
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedOccasion(label);
@@ -153,6 +177,7 @@ export default function StyleScreen() {
           count: 6,
           celebSignatureBrands: activeCeleb?.signatureBrands,
           celebName: activeCeleb?.name,
+          brandLock: activeBrand,
         })
       ),
       new Promise((r) => setTimeout(r, 1800)),
@@ -174,6 +199,7 @@ export default function StyleScreen() {
     setActiveCeleb(undefined);
     setActiveLookHint(undefined);
     setActiveTrendHint(undefined);
+    setActiveBrand(undefined);
   };
 
   return (
@@ -195,7 +221,27 @@ export default function StyleScreen() {
                 <Feather name="arrow-left" size={20} color={colors.foreground} />
               </Pressable>
             )}
-            {activeCeleb ? (
+            {activeBrand ? (
+              // BRAND LOCK chip (batch 83) — visible confirmation that the
+              // generator is filtering to ONLY this designer for every piece
+              // slot. Tap × to release the lock and return to the normal
+              // mixed-brand generator. Gold-accented since brand-lock isn't
+              // tied to a celeb accent color or a trend.
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setActiveBrand(undefined);
+                }}
+                style={[s.channelChip, { borderColor: colors.gold }]}
+                hitSlop={6}
+              >
+                <Feather name="tag" size={10} color={colors.gold} />
+                <Text style={[s.channelChipText, { color: colors.gold }]} numberOfLines={1}>
+                  ONLY {activeBrand.toUpperCase()}
+                </Text>
+                <Feather name="x" size={11} color={colors.gold} />
+              </Pressable>
+            ) : activeCeleb ? (
               // CHANNELING chip — visible confirmation that celeb brand bias
               // is active for this Style session. Tinted with the celeb's
               // accentColor so it reads as "this is a {Celeb} look" rather

@@ -57,6 +57,14 @@ interface GenerateParams {
   // Stamped onto every produced Look as `inspiredBy` so the attribution
   // survives navigation into the look detail screen.
   celebName?: string;
+  // Strict brand lock — set when the user tapped "STYLE WITH <BRAND>" on a
+  // designer card in /shop (batch 83). When defined, every piece slot in
+  // every generated look is filtered to ONLY items where `item.brand` is
+  // an EXACT match for this string. No cross-brand pollution, even at the
+  // relaxed tiers. If the brand has no items in a category (e.g. Louis
+  // Vuitton in `top`), that slot is simply skipped — the look may be sparse
+  // but it will be 100% on-brand.
+  brandLock?: string;
 }
 
 // ─── Session dedup tracker ───────────────────────────────────────────────────
@@ -1430,8 +1438,23 @@ const STYLE_TAGS: Record<string, string[]> = {
 
 // ─── Core engine ──────────────────────────────────────────────────────────────
 
+// Brand-lock alias map (batch 83). The shop's BRANDS list and the outfit
+// CATALOG use slightly different display strings for a few houses, so an
+// exact `item.brand === brandLock` filter would yield an empty pool for
+// these even though catalog items DO exist. Normalize the shop name to
+// the catalog name before filtering. Only houses where the catalog has
+// genuine items under the canonical name are mapped — for shop brands
+// with zero catalog inventory we deliberately let the lock yield empty
+// looks (better an honest empty state than wrong-brand pollution).
+const BRAND_LOCK_ALIASES: Record<string, string> = {
+  "Christian Dior": "Dior",
+  "Versace Jeans Couture": "Versace",
+  "Zegna": "Ermenegildo Zegna",
+};
+
 export function generateLooks(params: GenerateParams): Look[] {
   const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName } = params;
+  const brandLock = params.brandLock ? (BRAND_LOCK_ALIASES[params.brandLock] ?? params.brandLock) : undefined;
   const { max: budgetMax } = parseBudget(budget);
   const genderKey = gender.toLowerCase() as "women" | "men" | "unisex";
 
@@ -1511,7 +1534,12 @@ export function generateLooks(params: GenerateParams): Look[] {
           item.category === cat &&
           matchesGenderLocal(item) &&
           matchesOccasionLocal(item) &&
-          matchesBudget(item)
+          matchesBudget(item) &&
+          // Brand lock (batch 83): when set, ONLY items from this exact
+          // brand survive into the pool. Applied at every relaxed tier so
+          // no cross-brand pollution can leak through even if budget,
+          // occasion, or gender are loosened.
+          (!brandLock || item.brand === brandLock)
       );
     }
 
@@ -1736,7 +1764,13 @@ export function generateLooks(params: GenerateParams): Look[] {
 
   // HARD GUARANTEE: if even pass 5 produces nothing (tiny catalog, etc.),
   // hand-assemble a deterministic minimal outfit from whatever the catalog has.
-  if (looks.length === 0) {
+  // Brand-lock (batch 83) is enforced here too — if brandLock is set we MUST
+  // NOT pull from full CATALOG, since that would silently introduce cross-
+  // brand pieces and violate the "only this designer" promise the chip makes.
+  // When brandLock is set and the brand has no items in the required
+  // categories, we skip the fallback entirely and return whatever looks
+  // were generated (possibly empty) — an honest sparse result beats lying.
+  if (looks.length === 0 && !brandLock) {
     const anyTop = CATALOG.find((i) => i.category === "top");
     const anyBottom = CATALOG.find((i) => i.category === "bottom");
     const anyShoe = CATALOG.find((i) => i.category === "shoes");

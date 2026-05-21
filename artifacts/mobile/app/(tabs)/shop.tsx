@@ -374,7 +374,18 @@ export default function ShopScreen() {
                         </View>
                         <Pressable
                           style={[styles.brandShopBtn, { borderColor: accent }]}
-                          onPress={() => router.push("/(tabs)/style")}
+                          onPress={() =>
+                            // Batch 83: pass the brand name as a route param
+                            // so /style activates brand-lock mode (every
+                            // piece slot filtered to ONLY this designer's
+                            // catalog items). Snapshotted + cleared on the
+                            // /style side so cold-opening the Style tab
+                            // later doesn't re-apply the lock.
+                            router.push({
+                              pathname: "/(tabs)/style",
+                              params: { brand: brand.name },
+                            })
+                          }
                         >
                           <Text style={[styles.brandShopText, { color: accent }]}>
                             STYLE WITH {brand.name.split(" ")[0].toUpperCase()}
