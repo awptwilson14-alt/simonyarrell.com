@@ -279,17 +279,39 @@ export default function StyleScreen() {
                 {selectedOccasion} · {selectedGender} · {selectedBudget}
               </Text>
               {activeCeleb && (
-                <View
-                  style={[
+                // INSPIRED BY pill on the results step — tap to jump to the
+                // celeb's profile (batch 71). Same handoff vocab as the
+                // LookCard inspiredTag (batch 68), ProductCard inspiredChip
+                // (batch 31 chain), and look-detail inspiredBy chip (batch
+                // 26): celeb-tinted, star + chevron-right, selection haptic.
+                // activeCeleb is CelebFull (guaranteed by useState type) so
+                // .id is safe — and the pill only renders inside this
+                // `activeCeleb &&` gate, so no null branch needed. Distinct
+                // from the persistent header CHANNELING chip (line ~213)
+                // which CLEARS the channel — this pill INSPECTS the icon.
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    router.push(`/celebrity/${activeCeleb.id}`);
+                  }}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${activeCeleb.name} profile`}
+                  style={({ pressed }) => [
                     s.inspiredPill,
-                    { borderColor: activeCeleb.accentColor, backgroundColor: activeCeleb.accentColor + "1A" },
+                    {
+                      borderColor: activeCeleb.accentColor,
+                      backgroundColor: activeCeleb.accentColor + "1A",
+                      opacity: pressed ? 0.7 : 1,
+                    },
                   ]}
                 >
                   <Feather name="star" size={10} color={activeCeleb.accentColor} />
                   <Text style={[s.inspiredPillText, { color: activeCeleb.accentColor }]}>
                     INSPIRED BY {activeCeleb.name.toUpperCase()}
                   </Text>
-                </View>
+                  <Feather name="chevron-right" size={11} color={activeCeleb.accentColor} />
+                </Pressable>
               )}
             </>
           )}
