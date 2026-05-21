@@ -40,9 +40,30 @@ export default function LookDetailScreen() {
   const [panel, setPanel] = useState<PanelView>("details");
 
   const look = findLook(id ?? "");
-  const allRelated = look
-    ? LOOKS.filter((l) => l.id !== id).slice(0, 3)
-    : LOOKS.slice(0, 3);
+  // Context-aware related strip: prefer same-style first, then same-occasion,
+  // then fall back to the rest of the catalog. Using a Set keyed by id keeps
+  // the tiered fill deduped and stable even when style + occasion overlap.
+  // For celeb-inspired generated looks (LOOKS has no inspiredBy data), the
+  // dominantStyle match is the strongest available proxy for cohesion.
+  const allRelated = (() => {
+    if (!look) return LOOKS.slice(0, 3);
+    const pool = LOOKS.filter((l) => l.id !== id);
+    const picked: Look[] = [];
+    const seen = new Set<string>();
+    const take = (predicate: (l: Look) => boolean) => {
+      for (const l of pool) {
+        if (picked.length >= 3) return;
+        if (seen.has(l.id)) continue;
+        if (!predicate(l)) continue;
+        picked.push(l);
+        seen.add(l.id);
+      }
+    };
+    take((l) => l.style === look.style);
+    take((l) => l.occasion === look.occasion);
+    take(() => true);
+    return picked;
+  })();
 
   if (!look) {
     return (
