@@ -20,6 +20,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { GoldButton } from "@/components/GoldButton";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { STYLE_CATEGORIES, BUDGETS, GENDERS } from "@/constants/data";
+import { CELEBS } from "@/constants/celebrities";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -95,6 +96,18 @@ export default function ProfileScreen() {
     { label: "IN CLOSET", value: closetItems.length },
   ];
 
+  // Top channeled celeb across the user's saved looks. Reuses the same
+  // inspiredBy === celeb.name attribution contract documented across batches
+  // 22, 24, 25, 28, 32, 33. savedCelebs is already sorted desc by count
+  // (see the existing memo). Resolve the top entry to a CELEBS record so we
+  // can tint the chip in the celeb's accentColor and route to /celebrity/[id].
+  // Skips silently when no attributed saves exist OR when the top name no
+  // longer matches a CELEBS entry (renamed/removed icon — defensive).
+  const topCeleb = savedCelebs[0];
+  const topCelebRecord = topCeleb
+    ? CELEBS.find((c) => c.name === topCeleb.name)
+    : undefined;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -132,6 +145,42 @@ export default function ProfileScreen() {
             <Feather name={editing ? "x" : "edit-2"} size={14} color={colors.mutedForeground} />
           </Pressable>
         </View>
+
+        {/* Most-channeled celeb — editorial signature for the user's taste.
+            Tappable → /celebrity/[id], chevron + accentColor tint match the
+            celeb-link language established in batches 26 + 32 (look detail
+            INSPIRED BY pill, product card chip). Hidden when no attributed
+            saves OR the icon record is missing. */}
+        {topCelebRecord && topCeleb && (
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push(`/celebrity/${topCelebRecord.id}`);
+            }}
+            style={({ pressed }) => [
+              styles.topCelebChip,
+              {
+                backgroundColor: `${topCelebRecord.accentColor}12`,
+                borderColor: `${topCelebRecord.accentColor}55`,
+                opacity: pressed ? 0.88 : 1,
+              },
+            ]}
+          >
+            <Feather name="star" size={12} color={topCelebRecord.accentColor} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.topCelebLabel, { color: topCelebRecord.accentColor }]}>
+                MOST CHANNELED
+              </Text>
+              <Text style={[styles.topCelebName, { color: colors.foreground }]} numberOfLines={1}>
+                {topCelebRecord.name}{" "}
+                <Text style={{ color: colors.mutedForeground, fontFamily: "Inter_400Regular" }}>
+                  · {topCeleb.count} {topCeleb.count === 1 ? "look" : "looks"}
+                </Text>
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={14} color={topCelebRecord.accentColor} />
+          </Pressable>
+        )}
 
         {/* Stats Row */}
         <View style={[styles.statsRow, { borderColor: colors.border }]}>
@@ -362,6 +411,26 @@ const styles = StyleSheet.create({
   styleList: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
   editBtn: { borderWidth: 0.5, borderRadius: 20, padding: 8 },
   statsRow: { flexDirection: "row", borderWidth: 0.5, borderRadius: 2 },
+  topCelebChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 2,
+    borderWidth: 0.5,
+    marginBottom: 12,
+  },
+  topCelebLabel: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  topCelebName: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
   statItem: { flex: 1, alignItems: "center", paddingVertical: 18, gap: 4 },
   statValue: { fontSize: 24, fontFamily: "Inter_700Bold" },
   statLabel: { fontSize: 9, fontFamily: "Inter_600SemiBold", letterSpacing: 1.5 },
