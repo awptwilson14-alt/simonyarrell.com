@@ -38,6 +38,36 @@ export default function HomeScreen() {
   const heroFor = (key: string, seed?: string) => pickStyleHero(key, userProfile.gender, seed);
   const lookHero = (name: string, seed?: string) => pickLookHero(name, userProfile.gender, seed);
 
+  // For You personalization: score every catalog look by how strongly it matches
+  // the user's taste signals.
+  //   +3 per match with a saved-look style (strongest — actual behavior)
+  //   +2 per match with userProfile.favoriteStyles (explicit preference)
+  // Sort by score desc, tie-broken by original index (stable). When no signal
+  // exists, fall back to plain reversed LOOKS so the strip never goes empty.
+  // Subtitle reflects the active signal source so the line isn't a lie.
+  const forYou = (() => {
+    const savedStyleCounts = new Map<string, number>();
+    for (const l of savedLooks) {
+      savedStyleCounts.set(l.style, (savedStyleCounts.get(l.style) ?? 0) + 1);
+    }
+    const favSet = new Set(userProfile.favoriteStyles);
+    const hasSignal = savedStyleCounts.size > 0 || favSet.size > 0;
+    if (!hasSignal) return [...LOOKS].reverse();
+    const scored = LOOKS.map((look, idx) => {
+      const savedHits = savedStyleCounts.get(look.style) ?? 0;
+      const score = savedHits * 3 + (favSet.has(look.style) ? 2 : 0);
+      return { look, score, idx };
+    });
+    scored.sort((a, b) => (b.score - a.score) || (a.idx - b.idx));
+    return scored.map((s) => s.look);
+  })();
+  const forYouSubtitle = (() => {
+    const savedStylesUsed = new Set(savedLooks.map((l) => l.style));
+    if (savedStylesUsed.size > 0) return "Based on your saved looks";
+    if (userProfile.favoriteStyles.length > 0) return userProfile.favoriteStyles.join(", ");
+    return "Based on your taste";
+  })();
+
   // Top celebs the user has saved looks from, joined back to the CELEBS record
   // so we can render with photo + accentColor. Only icons present in CELEBS
   // survive — drops any orphan names from legacy data. Sorted by save count
@@ -221,7 +251,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <SectionHeader
             title="For You"
-            subtitle={userProfile.favoriteStyles.length > 0 ? userProfile.favoriteStyles.join(", ") : "Based on your taste"}
+            subtitle={forYouSubtitle}
           />
           <ScrollView
             horizontal
@@ -229,7 +259,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.hList}
           >
             {assignUniqueLookImages(
-              [...LOOKS].reverse().map((look) => ({ ...look, image: lookHero(look.name, `fy-${look.id}`) ?? heroFor(look.style, `fy-${look.id}`) ?? look.image })),
+              forYou.map((look) => ({ ...look, image: lookHero(look.name, `fy-${look.id}`) ?? heroFor(look.style, `fy-${look.id}`) ?? look.image })),
               userProfile.gender,
             ).map((look) => (
               <LookCard key={look.id} look={look} />
