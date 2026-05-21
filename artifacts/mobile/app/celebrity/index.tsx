@@ -46,14 +46,26 @@ export default function CelebrityPickerScreen() {
   })();
 
   const genderFiltered = filterCelebsByGender(CELEBS, userProfile.gender);
-  const filtered =
-    activeVibe === "All"
-      ? genderFiltered
-      : genderFiltered.filter((c) =>
-          c.vibes.some((v) =>
-            v.toLowerCase().includes(activeVibe.toLowerCase().split(" ")[0].toLowerCase())
-          )
-        );
+  // Shared fuzzy match predicate — kept as ONE function so the per-vibe
+  // counts in the chip row can never drift from the actual filter below.
+  // "All" passes everything; otherwise we compare against the first word of
+  // the vibe label (e.g. "Y2K / Vintage" → "y2k") against each of the
+  // celeb's vibes via .includes. Lossy by design — vibes overlap and the
+  // chip ordering already encodes which match wins visually.
+  const matchesVibe = (celeb: typeof CELEBS[number], vibe: string) =>
+    vibe === "All" ||
+    celeb.vibes.some((v) =>
+      v.toLowerCase().includes(vibe.toLowerCase().split(" ")[0].toLowerCase()),
+    );
+  // Per-vibe counts derived from the SAME predicate the filter uses below.
+  // Pre-computed once per render so chip mapping doesn't re-filter per pill.
+  // 7 vibes × ~50 celebs is cheap — no need to memoize. Same distribution-
+  // awareness language shipped to closet (batch 47) and shop tiers (48).
+  const vibeCounts = VIBES.reduce<Record<string, number>>((acc, v) => {
+    acc[v] = genderFiltered.filter((c) => matchesVibe(c, v)).length;
+    return acc;
+  }, {});
+  const filtered = genderFiltered.filter((c) => matchesVibe(c, activeVibe));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -108,6 +120,17 @@ export default function CelebrityPickerScreen() {
                   ]}
                 >
                   {vibe.toUpperCase()}
+                  <Text
+                    style={[
+                      styles.filterCount,
+                      {
+                        color: active ? "#0B0B0C" : colors.mutedForeground,
+                        opacity: active ? 0.7 : 0.55,
+                      },
+                    ]}
+                  >
+                    {"  "}{vibeCounts[vibe] ?? 0}
+                  </Text>
                 </Text>
               </Pressable>
             );
@@ -251,6 +274,11 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_700Bold",
     letterSpacing: 1.5,
+  },
+  filterCount: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
   },
   grid: {
     paddingHorizontal: 20,
