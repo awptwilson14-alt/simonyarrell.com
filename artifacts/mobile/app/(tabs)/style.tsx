@@ -173,10 +173,36 @@ export default function StyleScreen() {
                 <Feather name="arrow-left" size={20} color={colors.foreground} />
               </Pressable>
             )}
-            <View style={s.headerBadge}>
-              <Feather name="zap" size={11} color={colors.gold} />
-              <Text style={[s.headerBadgeText, { color: colors.gold }]}>AI STYLE CURATOR</Text>
-            </View>
+            {activeCeleb ? (
+              // CHANNELING chip — visible confirmation that celeb brand bias
+              // is active for this Style session. Tinted with the celeb's
+              // accentColor so it reads as "this is a {Celeb} look" rather
+              // than the neutral curator badge. The × clears activeCeleb so
+              // the user can opt out of the bias mid-flow without restarting
+              // (e.g. came in from /celebrity but decided to generate a
+              // generic look instead). The existing reset button still clears
+              // everything including this; this just gives a softer escape.
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setActiveCeleb(undefined);
+                  setActiveLookHint(undefined);
+                }}
+                style={[s.channelChip, { borderColor: activeCeleb.accentColor }]}
+                hitSlop={6}
+              >
+                <Feather name="star" size={10} color={activeCeleb.accentColor} />
+                <Text style={[s.channelChipText, { color: activeCeleb.accentColor }]} numberOfLines={1}>
+                  CHANNELING {activeCeleb.name.split(" ")[0].toUpperCase()}
+                </Text>
+                <Feather name="x" size={11} color={activeCeleb.accentColor} />
+              </Pressable>
+            ) : (
+              <View style={s.headerBadge}>
+                <Feather name="zap" size={11} color={colors.gold} />
+                <Text style={[s.headerBadgeText, { color: colors.gold }]}>AI STYLE CURATOR</Text>
+              </View>
+            )}
             {step !== "occasion" ? (
               <Pressable onPress={reset} hitSlop={12}>
                 <Feather name="refresh-cw" size={16} color={colors.mutedForeground} />
@@ -412,6 +438,22 @@ const s = StyleSheet.create({
   headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   headerBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
   headerBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2 },
+  channelChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: 240,
+  },
+  channelChipText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.5,
+    flexShrink: 1,
+  },
   title: { fontSize: 36, fontFamily: "PlayfairDisplay_700Bold", lineHeight: 44, letterSpacing: -0.3 },
   subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
   inspiredPill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 0.5, paddingHorizontal: 10, paddingVertical: 5, marginTop: 6 },
