@@ -52,6 +52,10 @@ interface GenerateParams {
   // have no entry in STYLE_SIGNATURE_BRANDS, so this is the only way to
   // make a Drake-look actually feel Drake-coded.
   celebSignatureBrands?: string[];
+  // Display name of the celebrity that triggered this generation, if any.
+  // Stamped onto every produced Look as `inspiredBy` so the attribution
+  // survives navigation into the look detail screen.
+  celebName?: string;
 }
 
 // ─── Session dedup tracker ───────────────────────────────────────────────────
@@ -1411,7 +1415,7 @@ const STYLE_TAGS: Record<string, string[]> = {
 // ─── Core engine ──────────────────────────────────────────────────────────────
 
 export function generateLooks(params: GenerateParams): Look[] {
-  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [] } = params;
+  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName } = params;
   const { max: budgetMax } = parseBudget(budget);
   const genderKey = gender.toLowerCase() as "women" | "men" | "unisex";
 
@@ -1670,6 +1674,8 @@ export function generateLooks(params: GenerateParams): Look[] {
       // Expose the palette we composed pieces around so the look-detail page
       // can render it alongside style/season — completing the visible trifecta.
       colorPalette: selectedPalette.name,
+      // Celebrity attribution — undefined for regular generations.
+      inspiredBy: celebName,
     });
     }
   }

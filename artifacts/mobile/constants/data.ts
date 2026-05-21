@@ -25,6 +25,11 @@ export interface Look {
   // trifecta — style × palette × season — visible. Optional because the
   // hand-curated static LOOKS array doesn't pre-compute palette names.
   colorPalette?: string;
+  // Celebrity attribution — set on every look produced by a "GENERATE MY <CELEB>
+  // LOOK" session so the celebrity context survives navigation into the look
+  // detail page (and anywhere the look is later saved/displayed). Undefined
+  // for regular generations and for the static LOOKS array.
+  inspiredBy?: string;
 }
 
 export interface Celebrity {

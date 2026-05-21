@@ -128,6 +128,19 @@ export default function LookDetailScreen() {
           <Text style={[styles.description, { color: colors.mutedForeground }]}>
             {look.description}
           </Text>
+          {look.inspiredBy ? (
+            <View style={styles.brandsBlock}>
+              <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
+                INSPIRED BY
+              </Text>
+              <View style={styles.inspiredRow}>
+                <Feather name="star" size={11} color={colors.gold} />
+                <Text style={[styles.inspiredName, { color: colors.gold }]}>
+                  {look.inspiredBy.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+          ) : null}
           {(() => {
             const brands = getSignatureBrands(look.style, 4);
             if (brands.length === 0) return null;
@@ -367,6 +380,8 @@ const styles = StyleSheet.create({
   brandsBlock: { marginTop: 18, gap: 6 },
   brandsLabel: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   brandsList: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.5, lineHeight: 18 },
+  inspiredRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  inspiredName: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 1.2 },
   panelToggle: { flexDirection: "row", borderBottomWidth: 0.5 },
   panelTab: { flex: 1, paddingVertical: 16, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   panelTabText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 2 },

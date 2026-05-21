@@ -119,6 +119,7 @@ export default function StyleScreen() {
           favoriteStyles: userProfile.favoriteStyles,
           count: 6,
           celebSignatureBrands: activeCeleb?.signatureBrands,
+          celebName: activeCeleb?.name,
         })
       ),
       new Promise((r) => setTimeout(r, 1800)),
