@@ -60,10 +60,11 @@ export default function StyleScreen() {
   // Snapshotted to local state on mount so it survives within this Style
   // session, then the route params are immediately cleared so the bias
   // does NOT leak the next time the user opens the Style tab.
-  const { celebrity: celebrityId, lookHint: lookHintParam } = useLocalSearchParams<{
+  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam } = useLocalSearchParams<{
     celebrity?: string;
     celebName?: string;
     lookHint?: string;
+    trendHint?: string;
   }>();
   const [activeCeleb, setActiveCeleb] = useState<CelebFull | undefined>(undefined);
   // Optional iconic-look hint when the user tapped a specific Signature Look
@@ -72,6 +73,14 @@ export default function StyleScreen() {
   // loading copy so the per-card tap has visible meaning. Cleared with the
   // celeb params so it can't leak into a later session.
   const [activeLookHint, setActiveLookHint] = useState<string | undefined>(undefined);
+  // Optional trend context — set when the user tapped a card on the explore
+  // TRENDS subtab (batch 50/51). Parallel to activeCeleb but with different
+  // intent vocabulary: a trend is a TASTE bias, a celeb is a BRAND bias. We
+  // keep them mutually exclusive in the header chip slot so the user always
+  // sees ONE source-of-bias label, never a confusing stack. The trend name
+  // is also pre-filled into the prompt so generateLooks's prompt-bias picks
+  // it up downstream — closes the loop end-to-end.
+  const [activeTrendHint, setActiveTrendHint] = useState<string | undefined>(undefined);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [step, setStep] = useState<Step>("occasion");
@@ -102,6 +111,18 @@ export default function StyleScreen() {
     setActiveLookHint(lookHintParam || undefined);
     router.setParams({ celebrity: undefined, celebName: undefined, lookHint: undefined });
   }, [celebrityId, lookHintParam, router]);
+
+  // One-shot capture of the trend route param. Same snapshot-then-clear
+  // pattern as the celeb effect above — keeps trend context inside this
+  // Style session and prevents stale bias when the user later opens the
+  // Style tab cold. Pre-fills the prompt with the trend name so the
+  // generation flow downstream picks it up via the existing `prompt` arg.
+  useEffect(() => {
+    if (!trendHintParam) return;
+    setActiveTrendHint(trendHintParam);
+    setPrompt((p) => (p.trim().length === 0 ? trendHintParam : p));
+    router.setParams({ trendHint: undefined });
+  }, [trendHintParam, router]);
 
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -152,6 +173,7 @@ export default function StyleScreen() {
     setGenerateCount(0);
     setActiveCeleb(undefined);
     setActiveLookHint(undefined);
+    setActiveTrendHint(undefined);
   };
 
   return (
@@ -196,6 +218,28 @@ export default function StyleScreen() {
                   CHANNELING {activeCeleb.name.split(" ")[0].toUpperCase()}
                 </Text>
                 <Feather name="x" size={11} color={activeCeleb.accentColor} />
+              </Pressable>
+            ) : activeTrendHint ? (
+              // INSPIRED BY {TREND} chip — mirrors the celeb channeling chip's
+              // shape so the header always has the same affordance. Gold
+              // (vs per-celeb accent) because trends don't carry an accent
+              // color; gold is the brand's neutral-positive emphasis. × clears
+              // activeTrendHint AND the pre-filled prompt (only if prompt
+              // still equals the trend name — never clobber user-typed text).
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setActiveTrendHint(undefined);
+                  setPrompt((p) => (p === activeTrendHint ? "" : p));
+                }}
+                style={[s.channelChip, { borderColor: colors.gold }]}
+                hitSlop={6}
+              >
+                <Feather name="trending-up" size={10} color={colors.gold} />
+                <Text style={[s.channelChipText, { color: colors.gold }]} numberOfLines={1}>
+                  INSPIRED BY {activeTrendHint.toUpperCase()}
+                </Text>
+                <Feather name="x" size={11} color={colors.gold} />
               </Pressable>
             ) : (
               <View style={s.headerBadge}>

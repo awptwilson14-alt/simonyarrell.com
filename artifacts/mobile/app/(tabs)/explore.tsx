@@ -131,7 +131,12 @@ export default function ExploreScreen() {
               <View key={trend.id} style={i % 2 === 0 ? styles.trendLeft : styles.trendRight}>
                 <TrendCard
                   trend={{ ...trend, image: heroFor(trend.name, trend.id) ?? trend.image }}
-                  onPress={() => router.push("/(tabs)/style")}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/style",
+                      params: { trendHint: trend.name },
+                    })
+                  }
                   size={i < 2 ? "large" : "small"}
                   savedCount={savedCountByTrend.get(trend.name) ?? 0}
                 />

@@ -7,6 +7,7 @@
  */
 
 import type { Look, OutfitPiece } from "@/constants/data";
+import { TRENDS } from "@/constants/data";
 import { isBadUnsId } from "@/constants/badImageIds";
 import { CATALOG_EXTRAS } from "./catalogExtras";
 
@@ -1424,7 +1425,24 @@ export function generateLooks(params: GenerateParams): Look[] {
 
   // Style priorities: user's favorites first, then occasion defaults
   const occasionStyles = OCCASION_STYLES[occasion] ?? OCCASION_STYLES["Casual"];
+  // Prompt-derived trend bias. The TRENDS catalog names (e.g. "Old Money",
+  // "Y2K Revival") line up 1:1 with style keys used throughout the engine,
+  // so when the user's prompt mentions a trend by name — either typed
+  // manually OR auto-pre-filled by the explore-TRENDS → /style hand-off
+  // (batch 51) — we surface that style as a HIGH-priority bias.
+  //
+  // Bias mechanism: prepend the matched trend styles to stylePool ×4 so
+  // the uniform `pick(stylePool)` call below resolves to them ~4x more
+  // often than baseline. We intentionally do NOT filter by occasion here
+  // (unlike favoriteStyles) — the user expressing a trend is a stronger
+  // signal than the occasion default; if they tapped "Old Money" they
+  // want Old Money pieces even at a Casual occasion.
+  const promptLower = prompt.toLowerCase();
+  const promptTrendStyles = prompt.trim().length
+    ? TRENDS.map((t) => t.name).filter((n) => promptLower.includes(n.toLowerCase()))
+    : [];
   const stylePool = [
+    ...promptTrendStyles, ...promptTrendStyles, ...promptTrendStyles, ...promptTrendStyles,
     ...favoriteStyles.filter((s) => occasionStyles.includes(s)),
     ...occasionStyles,
   ];
