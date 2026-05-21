@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Platform,
@@ -35,6 +35,35 @@ export default function ClosetScreen() {
   const [newBrand, setNewBrand] = useState("");
   const [newCategory, setNewCategory] = useState("Tops");
   const [newColor, setNewColor] = useState("Black");
+
+  // Per-category live counts powering the filter chip badges. Single pass
+  // over closetItems (vs filtering per chip in render) keeps the chip row
+  // O(n+k) instead of O(n·k). Empty categories are hidden from the chip row
+  // (except "All", which always shows the total) so the filter doesn't
+  // surface dead taps for things the user has never added.
+  const categoryCounts = (() => {
+    const m = new Map<string, number>();
+    for (const it of closetItems) m.set(it.category, (m.get(it.category) ?? 0) + 1);
+    return m;
+  })();
+  const visibleCategories = CATEGORIES.filter(
+    (c) => c === "All" || (categoryCounts.get(c) ?? 0) > 0,
+  );
+  const countFor = (cat: string) =>
+    cat === "All" ? closetItems.length : (categoryCounts.get(cat) ?? 0);
+
+  // Auto-reset to "All" if the active category's chip just vanished (user
+  // deleted their last item in that bucket). Without this guard, the chip
+  // row would have no visible active state and the grid would render
+  // "No items in this category" — recoverable only by tapping another chip.
+  // Effect, not render-time setState, to avoid React's "Cannot update during
+  // render" anti-pattern. Same self-healing pattern as profile.tsx's celeb
+  // filter guards (batches 33, 46).
+  useEffect(() => {
+    if (activeCategory !== "All" && (categoryCounts.get(activeCategory) ?? 0) === 0) {
+      setActiveCategory("All");
+    }
+  }, [activeCategory, categoryCounts]);
 
   const filtered = closetItems.filter(
     (i) => activeCategory === "All" || i.category === activeCategory
@@ -209,15 +238,24 @@ export default function ClosetScreen() {
         {/* Category Filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
           <View style={styles.chipRow}>
-            {CATEGORIES.map((cat) => (
-              <Pressable
-                key={cat}
-                onPress={() => { Haptics.selectionAsync(); setActiveCategory(cat); }}
-                style={[styles.chip, { borderColor: activeCategory === cat ? colors.gold : colors.border, backgroundColor: activeCategory === cat ? colors.gold : "transparent" }]}
-              >
-                <Text style={[styles.chipText, { color: activeCategory === cat ? "#080808" : colors.mutedForeground }]}>{cat}</Text>
-              </Pressable>
-            ))}
+            {visibleCategories.map((cat) => {
+              const active = activeCategory === cat;
+              const count = countFor(cat);
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => { Haptics.selectionAsync(); setActiveCategory(cat); }}
+                  style={[styles.chip, { borderColor: active ? colors.gold : colors.border, backgroundColor: active ? colors.gold : "transparent" }]}
+                >
+                  <Text style={[styles.chipText, { color: active ? "#080808" : colors.mutedForeground }]}>
+                    {cat}
+                    <Text style={[styles.chipCount, { color: active ? "#080808" : colors.mutedForeground, opacity: active ? 0.7 : 0.55 }]}>
+                      {"  "}{count}
+                    </Text>
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </ScrollView>
 
@@ -279,6 +317,7 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: "row", gap: 8 },
   chip: { borderWidth: 0.5, borderRadius: 2, paddingHorizontal: 12, paddingVertical: 7 },
   chipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  chipCount: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   colorChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 0.5, borderRadius: 2, paddingHorizontal: 10, paddingVertical: 7 },
   colorDot: { width: 10, height: 10, borderRadius: 5 },
   catScroll: { marginBottom: -4 },
