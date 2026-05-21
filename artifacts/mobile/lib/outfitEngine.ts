@@ -1452,6 +1452,64 @@ const BRAND_LOCK_ALIASES: Record<string, string> = {
   "Zegna": "Ermenegildo Zegna",
 };
 
+/**
+ * Brand availability probe used by the Style screen empty-state to explain
+ * WHY a brand-locked generation returned zero looks. Per product rule the
+ * only acceptable empty reasons are:
+ *   1. Gender-specific brand — the locked brand has no items for this gender
+ *      (e.g. Bottega Veneta has no women's items in catalog, etc.)
+ *   2. Over budget — items exist but the cheapest assemblable outfit's price
+ *      exceeds the user's selected budget cap.
+ * Returns the cheapest 2-piece outfit price (dress+shoe OR top+bottom) so
+ * the UI can suggest a concrete budget bump.
+ */
+export function getBrandAvailability(
+  brand: string,
+  gender: string,
+  budget: string,
+): {
+  hasGenderItems: boolean;
+  cheapestOutfitPrice: number;
+  budgetMax: number;
+} {
+  const actualBrand = BRAND_LOCK_ALIASES[brand] ?? brand;
+  const genderKey = gender.toLowerCase() as "women" | "men" | "unisex";
+  const { max: budgetMax } = parseBudget(budget);
+  const pool = CATALOG.filter(
+    (i) =>
+      i.brand === actualBrand &&
+      (i.genders.includes(genderKey) || i.genders.includes("unisex")),
+  );
+  if (pool.length === 0) {
+    return { hasGenderItems: false, cheapestOutfitPrice: 0, budgetMax };
+  }
+  const cheapest = (cat: string): number => {
+    const items = pool.filter((i) => i.category === cat);
+    if (!items.length) return Infinity;
+    return Math.min(...items.map((i) => i.price));
+  };
+  const cTop = cheapest("top");
+  const cBottom = cheapest("bottom");
+  const cShoe = cheapest("shoes");
+  const cDress = cheapest("dress");
+  const cOuter = cheapest("outerwear");
+  const combos = [
+    cDress + cShoe,
+    cTop + cBottom + cShoe,
+    cTop + cBottom,
+    cTop + cShoe,
+    cBottom + cShoe,
+    cOuter + cBottom,
+    cDress + cOuter,
+  ];
+  const min = Math.min(...combos);
+  return {
+    hasGenderItems: true,
+    cheapestOutfitPrice: isFinite(min) ? min : 0,
+    budgetMax,
+  };
+}
+
 export function generateLooks(params: GenerateParams): Look[] {
   const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName } = params;
   const brandLock = params.brandLock ? (BRAND_LOCK_ALIASES[params.brandLock] ?? params.brandLock) : undefined;
@@ -1777,10 +1835,16 @@ export function generateLooks(params: GenerateParams): Look[] {
   // chip a true promise rather than producing an empty Curated Looks page
   // for thinly-stocked houses.
   if (looks.length === 0 && brandLock) {
+    // Honor budget here too — per product rule, the ONLY acceptable empty
+    // states are (a) brand is gender-specific for the chosen gender, or
+    // (b) the cheapest possible outfit exceeds the budget. Both surface
+    // their own UI message via getBrandAvailability(); silently pushing
+    // an over-budget look would defeat the budget filter the user picked.
     const brandPool = CATALOG.filter(
       (i) =>
         i.brand === brandLock &&
-        (i.genders.includes(genderKey) || i.genders.includes("unisex")),
+        (i.genders.includes(genderKey) || i.genders.includes("unisex")) &&
+        (budgetMax === 0 || i.price <= budgetMax),
     );
     const bTop = brandPool.find((i) => i.category === "top");
     const bBottom = brandPool.find((i) => i.category === "bottom");

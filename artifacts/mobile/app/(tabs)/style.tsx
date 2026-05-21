@@ -23,7 +23,7 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero } from "@/constants/heroImages";
-import { generateLooks, resetShownLooks, assignUniqueLookImages } from "@/lib/outfitEngine";
+import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebById } from "@/lib/celebLookup";
 
@@ -502,12 +502,44 @@ export default function StyleScreen() {
               </View>
             ) : (
               <>
+                {/* Brand-lock empty-state — explains WHY this brand has 0 looks.
+                    Per product rule, only two acceptable empty reasons exist:
+                    gender-specific brand, or cheapest outfit over budget. */}
+                {results.length === 0 && activeBrand && (() => {
+                  const avail = getBrandAvailability(activeBrand, selectedGender || userProfile.gender, selectedBudget);
+                  return (
+                    <View style={s.brandEmptyBox}>
+                      <Feather
+                        name={!avail.hasGenderItems ? "user-x" : "dollar-sign"}
+                        size={28}
+                        color={colors.gold}
+                      />
+                      <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>
+                        {!avail.hasGenderItems
+                          ? `${activeBrand} is gender-specific`
+                          : "Look is over your budget"}
+                      </Text>
+                      <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>
+                        {!avail.hasGenderItems
+                          ? `${activeBrand} doesn't carry ${(selectedGender || userProfile.gender).toLowerCase()}'s pieces in our catalog. Try a different gender or remove the brand lock.`
+                          : `Looks from ${activeBrand} start around $${avail.cheapestOutfitPrice.toLocaleString()}. Try raising your budget or removing the brand lock.`}
+                      </Text>
+                      <View style={s.brandEmptyActions}>
+                        <GoldButton label="REMOVE BRAND LOCK" onPress={() => { setActiveBrand(undefined); setTimeout(() => generate(false), 50); }} variant="outline" />
+                        <GoldButton label="START OVER" onPress={reset} variant="ghost" />
+                      </View>
+                    </View>
+                  );
+                })()}
+
                 {/* Results grid */}
-                <View style={s.resultsGrid}>
-                  {assignUniqueLookImages(results, selectedGender || userProfile.gender).map((look) => (
-                    <LookCard key={look.id} look={look} width={CARD_W} />
-                  ))}
-                </View>
+                {results.length > 0 && (
+                  <View style={s.resultsGrid}>
+                    {assignUniqueLookImages(results, selectedGender || userProfile.gender).map((look) => (
+                      <LookCard key={look.id} look={look} width={CARD_W} />
+                    ))}
+                  </View>
+                )}
 
                 {/* Loading more spinner */}
                 {loading && (
@@ -519,21 +551,23 @@ export default function StyleScreen() {
                   </View>
                 )}
 
-                {/* Actions */}
-                {!loading && (
+                {/* Actions — only when there's something to load-more from */}
+                {!loading && results.length > 0 && (
                   <View style={s.resultActions}>
                     <GoldButton label="LOAD MORE LOOKS" onPress={() => generate(true)} variant="outline" />
                     <GoldButton label="START OVER" onPress={reset} variant="ghost" />
                   </View>
                 )}
 
-                {/* Session count */}
-                <View style={s.sessionNote}>
-                  <Feather name="layers" size={11} color={colors.mutedForeground} />
-                  <Text style={[s.sessionNoteText, { color: colors.mutedForeground }]}>
-                    {results.length} unique looks generated · no repeats
-                  </Text>
-                </View>
+                {/* Session count — hide when we're showing the brand-lock empty state */}
+                {results.length > 0 && (
+                  <View style={s.sessionNote}>
+                    <Feather name="layers" size={11} color={colors.mutedForeground} />
+                    <Text style={[s.sessionNoteText, { color: colors.mutedForeground }]}>
+                      {results.length} unique looks generated · no repeats
+                    </Text>
+                  </View>
+                )}
               </>
             )}
           </View>
@@ -608,6 +642,30 @@ const s = StyleSheet.create({
   // Results
   resultsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   resultActions: { gap: 12 },
+  brandEmptyBox: {
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: "rgba(198,167,94,0.25)",
+    borderRadius: 16,
+    backgroundColor: "rgba(198,167,94,0.04)",
+  },
+  brandEmptyTitle: {
+    fontSize: 16,
+    fontFamily: "PlayfairDisplay_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.3,
+  },
+  brandEmptyText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    lineHeight: 19,
+    maxWidth: 280,
+  },
+  brandEmptyActions: { gap: 10, width: "100%", marginTop: 8 },
   loadMoreSpinner: { alignItems: "center", paddingVertical: 24, gap: 10 },
   sessionNote: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 4 },
   sessionNoteText: { fontSize: 11, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
