@@ -55,18 +55,23 @@ export interface Trend {
 }
 
 // Canonical trend-membership predicate. Single source of truth for every
-// surface that counts/filters saved looks by trend. A look is "in" a trend
-// when its style equals the trend name OR its tags include it. Centralized
-// in batch 59 after architect flagged drift risk across five duplicated call
-// sites (batches 50/54/56/58). Accepts the minimal shape so it composes with
-// both the Look type and ad-hoc objects without type juggling.
+// surface that counts/filters saved items by trend. An item is "in" a trend
+// when its style equals the trend name OR (if it has tags) its tags include
+// it. Centralized in batch 59 after architect flagged drift risk across
+// duplicated call sites (batches 50/54/56/58). Accepts the minimal shape so
+// it composes with Look, Product, and ad-hoc objects without type juggling
+// — Product has no `tags` field, so the optional chain returns undefined and
+// the nullish coalesce makes it fall through to the style equality check.
 //   Surfaces: /explore TrendCard SAVED badge (50), home Trends-You-Love rail
 //   (54), profile savedTrends + trendFilter (56), home Trending Now badge
-//   (58). All five now call this helper; counts cannot drift.
+//   (58), profile saved-products trend filter (60). All call this helper;
+//   counts and filter semantics cannot drift. Name kept as isLookInTrend
+//   even though products use it too — products entering trends via `style`
+//   is a natural Look-like read, and renaming would churn 6+ call sites.
 export const isLookInTrend = (
-  look: { style: string; tags?: string[] },
+  item: { style: string; tags?: string[] },
   trendName: string,
-): boolean => look.style === trendName || (look.tags?.includes(trendName) ?? false);
+): boolean => item.style === trendName || (item.tags?.includes(trendName) ?? false);
 
 export interface Product {
   id: string;

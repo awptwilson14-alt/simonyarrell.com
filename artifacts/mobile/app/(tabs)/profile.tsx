@@ -51,6 +51,11 @@ export default function ProfileScreen() {
   // but few inspiredBy products (or vice versa) — sharing one filter would
   // silently empty the inactive section when switching tabs.
   const [productCelebFilter, setProductCelebFilter] = useState<string | null>(null);
+  // Product trend filter — symmetry with looks side (trendFilter, batch 56).
+  // Same orthogonality argument: a user might shop heavily Old Money but save
+  // looks across many trends. Independent state keeps each section's filter
+  // surface honest.
+  const [productTrendFilter, setProductTrendFilter] = useState<string | null>(null);
 
   // Derived list of distinct celebs that appear in saved looks, sorted by
   // descending count so the most-saved celeb leads. Drives the filter pills.
@@ -89,6 +94,18 @@ export default function ProfileScreen() {
       .map((t) => ({
         name: t.name,
         count: savedLooks.reduce((n, l) => (isLookInTrend(l, t.name) ? n + 1 : n), 0),
+      }))
+      .filter(({ count }) => count > 0)
+      .sort((a, b) => b.count - a.count);
+  })();
+  // Same shape for the products side. Products have no `tags`, so the helper
+  // falls through to the `style === t.name` check — semantics consistent
+  // with looks side and intentional per the helper's docstring.
+  const savedProductTrends = (() => {
+    return TRENDS
+      .map((t) => ({
+        name: t.name,
+        count: savedProducts.reduce((n, p) => (isLookInTrend(p, t.name) ? n + 1 : n), 0),
       }))
       .filter(({ count }) => count > 0)
       .sort((a, b) => b.count - a.count);
@@ -135,15 +152,31 @@ export default function ProfileScreen() {
       setTrendFilter(null);
     }
   }, [trendFilter, savedTrends]);
+  // Same coupling pattern for productTrendFilter — row hides at <2, filter
+  // auto-clears at <2, single source of truth (batches 56/57).
+  useEffect(() => {
+    if (
+      productTrendFilter &&
+      (savedProductTrends.length < 2 ||
+        !savedProductTrends.some((t) => t.name === productTrendFilter))
+    ) {
+      setProductTrendFilter(null);
+    }
+  }, [productTrendFilter, savedProductTrends]);
 
   const visibleSavedLooks = savedLooks.filter((l) => {
     if (celebFilter && l.inspiredBy !== celebFilter) return false;
     if (trendFilter && !isLookInTrend(l, trendFilter)) return false;
     return true;
   });
-  const visibleSavedProducts = productCelebFilter
-    ? savedProducts.filter((p) => p.inspiredBy === productCelebFilter)
-    : savedProducts;
+  // AND-compose celeb + trend filters, mirroring looks side. Single .filter
+  // with early returns per axis — cleaner than nested ternaries and matches
+  // the visibleSavedLooks shape above.
+  const visibleSavedProducts = savedProducts.filter((p) => {
+    if (productCelebFilter && p.inspiredBy !== productCelebFilter) return false;
+    if (productTrendFilter && !isLookInTrend(p, productTrendFilter)) return false;
+    return true;
+  });
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(userProfile.name);
   const [editGender, setEditGender] = useState(userProfile.gender);
@@ -543,6 +576,42 @@ export default function ProfileScreen() {
                         {c.name && <Feather name="star" size={9} color={active ? colors.gold : colors.mutedForeground} />}
                         <Text style={[styles.celebFilterText, { color: active ? colors.gold : colors.mutedForeground }]}>
                           {c.label} · {c.count}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+              {/* Trend filter row — symmetry with the looks side. trending-up
+                  icon (vs star) and non-uppercased trend names (Old Money
+                  reads correctly, ALL CAPS would read shouty) — same grammar
+                  as the looks trend row. Reuses celebFilter* styles since
+                  the chip shape is identical, only icon + label case differ.
+                  AND-composes with productCelebFilter so users can express
+                  "Drake-coded pieces that are Old Money" via two taps. */}
+              {savedProductTrends.length >= 2 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.celebFilterRow}
+                >
+                  {[{ name: null as string | null, count: savedProducts.length, label: "ALL TRENDS" }, ...savedProductTrends.map((t) => ({ name: t.name as string | null, count: t.count, label: t.name }))].map((t) => {
+                    const active = productTrendFilter === t.name;
+                    return (
+                      <Pressable
+                        key={t.name ?? "__all"}
+                        onPress={() => { Haptics.selectionAsync(); setProductTrendFilter(t.name); }}
+                        style={[
+                          styles.celebFilterChip,
+                          {
+                            borderColor: active ? colors.gold : colors.border,
+                            backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                          },
+                        ]}
+                      >
+                        {t.name && <Feather name="trending-up" size={9} color={active ? colors.gold : colors.mutedForeground} />}
+                        <Text style={[styles.celebFilterText, { color: active ? colors.gold : colors.mutedForeground }]}>
+                          {t.label} · {t.count}
                         </Text>
                       </Pressable>
                     );
