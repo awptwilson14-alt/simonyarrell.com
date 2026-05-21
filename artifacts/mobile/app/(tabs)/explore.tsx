@@ -56,6 +56,25 @@ export default function ExploreScreen() {
   // when two celebs have equal counts (avoids the avatar row reshuffling on
   // every re-render). Capped at 6 — beyond that we want the user pulled into
   // the full directory rather than scrolling a personalized rail.
+  // Saved-look counts per TREND NAME — matches by Look.style OR
+  // Look.tags.includes(trend.name). The static LOOKS array authors style as
+  // "Old Money" / "Y2K Revival" which lines up 1:1 with trend names; user-
+  // generated saves can also surface a trend via their tag array. Powers the
+  // "★ N SAVED" badge on TrendCard (same language as the celeb card badge
+  // shipped in batch 18) — first personalization signal on the TRENDS subtab,
+  // which previously had none. Cheap: O(saves × 6) per render.
+  const savedCountByTrend = (() => {
+    const counts = new Map<string, number>();
+    for (const l of savedLooks) {
+      for (const t of TRENDS) {
+        if (l.style === t.name || l.tags?.includes(t.name)) {
+          counts.set(t.name, (counts.get(t.name) ?? 0) + 1);
+        }
+      }
+    }
+    return counts;
+  })();
+
   const yourIcons = visibleCelebs
     .filter((c) => (savedCountByCeleb.get(c.name) ?? 0) > 0)
     .sort((a, b) => {
@@ -114,6 +133,7 @@ export default function ExploreScreen() {
                   trend={{ ...trend, image: heroFor(trend.name, trend.id) ?? trend.image }}
                   onPress={() => router.push("/(tabs)/style")}
                   size={i < 2 ? "large" : "small"}
+                  savedCount={savedCountByTrend.get(trend.name) ?? 0}
                 />
               </View>
             ))}

@@ -8,9 +8,22 @@ interface TrendCardProps {
   trend: Trend;
   onPress: () => void;
   size?: "large" | "small";
+  /**
+   * Number of the user's saved looks that match this trend (by style or tag).
+   * When > 0 a gold "★ N SAVED" pill renders in the top-right corner, mirroring
+   * the celebrity card badge (batch 18 / celebrity directory). Surfaces the
+   * "this trend matters to you" signal on the explore TRENDS grid — first
+   * personalization signal on a subtab that previously had none.
+   */
+  savedCount?: number;
 }
 
-export function TrendCard({ trend, onPress, size = "large" }: TrendCardProps) {
+export function TrendCard({
+  trend,
+  onPress,
+  size = "large",
+  savedCount = 0,
+}: TrendCardProps) {
   const colors = useColors();
   const isLarge = size === "large";
 
@@ -28,6 +41,18 @@ export function TrendCard({ trend, onPress, size = "large" }: TrendCardProps) {
         style={[styles.image, isLarge ? styles.imageLarge : styles.imageSmall]}
         resizeMode="cover"
       />
+      {savedCount > 0 && (
+        <View
+          style={[
+            styles.savedBadge,
+            { borderColor: colors.gold, backgroundColor: "rgba(11,11,12,0.78)" },
+          ]}
+        >
+          <Text style={[styles.savedBadgeText, { color: colors.gold }]}>
+            ★ {savedCount} SAVED
+          </Text>
+        </View>
+      )}
       <View style={styles.overlay}>
         <View style={[styles.badge, { borderColor: colors.gold }]}>
           <Text style={[styles.badgeText, { color: colors.gold }]}>TREND</Text>
@@ -86,6 +111,19 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_600SemiBold",
     letterSpacing: 1.5,
+  },
+  savedBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    borderWidth: 0.5,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  savedBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.2,
   },
   name: {
     fontSize: 16,
