@@ -19,7 +19,7 @@ import { Feather } from "@expo/vector-icons";
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
-import { LOOKS } from "@/constants/data";
+import { LOOKS, TRENDS } from "@/constants/data";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
@@ -141,9 +141,35 @@ export default function LookDetailScreen() {
 
           <View style={styles.heroInfo}>
             <View style={styles.pillRow}>
-              <View style={[styles.stylePill, { borderColor: colors.gold }]}>
-                <Text style={[styles.stylePillText, { color: colors.gold }]}>{look.style}</Text>
-              </View>
+              {/* Style pill — when look.style is a known TREND name (e.g.
+                  "Old Money", "Y2K Revival"), upgrade it to a tappable
+                  affordance that jumps to /style with trendHint pre-loaded
+                  (batch 51 mechanism). Closes the "I love this look's
+                  vibe → make me more of it" loop in ONE tap. The trending-up
+                  icon + chevron makes the affordance visible vs the plain
+                  pill for non-trend styles. Mirrors batch 45's CHANNEL CTA
+                  but for taste bias rather than brand bias. */}
+              {TRENDS.some((t) => t.name === look.style) ? (
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push({
+                      pathname: "/(tabs)/style",
+                      params: { trendHint: look.style },
+                    });
+                  }}
+                  style={[styles.stylePill, styles.stylePillTappable, { borderColor: colors.gold }]}
+                  hitSlop={6}
+                >
+                  <Feather name="trending-up" size={9} color={colors.gold} />
+                  <Text style={[styles.stylePillText, { color: colors.gold }]}>{look.style}</Text>
+                  <Feather name="chevron-right" size={11} color={colors.gold} />
+                </Pressable>
+              ) : (
+                <View style={[styles.stylePill, { borderColor: colors.gold }]}>
+                  <Text style={[styles.stylePillText, { color: colors.gold }]}>{look.style}</Text>
+                </View>
+              )}
               {look.colorPalette ? (
                 <View style={[styles.stylePill, { borderColor: "rgba(245,245,240,0.4)" }]}>
                   <Text style={[styles.stylePillText, { color: "rgba(245,245,240,0.85)" }]}>
@@ -499,6 +525,7 @@ const styles = StyleSheet.create({
   heroInfo: { padding: 24, gap: 8 },
   pillRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   stylePill: { alignSelf: "flex-start", borderWidth: 0.5, paddingHorizontal: 10, paddingVertical: 4 },
+  stylePillTappable: { flexDirection: "row", alignItems: "center", gap: 6 },
   stylePillText: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2, textTransform: "uppercase" },
   lookName: { fontSize: 28, fontFamily: "PlayfairDisplay_700Bold", color: "#F5F5F0", lineHeight: 34 },
   heroMeta: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
