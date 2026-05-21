@@ -289,8 +289,20 @@ export default function HomeScreen() {
             />
           </View>
           <View style={styles.headerRight}>
-            <Pressable onPress={() => {}} style={styles.headerIcon}>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push("/activity");
+              }}
+              style={styles.headerIcon}
+            >
               <Feather name="bell" size={18} color={colors.foreground} />
+              {/* Subtle accent dot when there's anything in the inbox — same
+                  saved-looks signal that powers the /activity feed. Avoids
+                  promising notifications we can't actually deliver. */}
+              {savedLooks.length > 0 && (
+                <View style={[styles.bellDot, { backgroundColor: colors.gold }]} />
+              )}
             </Pressable>
             <Pressable onPress={() => router.push("/(tabs)/profile")} style={styles.headerIcon}>
               <Feather name="user" size={18} color={colors.foreground} />
@@ -401,4 +413,12 @@ const styles = StyleSheet.create({
   logoImg: { height: 32, width: 59 },
   headerRight: { flexDirection: "row", gap: 16, alignItems: "center" },
   headerIcon: { padding: 4 },
+  bellDot: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
 });
