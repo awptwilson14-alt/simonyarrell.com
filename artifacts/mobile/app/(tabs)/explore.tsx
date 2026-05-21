@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { TrendCard } from "@/components/TrendCard";
-import { TRENDS } from "@/constants/data";
+import { TRENDS, isLookInTrend } from "@/constants/data";
 import { CELEBS } from "@/constants/celebrities";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -67,7 +67,7 @@ export default function ExploreScreen() {
     const counts = new Map<string, number>();
     for (const l of savedLooks) {
       for (const t of TRENDS) {
-        if (l.style === t.name || l.tags?.includes(t.name)) {
+        if (isLookInTrend(l, t.name)) {
           counts.set(t.name, (counts.get(t.name) ?? 0) + 1);
         }
       }

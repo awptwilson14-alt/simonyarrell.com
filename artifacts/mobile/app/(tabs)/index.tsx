@@ -19,7 +19,7 @@ import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { HeroAudio } from "@/components/HeroAudio";
-import { LOOKS, TRENDS, type Trend } from "@/constants/data";
+import { LOOKS, TRENDS, isLookInTrend, type Trend } from "@/constants/data";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
@@ -91,19 +91,17 @@ export default function HomeScreen() {
   })();
 
   // Trends-You-Love rail — parallel to continueExploring but indexed on
-  // TRENDS instead of celebs. Uses the same matching predicate batch 50
-  // applied to the TrendCard SAVED badge (style===t.name OR
-  // tags.includes(t.name)) so counts can never disagree with the badges
-  // on /explore TRENDS. Iterate TRENDS in declared order, count once
-  // per trend, drop zero, sort desc, cap 6. Sixth surface in the
-  // trend-hint loop (batches 50-53).
+  // TRENDS instead of celebs. Counts via canonical isLookInTrend helper
+  // (constants/data.ts) — single source of truth shared with /explore
+  // SAVED badge (50), profile savedTrends/trendFilter (56), home
+  // Trending Now badge (58). Counts cannot drift. Iterate TRENDS in
+  // declared order, count once per trend, drop zero, sort desc, cap 6.
+  // Sixth surface in the trend-hint loop (batches 50-53).
   const trendsYouLove = (() => {
-    const matches = (look: { style: string; tags?: string[] }, t: Trend) =>
-      look.style === t.name || (look.tags?.includes(t.name) ?? false);
     return TRENDS
       .map((trend) => ({
         trend,
-        count: savedLooks.reduce((n, l) => (matches(l, trend) ? n + 1 : n), 0),
+        count: savedLooks.reduce((n, l) => (isLookInTrend(l, trend.name) ? n + 1 : n), 0),
       }))
       .filter(({ count }) => count > 0)
       .sort((a, b) => b.count - a.count)
@@ -342,10 +340,7 @@ export default function HomeScreen() {
           >
             {TRENDS.slice(0, 4).map((trend) => {
               const savedCount = savedLooks.reduce(
-                (n, l) =>
-                  l.style === trend.name || (l.tags?.includes(trend.name) ?? false)
-                    ? n + 1
-                    : n,
+                (n, l) => (isLookInTrend(l, trend.name) ? n + 1 : n),
                 0,
               );
               return (

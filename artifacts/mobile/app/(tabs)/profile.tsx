@@ -19,7 +19,7 @@ import { LookCard } from "@/components/LookCard";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldButton } from "@/components/GoldButton";
 import { MultiFilterChips } from "@/components/FilterChips";
-import { STYLE_CATEGORIES, BUDGETS, GENDERS, TRENDS } from "@/constants/data";
+import { STYLE_CATEGORIES, BUDGETS, GENDERS, TRENDS, isLookInTrend } from "@/constants/data";
 import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -80,18 +80,15 @@ export default function ProfileScreen() {
       .map(([name, count]) => ({ name, count }));
   })();
 
-  // Trends present in savedLooks, indexed with the same predicate batches
-  // 50/54 use for the TrendCard SAVED badge and the home Trends-You-Love
-  // rail (style===t.name OR tags.includes(t.name)). Counts can never drift
-  // across these surfaces. Drop zero, sort desc, surface as filter chips.
+  // Trends present in savedLooks, counted via canonical isLookInTrend helper
+  // (constants/data.ts) — single source of truth shared with /explore SAVED
+  // badge (50), home Trends-You-Love rail (54), home Trending Now badge (58).
+  // Drop zero, sort desc, surface as filter chips.
   const savedTrends = (() => {
     return TRENDS
       .map((t) => ({
         name: t.name,
-        count: savedLooks.reduce(
-          (n, l) => (l.style === t.name || (l.tags?.includes(t.name) ?? false) ? n + 1 : n),
-          0,
-        ),
+        count: savedLooks.reduce((n, l) => (isLookInTrend(l, t.name) ? n + 1 : n), 0),
       }))
       .filter(({ count }) => count > 0)
       .sort((a, b) => b.count - a.count);
@@ -141,10 +138,7 @@ export default function ProfileScreen() {
 
   const visibleSavedLooks = savedLooks.filter((l) => {
     if (celebFilter && l.inspiredBy !== celebFilter) return false;
-    if (trendFilter) {
-      const matches = l.style === trendFilter || (l.tags?.includes(trendFilter) ?? false);
-      if (!matches) return false;
-    }
+    if (trendFilter && !isLookInTrend(l, trendFilter)) return false;
     return true;
   });
   const visibleSavedProducts = productCelebFilter
