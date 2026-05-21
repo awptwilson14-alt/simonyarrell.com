@@ -29,9 +29,21 @@ export default function CelebrityPickerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { userProfile } = useApp();
+  const { userProfile, savedLooks } = useApp();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const [activeVibe, setActiveVibe] = useState("All");
+
+  // Saved-look counts per celeb NAME (inspiredBy stores the name, not the id —
+  // see batch 18). Powers the "★ N SAVED" badge on each card to close the loop
+  // between profile saves and celeb discovery.
+  const savedCountByCeleb = (() => {
+    const counts = new Map<string, number>();
+    for (const l of savedLooks) {
+      if (!l.inspiredBy) continue;
+      counts.set(l.inspiredBy, (counts.get(l.inspiredBy) ?? 0) + 1);
+    }
+    return counts;
+  })();
 
   const genderFiltered = filterCelebsByGender(CELEBS, userProfile.gender);
   const filtered =
@@ -116,7 +128,9 @@ export default function CelebrityPickerScreen() {
         </Text>
 
         <View style={styles.row}>
-          {filtered.map((celeb, idx) => (
+          {filtered.map((celeb, idx) => {
+            const savedCount = savedCountByCeleb.get(celeb.name) ?? 0;
+            return (
             <Pressable
               key={celeb.id}
               onPress={() => {
@@ -128,7 +142,7 @@ export default function CelebrityPickerScreen() {
                 {
                   width: CARD_W,
                   backgroundColor: colors.card,
-                  borderColor: colors.border,
+                  borderColor: savedCount > 0 ? celeb.accentColor : colors.border,
                   opacity: pressed ? 0.82 : 1,
                 },
               ]}
@@ -154,6 +168,15 @@ export default function CelebrityPickerScreen() {
                     {celeb.vibes[0].toUpperCase()}
                   </Text>
                 </View>
+                {/* Saved-looks count — only when user has saves from this icon. */}
+                {savedCount > 0 && (
+                  <View style={[styles.savedBadge, { backgroundColor: celeb.accentColor }]}>
+                    <Feather name="star" size={9} color="#0B0B0C" />
+                    <Text style={styles.savedBadgeText}>
+                      {savedCount} SAVED
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Info */}
@@ -172,7 +195,8 @@ export default function CelebrityPickerScreen() {
                 </Text>
               </View>
             </Pressable>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -273,6 +297,23 @@ const styles = StyleSheet.create({
     fontSize: 7,
     fontFamily: "Inter_700Bold",
     letterSpacing: 1,
+    color: "#0B0B0C",
+  },
+  savedBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 2,
+  },
+  savedBadgeText: {
+    fontSize: 8,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.2,
     color: "#0B0B0C",
   },
   cardInfo: {
