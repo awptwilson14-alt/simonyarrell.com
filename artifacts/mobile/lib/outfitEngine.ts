@@ -1489,6 +1489,13 @@ export function generateLooks(params: GenerateParams): Look[] {
     // Pick a dominant style and color palette for this look
     const dominantStyle = pick(stylePool.length > 0 ? stylePool : occasionStyles);
     const selectedPalette = pickPaletteForStyle(dominantStyle);
+    // Editorial brand bias — when the dominant style has curated signature
+    // houses (see STYLE_SIGNATURE_BRANDS), prefer pieces from those houses so
+    // the shop panel actually reflects the "SIGNATURE HOUSES" label shown on
+    // the look detail. Empty for styles without a curated list (e.g. celeb-
+    // unique styles), which makes the bias a no-op for those.
+    const sigBrandList = getSignatureBrands(dominantStyle, 8);
+    const sigBrands = new Set<string>(sigBrandList);
 
     // Decide outfit structure
     const useDress =
@@ -1516,6 +1523,23 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     const stylePick = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
+      // Signature-brand-biased tiers run FIRST when the style has curated
+      // houses. Falls through to the legacy tiers if no signature item exists
+      // in the pool — guarantees we never fail to place a piece just because
+      // (e.g.) the catalog has no shoes from any of the 5 signature houses.
+      if (sigBrands.size > 0) {
+        const sigPool = pool_.filter((i) => sigBrands.has(i.brand));
+        if (sigPool.length > 0) {
+          // Best of best: signature house + dominant style + palette
+          const sigPerfect = sigPool.filter(
+            (i) => i.styles.includes(dominantStyle) && paletteMatch(i.colors, selectedPalette.colors)
+          );
+          if (sigPerfect.length > 0) return pick(sigPerfect);
+          // Signature house + dominant style
+          const sigStyle = sigPool.filter((i) => i.styles.includes(dominantStyle));
+          if (sigStyle.length > 0) return pick(sigStyle);
+        }
+      }
       // Best: matches dominant style AND color palette
       const perfect = pool_.filter(
         (i) => i.styles.includes(dominantStyle) && paletteMatch(i.colors, selectedPalette.colors)
