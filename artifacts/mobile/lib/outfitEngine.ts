@@ -1583,6 +1583,12 @@ export function generateLooks(params: GenerateParams): Look[] {
         // category-matched placeholder pool and a brand-site search URL.
         imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
         purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
+        // Mark when this piece's brand is part of the active signature set
+        // (style sig houses ∪ celeb sig brands). The shop panel renders a
+        // small "★ SIGNATURE" chip on these so users see WHY the engine
+        // pulled this specific house. Source-of-truth attribution — no
+        // brittle display-time string matching.
+        signature: sigBrands.has(item.brand),
       });
       total += item.price;
     };

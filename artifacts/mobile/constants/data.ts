@@ -7,6 +7,11 @@ export interface OutfitPiece {
   color: string;
   imageUrl?: string;
   purchaseUrl?: string;
+  // True when the engine picked this piece from the signature-house pool
+  // for the current style/celeb (see outfitEngine.ts addPiece). Drives the
+  // "★ SIGNATURE" chip in the look-detail shop panel. Undefined for the
+  // hand-curated static LOOKS array.
+  signature?: boolean;
 }
 
 export interface Look {

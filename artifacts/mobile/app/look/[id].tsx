@@ -271,9 +271,19 @@ export default function LookDetailScreen() {
                   </View>
 
                   <View style={styles.shopInfo}>
-                    <Text style={[styles.shopBrand, { color: colors.gold }]}>
-                      {piece.brand.toUpperCase()}
-                    </Text>
+                    <View style={styles.shopBrandRow}>
+                      <Text style={[styles.shopBrand, { color: colors.gold }]}>
+                        {piece.brand.toUpperCase()}
+                      </Text>
+                      {piece.signature ? (
+                        <View style={styles.sigBadge}>
+                          <Feather name="star" size={8} color={colors.gold} />
+                          <Text style={[styles.sigBadgeText, { color: colors.gold }]}>
+                            SIGNATURE
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={[styles.shopName, { color: colors.foreground }]} numberOfLines={2}>
                       {piece.name}
                     </Text>
@@ -425,7 +435,10 @@ const styles = StyleSheet.create({
   shopThumb: { width: 68, height: 68, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   shopThumbImg: { width: "100%", height: "100%" },
   shopInfo: { flex: 1, gap: 4 },
+  shopBrandRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   shopBrand: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  sigBadge: { flexDirection: "row", alignItems: "center", gap: 3, borderWidth: 0.5, borderColor: "rgba(198,167,94,0.5)", paddingHorizontal: 5, paddingVertical: 1 },
+  sigBadgeText: { fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 1 },
   shopName: { fontSize: 13, fontFamily: "Inter_500Medium", lineHeight: 18 },
   shopPriceRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 2 },
   shopPrice: { fontSize: 16, fontFamily: "PlayfairDisplay_700Bold" },
