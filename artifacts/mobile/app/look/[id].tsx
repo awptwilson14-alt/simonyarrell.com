@@ -21,7 +21,7 @@ import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
 import { LOOKS } from "@/constants/data";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
-import { hasNamedLookImageForStyle, assignUniqueLookImages } from "@/lib/outfitEngine";
+import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -128,6 +128,20 @@ export default function LookDetailScreen() {
           <Text style={[styles.description, { color: colors.mutedForeground }]}>
             {look.description}
           </Text>
+          {(() => {
+            const brands = getSignatureBrands(look.style, 4);
+            if (brands.length === 0) return null;
+            return (
+              <View style={styles.brandsBlock}>
+                <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
+                  SIGNATURE HOUSES
+                </Text>
+                <Text style={[styles.brandsList, { color: colors.foreground }]}>
+                  {brands.join("  ·  ")}
+                </Text>
+              </View>
+            );
+          })()}
         </View>
 
         {/* ── Panel toggle ── */}
@@ -350,6 +364,9 @@ const styles = StyleSheet.create({
   heroPrice: { fontSize: 22, fontFamily: "PlayfairDisplay_700Bold" },
   descSection: { padding: 24, borderBottomWidth: 0.5 },
   description: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22, letterSpacing: 0.2 },
+  brandsBlock: { marginTop: 18, gap: 6 },
+  brandsLabel: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2 },
+  brandsList: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.5, lineHeight: 18 },
   panelToggle: { flexDirection: "row", borderBottomWidth: 0.5 },
   panelTab: { flex: 1, paddingVertical: 16, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   panelTabText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 2 },

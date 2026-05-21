@@ -1075,6 +1075,32 @@ function generateDescription(occasion: string, style?: string): string {
   return pick(descs);
 }
 
+// Signature fashion houses per style — surfaced on the look-detail page as
+// editorial context so the card reads as authored, not generated. Each list
+// is curated to be the most recognizable houses that DEFINE the style, not
+// merely brands that happen to make one product in that aesthetic.
+const STYLE_SIGNATURE_BRANDS: Record<string, readonly string[]> = {
+  "Old Money":         ["Loro Piana", "Brunello Cucinelli", "The Row", "Hermès", "Ralph Lauren Purple Label"],
+  "Luxury Streetwear": ["Fear of God", "Rhude", "Amiri", "Off-White", "Palm Angels"],
+  "Vacation Luxe":     ["Loro Piana", "Zimmermann", "Jacquemus", "Etro", "Missoni"],
+  Techwear:            ["Acronym", "Stone Island Shadow", "Veilance", "Y-3", "Nike ACG"],
+  "Clean Minimal":     ["The Row", "Jil Sander", "Toteme", "Lemaire", "Khaite"],
+  "Y2K Revival":       ["Blumarine", "Diesel", "Miu Miu", "Mugler", "Versace"],
+  Business:            ["Tom Ford", "Brioni", "Ermenegildo Zegna", "Brunello Cucinelli", "Ralph Lauren Purple Label"],
+  Evening:             ["Tom Ford", "Saint Laurent", "Dolce & Gabbana", "Versace", "Roberto Cavalli"],
+  Formal:              ["Brioni", "Tom Ford", "Dior", "Giorgio Armani", "Ralph Lauren Purple Label"],
+  "Avant-garde":       ["Rick Owens", "Yohji Yamamoto", "Comme des Garçons", "Maison Margiela", "Junya Watanabe"],
+};
+
+// Returns up to `limit` signature houses for the given style, or an empty
+// array if no curated list exists. Callers should hide the section when empty
+// rather than render a generic fallback (would dilute the editorial voice).
+export function getSignatureBrands(style: string, limit = 4): readonly string[] {
+  const brands = STYLE_SIGNATURE_BRANDS[style];
+  if (!brands) return [];
+  return brands.slice(0, limit);
+}
+
 // ─── Massive Catalog — 200+ items, 80+ brands ────────────────────────────────
 
 const CATALOG: CatalogItem[] = [
