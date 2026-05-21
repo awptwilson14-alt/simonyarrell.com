@@ -19,7 +19,7 @@ import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { GoldButton } from "@/components/GoldButton";
 import { HeroAudio } from "@/components/HeroAudio";
-import { LOOKS, TRENDS } from "@/constants/data";
+import { LOOKS, TRENDS, type Trend } from "@/constants/data";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
@@ -86,6 +86,26 @@ export default function HomeScreen() {
         return celeb ? { celeb, count } : null;
       })
       .filter((x): x is { celeb: CelebFull; count: number } => x !== null)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  })();
+
+  // Trends-You-Love rail — parallel to continueExploring but indexed on
+  // TRENDS instead of celebs. Uses the same matching predicate batch 50
+  // applied to the TrendCard SAVED badge (style===t.name OR
+  // tags.includes(t.name)) so counts can never disagree with the badges
+  // on /explore TRENDS. Iterate TRENDS in declared order, count once
+  // per trend, drop zero, sort desc, cap 6. Sixth surface in the
+  // trend-hint loop (batches 50-53).
+  const trendsYouLove = (() => {
+    const matches = (look: { style: string; tags?: string[] }, t: Trend) =>
+      look.style === t.name || (look.tags?.includes(t.name) ?? false);
+    return TRENDS
+      .map((trend) => ({
+        trend,
+        count: savedLooks.reduce((n, l) => (matches(l, trend) ? n + 1 : n), 0),
+      }))
+      .filter(({ count }) => count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
   })();
@@ -197,6 +217,68 @@ export default function HomeScreen() {
                     <View style={styles.continueCountRow}>
                       <Feather name="star" size={9} color={celeb.accentColor} />
                       <Text style={[styles.continueCount, { color: celeb.accentColor }]}>
+                        {count} SAVED
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── Trends You Love (personalized trend strip) ──
+            Mirrors Continue Exploring's grammar (horiz strip of
+            image cards with bottom-overlay count + icon) so the two
+            personalized rails read as a pair. trending-up icon +
+            gold accent matches the trend-hint visual vocab
+            established in batches 51/52/53. Tap pushes /style with
+            trendHint pre-loaded — same contract as the explore tap,
+            look-detail pill tap, and profile chip tap. */}
+        {trendsYouLove.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader
+              title="Trends You Love"
+              subtitle="Vibes that keep showing up in your saves"
+              onSeeAll={() => router.push("/(tabs)/explore")}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hList}
+            >
+              {trendsYouLove.map(({ trend, count }) => (
+                <Pressable
+                  key={trend.id}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push({
+                      pathname: "/(tabs)/style",
+                      params: { trendHint: trend.name },
+                    });
+                  }}
+                  style={({ pressed }) => [
+                    styles.continueCard,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.gold,
+                      opacity: pressed ? 0.82 : 1,
+                    },
+                  ]}
+                >
+                  <Image source={trend.image} style={styles.continueImg} />
+                  <LinearGradient
+                    colors={["transparent", "rgba(11,11,12,0.92)"]}
+                    locations={[0.4, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.continueOverlay}>
+                    <Text style={styles.continueName} numberOfLines={1}>
+                      {trend.name}
+                    </Text>
+                    <View style={styles.continueCountRow}>
+                      <Feather name="trending-up" size={9} color={colors.gold} />
+                      <Text style={[styles.continueCount, { color: colors.gold }]}>
                         {count} SAVED
                       </Text>
                     </View>
