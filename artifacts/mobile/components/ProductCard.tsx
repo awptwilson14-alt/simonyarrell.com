@@ -1,9 +1,7 @@
 import * as Haptics from "expo-haptics";
-import { Image } from "expo-image";
 import * as Linking from "expo-linking";
-import React, { useState } from "react";
+import React from "react";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -11,6 +9,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
+import { ResilientImage } from "@/components/ResilientImage";
 import { Product } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -23,7 +22,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const colors = useColors();
   const { isProductSaved, saveProduct, unsaveProduct } = useApp();
   const saved = isProductSaved(product.id);
-  const [imgError, setImgError] = useState(false);
 
   const toggleSave = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -38,24 +36,16 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      {/* ── Product Image ── */}
+      {/* ── Product Image (with editorial brand-monogram fallback) ── */}
       <View style={[styles.imageWrapper, { backgroundColor: colors.secondary }]}>
-        {!imgError && product.imageUrl ? (
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={styles.image}
-            contentFit="cover"
-            onError={() => setImgError(true)}
-            transition={300}
-          />
-        ) : (
-          <View style={[styles.imageFallback, { backgroundColor: colors.secondary }]}>
-            <Feather name="image" size={28} color={colors.border} />
-            <Text style={[styles.fallbackCat, { color: colors.mutedForeground }]}>
-              {product.category}
-            </Text>
-          </View>
-        )}
+        <ResilientImage
+          uri={product.imageUrl}
+          style={styles.image}
+          brand={product.brand}
+          category={product.category}
+          size="lg"
+          transition={300}
+        />
         {/* Tier badge */}
         <View style={[styles.tierBadge, { backgroundColor: "rgba(11,11,12,0.72)" }]}>
           <Text style={[styles.tierBadgeText, { color: tierColor(product.price) }]}>
@@ -134,19 +124,6 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-  },
-  imageFallback: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  fallbackCat: {
-    fontSize: 10,
-    fontFamily: "Inter_500Medium",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
   },
   tierBadge: {
     position: "absolute",
