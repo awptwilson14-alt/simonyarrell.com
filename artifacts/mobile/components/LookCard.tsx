@@ -13,6 +13,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 import { Look } from "@/constants/data";
+import { CELEBS } from "@/constants/celebrities";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { pickStyleHero } from "@/constants/heroImages";
@@ -92,14 +93,28 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
         <View style={styles.styleTag}>
           <Text style={styles.styleTagText}>{look.style}</Text>
         </View>
-        {look.inspiredBy ? (
-          <View style={styles.inspiredTag}>
-            <Feather name="star" size={9} color={colors.gold} />
-            <Text style={[styles.inspiredTagText, { color: colors.gold }]} numberOfLines={1}>
-              {look.inspiredBy.split(" ")[0].toUpperCase()}
-            </Text>
-          </View>
-        ) : null}
+        {look.inspiredBy ? (() => {
+          // Resolve celeb record to tint the INSPIRED BY tag in the icon's
+          // accentColor — visual continuity with batches 22/26/28/32/33/34.
+          // Falls back to gold when the inspiredBy name isn't a CELEBS entry
+          // (legacy / removed icons). The same name-key attribution contract
+          // (`inspiredBy === celeb.name`) used everywhere else in the app.
+          const linked = CELEBS.find((c) => c.name === look.inspiredBy);
+          const tint = linked?.accentColor ?? colors.gold;
+          return (
+            <View
+              style={[
+                styles.inspiredTag,
+                { borderColor: `${tint}80` },
+              ]}
+            >
+              <Feather name="star" size={9} color={tint} />
+              <Text style={[styles.inspiredTagText, { color: tint }]} numberOfLines={1}>
+                {look.inspiredBy.split(" ")[0].toUpperCase()}
+              </Text>
+            </View>
+          );
+        })() : null}
       </View>
       <View style={[styles.info, { borderTopColor: colors.border }]}>
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
@@ -160,7 +175,6 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: "rgba(11,11,12,0.78)",
     borderWidth: 0.5,
-    borderColor: "rgba(198,167,94,0.5)",
     paddingHorizontal: 7,
     paddingVertical: 3,
     maxWidth: 130,
