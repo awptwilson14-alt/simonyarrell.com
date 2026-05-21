@@ -40,6 +40,12 @@ export default function ProfileScreen() {
   // name match. Auto-clears below when the active celeb is no longer present
   // in the saved list (e.g. user unsaved their last Drake-coded look).
   const [celebFilter, setCelebFilter] = useState<string | null>(null);
+  // Independent of celebFilter — they compose with AND. Lets the user
+  // narrow saved looks by celeb AND trend simultaneously (e.g. "Drake
+  // looks that are Old Money"). Mutual exclusion would have been simpler
+  // but would force the user to give up one signal to express the other,
+  // and these are orthogonal taste dimensions.
+  const [trendFilter, setTrendFilter] = useState<string | null>(null);
   // Independent product-side celeb filter. Looks and products are filtered
   // separately because a user channeling Audrey may have saved many looks
   // but few inspiredBy products (or vice versa) — sharing one filter would
@@ -74,6 +80,23 @@ export default function ProfileScreen() {
       .map(([name, count]) => ({ name, count }));
   })();
 
+  // Trends present in savedLooks, indexed with the same predicate batches
+  // 50/54 use for the TrendCard SAVED badge and the home Trends-You-Love
+  // rail (style===t.name OR tags.includes(t.name)). Counts can never drift
+  // across these surfaces. Drop zero, sort desc, surface as filter chips.
+  const savedTrends = (() => {
+    return TRENDS
+      .map((t) => ({
+        name: t.name,
+        count: savedLooks.reduce(
+          (n, l) => (l.style === t.name || (l.tags?.includes(t.name) ?? false) ? n + 1 : n),
+          0,
+        ),
+      }))
+      .filter(({ count }) => count > 0)
+      .sort((a, b) => b.count - a.count);
+  })();
+
   // Auto-clear stale filter if its celeb no longer exists in saved looks
   // (e.g. user unsaved their last Drake-coded look). Effect, not render-time
   // setState, to avoid React's "Cannot update during render" anti-pattern.
@@ -87,10 +110,31 @@ export default function ProfileScreen() {
       setProductCelebFilter(null);
     }
   }, [productCelebFilter, savedProductCelebs]);
+  // Self-healing guard for the trend filter. Two recovery paths:
+  //   1. Selected trend disappears entirely (last Old Money save removed).
+  //   2. savedTrends collapses to <2, which hides the trend row entirely —
+  //      a stranded trendFilter would silently keep filtering with no UI
+  //      affordance to clear it. So we also clear when the row hides, even
+  //      if the selected trend technically still has saves. The trend row
+  //      visibility threshold and the auto-clear threshold are now the
+  //      same single source of truth.
+  useEffect(() => {
+    if (
+      trendFilter &&
+      (savedTrends.length < 2 || !savedTrends.some((t) => t.name === trendFilter))
+    ) {
+      setTrendFilter(null);
+    }
+  }, [trendFilter, savedTrends]);
 
-  const visibleSavedLooks = celebFilter
-    ? savedLooks.filter((l) => l.inspiredBy === celebFilter)
-    : savedLooks;
+  const visibleSavedLooks = savedLooks.filter((l) => {
+    if (celebFilter && l.inspiredBy !== celebFilter) return false;
+    if (trendFilter) {
+      const matches = l.style === trendFilter || (l.tags?.includes(trendFilter) ?? false);
+      if (!matches) return false;
+    }
+    return true;
+  });
   const visibleSavedProducts = productCelebFilter
     ? savedProducts.filter((p) => p.inspiredBy === productCelebFilter)
     : savedProducts;
@@ -403,6 +447,47 @@ export default function ProfileScreen() {
                         {c.name && <Feather name="star" size={9} color={active ? colors.gold : colors.mutedForeground} />}
                         <Text style={[styles.celebFilterText, { color: active ? colors.gold : colors.mutedForeground }]}>
                           {c.label} · {c.count}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+              {/* Trend filter row — parallel to celeb filter row above.
+                  Composes with celebFilter via AND so users can narrow on
+                  both axes simultaneously. Same chip grammar (border, bg,
+                  count grammar "LABEL · N"), only the leading icon swaps
+                  to trending-up to match the trend-bias visual vocab from
+                  batches 51-55. Hidden when fewer than 2 trends present
+                  (single trend = no useful filter, same threshold logic
+                  as celeb row). The trend label uses the trend NAME, not
+                  uppercased, since trend names are already title-case
+                  brand-style strings ("Old Money", "Y2K Revival") that
+                  would look shouty in ALL CAPS — slight grammar diff from
+                  celebs is intentional. */}
+              {savedTrends.length >= 2 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.celebFilterRow}
+                >
+                  {[{ name: null as string | null, count: savedLooks.length, label: "ALL TRENDS" }, ...savedTrends.map((t) => ({ name: t.name as string | null, count: t.count, label: t.name }))].map((t) => {
+                    const active = trendFilter === t.name;
+                    return (
+                      <Pressable
+                        key={t.name ?? "__alltrends"}
+                        onPress={() => { Haptics.selectionAsync(); setTrendFilter(t.name); }}
+                        style={[
+                          styles.celebFilterChip,
+                          {
+                            borderColor: active ? colors.gold : colors.border,
+                            backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                          },
+                        ]}
+                      >
+                        {t.name && <Feather name="trending-up" size={9} color={active ? colors.gold : colors.mutedForeground} />}
+                        <Text style={[styles.celebFilterText, { color: active ? colors.gold : colors.mutedForeground }]}>
+                          {t.label} · {t.count}
                         </Text>
                       </Pressable>
                     );
