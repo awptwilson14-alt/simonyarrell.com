@@ -20,6 +20,11 @@ export interface Look {
   pieces: OutfitPiece[];
   style: string;
   tags: string[];
+  // Named color palette this look was composed around (e.g. "Bougainvillea",
+  // "Executive Suite"). Surfaced to users on the look-detail page to make the
+  // trifecta — style × palette × season — visible. Optional because the
+  // hand-curated static LOOKS array doesn't pre-compute palette names.
+  colorPalette?: string;
 }
 
 export interface Celebrity {

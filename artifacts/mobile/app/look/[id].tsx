@@ -101,8 +101,17 @@ export default function LookDetailScreen() {
           </View>
 
           <View style={styles.heroInfo}>
-            <View style={[styles.stylePill, { borderColor: colors.gold }]}>
-              <Text style={[styles.stylePillText, { color: colors.gold }]}>{look.style}</Text>
+            <View style={styles.pillRow}>
+              <View style={[styles.stylePill, { borderColor: colors.gold }]}>
+                <Text style={[styles.stylePillText, { color: colors.gold }]}>{look.style}</Text>
+              </View>
+              {look.colorPalette ? (
+                <View style={[styles.stylePill, { borderColor: "rgba(245,245,240,0.4)" }]}>
+                  <Text style={[styles.stylePillText, { color: "rgba(245,245,240,0.85)" }]}>
+                    {look.colorPalette}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <Text style={styles.lookName}>{look.name}</Text>
             <View style={styles.heroMeta}>
@@ -332,6 +341,7 @@ const styles = StyleSheet.create({
   circleBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   topRight: { flexDirection: "row", gap: 10 },
   heroInfo: { padding: 24, gap: 8 },
+  pillRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   stylePill: { alignSelf: "flex-start", borderWidth: 0.5, paddingHorizontal: 10, paddingVertical: 4 },
   stylePillText: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2, textTransform: "uppercase" },
   lookName: { fontSize: 28, fontFamily: "PlayfairDisplay_700Bold", color: "#F5F5F0", lineHeight: 34 },

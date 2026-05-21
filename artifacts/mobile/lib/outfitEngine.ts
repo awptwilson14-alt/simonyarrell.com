@@ -1606,6 +1606,9 @@ export function generateLooks(params: GenerateParams): Look[] {
       pieces,
       style: dominantStyle,
       tags,
+      // Expose the palette we composed pieces around so the look-detail page
+      // can render it alongside style/season — completing the visible trifecta.
+      colorPalette: selectedPalette.name,
     });
     }
   }
@@ -1674,6 +1677,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         pieces,
         style: fallbackStyle,
         tags: [occasion.toLowerCase(), fallbackPalette.name.toLowerCase(), pieces[0].brand.toLowerCase()],
+        colorPalette: fallbackPalette.name,
       });
     }
   }
