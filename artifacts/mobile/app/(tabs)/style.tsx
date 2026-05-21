@@ -59,11 +59,18 @@ export default function StyleScreen() {
   // Snapshotted to local state on mount so it survives within this Style
   // session, then the route params are immediately cleared so the bias
   // does NOT leak the next time the user opens the Style tab.
-  const { celebrity: celebrityId } = useLocalSearchParams<{
+  const { celebrity: celebrityId, lookHint: lookHintParam } = useLocalSearchParams<{
     celebrity?: string;
     celebName?: string;
+    lookHint?: string;
   }>();
   const [activeCeleb, setActiveCeleb] = useState<CelebFull | undefined>(undefined);
+  // Optional iconic-look hint when the user tapped a specific Signature Look
+  // card on /celebrity/[id] (e.g. "Met Gala Yellow"). Cosmetic only — the
+  // engine still generates from celeb.signatureBrands; this drives the
+  // loading copy so the per-card tap has visible meaning. Cleared with the
+  // celeb params so it can't leak into a later session.
+  const [activeLookHint, setActiveLookHint] = useState<string | undefined>(undefined);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [step, setStep] = useState<Step>("occasion");
@@ -88,8 +95,12 @@ export default function StyleScreen() {
     if (!celebrityId) return;
     const celeb = CELEBS.find((c) => c.id === celebrityId);
     if (celeb) setActiveCeleb(celeb);
-    router.setParams({ celebrity: undefined, celebName: undefined });
-  }, [celebrityId, router]);
+    // Deterministic set — when a celeb param arrives WITHOUT a look hint
+    // (generic "GENERATE MY <CELEB> LOOK" CTA), explicitly clear any stale
+    // hint from a prior look-card entry in the same mounted Style session.
+    setActiveLookHint(lookHintParam || undefined);
+    router.setParams({ celebrity: undefined, celebName: undefined, lookHint: undefined });
+  }, [celebrityId, lookHintParam, router]);
 
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -139,6 +150,7 @@ export default function StyleScreen() {
     setResults([]);
     setGenerateCount(0);
     setActiveCeleb(undefined);
+    setActiveLookHint(undefined);
   };
 
   return (
@@ -332,7 +344,11 @@ export default function StyleScreen() {
               <View style={s.loadingBox}>
                 <ActivityIndicator color={activeCeleb?.accentColor ?? colors.gold} size="large" />
                 <Text style={[s.loadingTitle, { color: colors.foreground }]}>
-                  {activeCeleb ? `Channeling ${activeCeleb.name.split(" ")[0]}...` : "Curating your looks..."}
+                  {activeCeleb
+                    ? activeLookHint
+                      ? `Channeling ${activeCeleb.name.split(" ")[0]}'s ${activeLookHint}...`
+                      : `Channeling ${activeCeleb.name.split(" ")[0]}...`
+                    : "Curating your looks..."}
                 </Text>
                 <Text style={[s.loadingText, { color: colors.mutedForeground }]}>
                   {activeCeleb

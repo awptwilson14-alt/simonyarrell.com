@@ -186,11 +186,26 @@ export default function CelebrityDetailScreen() {
             </View>
             <View style={styles.looksGrid}>
               {celeb.looks.map((look, i) => (
-                <View
+                <Pressable
                   key={i}
-                  style={[
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push({
+                      pathname: "/(tabs)/style",
+                      params: {
+                        celebrity: celeb.id,
+                        celebName: celeb.name,
+                        lookHint: look.name,
+                      },
+                    });
+                  }}
+                  style={({ pressed }) => [
                     styles.lookGridCard,
-                    { backgroundColor: colors.card, borderColor: i === 0 ? celeb.accentColor : colors.border },
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: i === 0 ? celeb.accentColor : colors.border,
+                      opacity: pressed ? 0.82 : 1,
+                    },
                   ]}
                 >
                   <View style={styles.lookGridHeader}>
@@ -213,7 +228,16 @@ export default function CelebrityDetailScreen() {
                       </Text>
                     ))}
                   </View>
-                </View>
+                  {/* Recreate affordance — small gold cue at footer so the
+                      tap-to-generate intent is unmistakable. */}
+                  <View style={styles.lookGridCta}>
+                    <Feather name="zap" size={10} color={celeb.accentColor} />
+                    <Text style={[styles.lookGridCtaText, { color: celeb.accentColor }]}>
+                      RECREATE THIS LOOK
+                    </Text>
+                    <Feather name="arrow-right" size={10} color={celeb.accentColor} />
+                  </View>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -482,6 +506,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 2,
+  },
+  lookGridCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: "rgba(255,255,255,0.06)",
+  },
+  lookGridCtaText: {
+    flex: 1,
+    fontSize: 8,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.4,
   },
   iconicText: {
     fontSize: 8,
