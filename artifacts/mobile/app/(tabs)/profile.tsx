@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSubscription } from "@/lib/revenuecat";
 import {
   Alert,
@@ -35,6 +35,36 @@ export default function ProfileScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [activeSection, setActiveSection] = useState<Section>("looks");
+  // null = "All" — show every saved look. Otherwise filter by exact inspiredBy
+  // name match. Auto-clears below when the active celeb is no longer present
+  // in the saved list (e.g. user unsaved their last Drake-coded look).
+  const [celebFilter, setCelebFilter] = useState<string | null>(null);
+
+  // Derived list of distinct celebs that appear in saved looks, sorted by
+  // descending count so the most-saved celeb leads. Drives the filter pills.
+  const savedCelebs = (() => {
+    const counts = new Map<string, number>();
+    for (const l of savedLooks) {
+      if (!l.inspiredBy) continue;
+      counts.set(l.inspiredBy, (counts.get(l.inspiredBy) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count }));
+  })();
+
+  // Auto-clear stale filter if its celeb no longer exists in saved looks
+  // (e.g. user unsaved their last Drake-coded look). Effect, not render-time
+  // setState, to avoid React's "Cannot update during render" anti-pattern.
+  useEffect(() => {
+    if (celebFilter && !savedCelebs.some((c) => c.name === celebFilter)) {
+      setCelebFilter(null);
+    }
+  }, [celebFilter, savedCelebs]);
+
+  const visibleSavedLooks = celebFilter
+    ? savedLooks.filter((l) => l.inspiredBy === celebFilter)
+    : savedLooks;
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(userProfile.name);
   const [editGender, setEditGender] = useState(userProfile.gender);
@@ -222,11 +252,42 @@ export default function ProfileScreen() {
 
         {activeSection === "looks" && (
           savedLooks.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.savedList}>
-              {savedLooks.map((look) => (
-                <LookCard key={look.id} look={look} />
-              ))}
-            </ScrollView>
+            <>
+              {savedCelebs.length >= 2 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.celebFilterRow}
+                >
+                  {[{ name: null as string | null, count: savedLooks.length, label: "ALL" }, ...savedCelebs.map((c) => ({ name: c.name as string | null, count: c.count, label: c.name.toUpperCase() }))].map((c) => {
+                    const active = celebFilter === c.name;
+                    return (
+                      <Pressable
+                        key={c.name ?? "__all"}
+                        onPress={() => { Haptics.selectionAsync(); setCelebFilter(c.name); }}
+                        style={[
+                          styles.celebFilterChip,
+                          {
+                            borderColor: active ? colors.gold : colors.border,
+                            backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                          },
+                        ]}
+                      >
+                        {c.name && <Feather name="star" size={9} color={active ? colors.gold : colors.mutedForeground} />}
+                        <Text style={[styles.celebFilterText, { color: active ? colors.gold : colors.mutedForeground }]}>
+                          {c.label} · {c.count}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.savedList}>
+                {visibleSavedLooks.map((look) => (
+                  <LookCard key={look.id} look={look} />
+                ))}
+              </ScrollView>
+            </>
           ) : (
             <View style={styles.emptySection}>
               <Feather name="heart" size={32} color={colors.border} />
@@ -322,6 +383,9 @@ const styles = StyleSheet.create({
   sectionTab: { flex: 1, paddingVertical: 12, alignItems: "center" },
   sectionTabText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
   savedList: { paddingRight: 8 },
+  celebFilterRow: { gap: 8, paddingRight: 24, marginBottom: 14 },
+  celebFilterChip: { flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 0.5, paddingHorizontal: 11, paddingVertical: 6 },
+  celebFilterText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.2 },
   productsGrid: { gap: 12 },
   emptySection: { alignItems: "center", paddingVertical: 40, gap: 12 },
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular" },
