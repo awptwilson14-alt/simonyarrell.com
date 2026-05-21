@@ -2,6 +2,24 @@ import { Image } from "expo-image";
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { isBadUnsId } from "@/constants/badImageIds";
+
+/**
+ * Render-time denylist gate (batch 74). Extracts the Unsplash photo ID from
+ * any incoming URI and consults `isBadUnsId` — if the ID is in the visual
+ * denylist, the photo is suppressed and the editorial fallback tile renders
+ * instead. This protects against the failure mode where a saved snapshot
+ * (e.g. `savedProducts` persisted to AsyncStorage before the ID was added
+ * to the denylist) keeps showing the wrong/decayed image even after the
+ * source-side `uns()` gate has been updated. Same regex shape as `uns()`
+ * in `lib/outfitEngine.ts`.
+ */
+const UNSPLASH_PHOTO_RE = /images\.unsplash\.com\/photo-([0-9a-zA-Z_-]+)/;
+function extractUnsplashId(uri?: string): string | null {
+  if (!uri) return null;
+  const m = uri.match(UNSPLASH_PHOTO_RE);
+  return m ? m[1] : null;
+}
 
 /**
  * Editorial fallback image used everywhere a hotlinked CDN photo can fail
@@ -93,7 +111,17 @@ export function ResilientImage({
 }: ResilientImageProps) {
   const [failed, setFailed] = useState(false);
 
-  if (!uri || failed) {
+  // Render-time visual-denylist check — see header comment. Stale AsyncStorage
+  // saves (e.g. savedProducts captured before an ID joined the denylist) still
+  // ship the decayed URL to this component; pulling the ID out of the URI and
+  // re-running isBadUnsId here forces the editorial fallback no matter where
+  // the URI came from.
+  const denylisted = (() => {
+    const id = extractUnsplashId(uri);
+    return id ? isBadUnsId(id) : false;
+  })();
+
+  if (!uri || failed || denylisted) {
     const monoSize = size === "lg" ? 44 : size === "md" ? 28 : 20;
     const iconSize = size === "lg" ? 18 : size === "md" ? 12 : 9;
     const dotSize  = size === "lg" ? 12 : size === "md" ? 8  : 6;

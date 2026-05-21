@@ -1176,7 +1176,13 @@ const CATALOG: CatalogItem[] = [
   { id: "b013", name: "Vinyl Mini Skirt", brand: "Fashion Nova", price: 35, category: "bottom", styles: ["Y2K Revival"], occasions: ["Party", "Date Night"], genders: ["women"], colors: ["Black", "Red"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.fashionnova.com" },
 
   // ── BOTTOMS — Men ─────────────────────────────────────────────────────────
-  { id: "b014", name: "Slim Flannel Trouser", brand: "Ralph Lauren Purple Label", price: 695, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Date Night", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Stone"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.ralphlauren.com" },
+  // Real Ralph Lauren Purple Label slim flannel pants product photo via
+  // Amazon's CDN. Verified to depict an actual slim-fit grey/stone flannel
+  // trouser — replaces the denylisted Unsplash ID 1552902865-b72c031ac5ea
+  // which decayed to a woman in teal. productImageUrl is checked first
+  // (line 1602/1754) before falling back to the uns() ID, same pattern as
+  // catalogExtras.ts uses for shoes.
+  { id: "b014", name: "Slim Flannel Trouser", brand: "Ralph Lauren Purple Label", price: 695, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Date Night", "Event"], genders: ["men"], colors: ["Charcoal", "Navy", "Stone"], imageUrl: uns("1552902865-b72c031ac5ea"), productImageUrl: "https://m.media-amazon.com/images/I/7107KzirejL.jpg", purchaseUrl: "https://www.ralphlauren.com" },
   { id: "b015", name: "Slim Wool Trouser", brand: "Incotex", price: 480, category: "bottom", styles: ["Old Money", "Business"], occasions: ["Work", "Date Night", "Casual"], genders: ["men"], colors: ["Dark Brown", "Grey", "Navy"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.incotex.com" },
   { id: "b016", name: "Relaxed Chino", brand: "Polo Ralph Lauren", price: 165, category: "bottom", styles: ["Old Money", "Casual"], occasions: ["Casual", "Work", "Date Night"], genders: ["men"], colors: ["Stone", "Khaki", "Navy"], imageUrl: uns("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.ralphlauren.com" },
   { id: "b017", name: "Slim Raw-Edge Denim", brand: "Acne Studios", price: 320, category: "bottom", styles: ["Luxury Streetwear", "Casual"], occasions: ["Casual", "Date Night", "Streetwear"], genders: ["men"], colors: ["Indigo", "Black", "Grey"], imageUrl: uns("1542272054537-4845f1353d17"), purchaseUrl: "https://www.acnestudios.com" },
