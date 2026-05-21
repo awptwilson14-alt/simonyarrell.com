@@ -313,7 +313,22 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* ── Trending Styles ── */}
+        {/* ── Trending Styles ──
+            Global trends rail (vs the personalized Trends You Love rail
+            above). Two fixes vs prior:
+              1. onPress now pushes /style with trendHint pre-loaded,
+                 same contract as /explore TRENDS subtab (batch 51),
+                 home Trends-You-Love rail (54), look-detail style pill
+                 (52), profile chip (53), related-rail MORE CTA (55).
+                 Previously dumped users on /explore with no bias signal.
+              2. savedCount prop is now derived per trend (predicate
+                 parity with batches 50/54/56: style===t.name OR
+                 tags.includes(t.name)) and passed to TrendCard so the
+                 gold "★ N SAVED" badge (batch 50) lights up here too —
+                 not just on the /explore TRENDS subtab. SeeAll still
+                 routes to /explore since this rail mirrors the global
+                 trends section there. Eighth surface for the trend-hint
+                 loop. */}
         <View style={styles.section}>
           <SectionHeader
             title="Trending Now"
@@ -325,13 +340,29 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hList}
           >
-            {TRENDS.slice(0, 4).map((trend) => (
-              <TrendCard
-                key={trend.id}
-                trend={{ ...trend, image: heroFor(trend.name, trend.id) ?? trend.image }}
-                onPress={() => router.push("/(tabs)/explore")}
-              />
-            ))}
+            {TRENDS.slice(0, 4).map((trend) => {
+              const savedCount = savedLooks.reduce(
+                (n, l) =>
+                  l.style === trend.name || (l.tags?.includes(trend.name) ?? false)
+                    ? n + 1
+                    : n,
+                0,
+              );
+              return (
+                <TrendCard
+                  key={trend.id}
+                  trend={{ ...trend, image: heroFor(trend.name, trend.id) ?? trend.image }}
+                  savedCount={savedCount}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push({
+                      pathname: "/(tabs)/style",
+                      params: { trendHint: trend.name },
+                    });
+                  }}
+                />
+              );
+            })}
           </ScrollView>
         </View>
 
