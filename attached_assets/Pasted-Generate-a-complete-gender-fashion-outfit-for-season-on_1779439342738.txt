@@ -1,0 +1,108 @@
+Generate a complete [gender] fashion outfit for [season] only.
+
+Every clothing item, shoe, and accessory must:
+
+match the selected gender
+match the selected season
+coordinate stylistically
+fit the same aesthetic and occasion
+use seasonally appropriate materials, layers, and colors
+
+Do NOT mix:
+
+genders
+seasonal clothing
+weather-inappropriate items
+conflicting aesthetics
+
+The entire outfit must feel cohesive, luxury-styled, and professionally curated.
+
+Example (Male + Winter)
+
+Generate a complete MEN’S luxury WINTER outfit.
+
+Every item must be winter appropriate and masculine in fit and styling.
+
+Do not include:
+
+women’s clothing
+summer items
+shorts
+sandals
+lightweight fabrics
+
+Ensure all items coordinate in color palette, silhouette, texture, and luxury aesthetic.
+
+Example (Women + Summer)
+
+Generate a complete WOMEN’S SUMMER luxury outfit.
+
+All clothing, shoes, and accessories must:
+
+be feminine in styling
+be summer appropriate
+use lightweight warm-weather fabrics
+coordinate into one cohesive luxury look
+
+Do not mix:
+
+men’s items
+winter clothing
+boots
+coats
+heavy layers
+Add This “Consistency Rule” (VERY IMPORTANT)
+
+This helps stop random mixed outfits:
+
+Outfit Consistency Rule:
+Every generated item must belong to the SAME:
+
+gender category
+season
+aesthetic
+fashion tier
+occasion
+
+No item should visually or functionally conflict with another item in the outfit.
+
+For Your App (Best Production Version)
+
+Use this system-style prompt behind the scenes:
+
+Generate a cohesive luxury fashion outfit.
+
+STRICT REQUIREMENTS:
+- All items must match the selected gender.
+- All items must match the selected season.
+- Do not mix seasonal categories.
+- Do not mix masculine and feminine fashion items.
+- Ensure all pieces coordinate naturally.
+- Outfit must appear professionally styled by a luxury fashion stylist.
+- All colors, fabrics, silhouettes, and accessories must complement each other.
+- Generate only realistic, wearable combinations.
+Add Negative Instructions
+
+AI responds VERY well to negatives.
+
+Example:
+
+Do NOT generate:
+- mixed gender clothing
+- conflicting seasonal wear
+- random accessories
+- mismatched footwear
+- duplicate layering
+- unrealistic combinations
+Even Better (Advanced)
+
+Add metadata logic in your app:
+
+Example:
+
+season = "Winter"
+gender = "Male"
+
+FILTER products WHERE:
+product.gender === "Male"
+AND product.season === "Winter"
