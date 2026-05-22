@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GoldButton } from "@/components/GoldButton";
+import { TitleRule } from "@/components/TitleRule";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { BUDGETS, GENDERS, STYLE_CATEGORIES } from "@/constants/data";
 import { SPLASH_HEROES } from "@/constants/heroImages";
@@ -237,6 +238,15 @@ export default function OnboardingScreen() {
         <View style={styles.header}>
           <Text style={[styles.logo, { color: colors.gold }]}>MAISON SIMON</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>{current.title}</Text>
+          {/* Gold rule (batch 125) — completes the editorial-hero motif
+              coverage. Onboarding was the first-impression hero the rest of
+              the app's gold-rule treatment (batches 115-124) was modeled
+              after, but it never got the rule itself. width:36 matches the
+              36px Playfair (1:1 ratio fitting the 'eyebrow + title + sub'
+              hero composition used by activity/membership/privacy/partners).
+              marginTop:-6 pulls the rule into a tight ~6px pairing with
+              the title while leaving the full gap:12 to the subtitle. */}
+          <TitleRule width={36} style={{ marginTop: -6 }} />
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{current.subtitle}</Text>
         </View>
 
