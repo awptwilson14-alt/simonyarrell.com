@@ -213,9 +213,49 @@ export default function LookDetailScreen() {
 
         {/* ── Description ── */}
         <View style={[styles.descSection, { borderBottomColor: colors.border }]}>
+          {look.occasion === "AI Stylist" ? (
+            <View style={styles.aiAttribution}>
+              <Feather name="zap" size={10} color={colors.gold} />
+              <Text style={[styles.aiAttributionText, { color: colors.gold }]}>
+                STYLED BY MAISON SIMON AI
+              </Text>
+            </View>
+          ) : null}
           <Text style={[styles.description, { color: colors.mutedForeground }]}>
             {look.description}
           </Text>
+          {/* AI palette swatches — only render hex-valid entries so a
+              malformed model response can't crash RN's color parser. The
+              palette NAME already shows in the hero pill (e.g. "Champagne
+              & Ivory"); this makes that name visually concrete. */}
+          {(() => {
+            const HEX = /^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/;
+            const swatches = (look.paletteColors ?? []).filter((c) => HEX.test(c));
+            if (swatches.length === 0) return null;
+            return (
+              <View style={styles.paletteBlock}>
+                <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
+                  COLOR STORY
+                </Text>
+                <View style={styles.swatchRow}>
+                  {swatches.map((hex, idx) => (
+                    <View
+                      key={`${hex}-${idx}`}
+                      style={[
+                        styles.swatch,
+                        { backgroundColor: hex, borderColor: colors.border },
+                      ]}
+                    />
+                  ))}
+                  {look.colorPalette ? (
+                    <Text style={[styles.swatchCaption, { color: colors.mutedForeground }]}>
+                      {look.colorPalette}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            );
+          })()}
           {look.inspiredBy ? (() => {
             // Resolve the inspiredBy name to a real celeb so we can make the
             // chip tappable (pivot back to the icon's full profile — closes
@@ -682,6 +722,26 @@ const styles = StyleSheet.create({
   descSection: { padding: 24, borderBottomWidth: 0.5 },
   description: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22, letterSpacing: 0.2 },
   brandsBlock: { marginTop: 18, gap: 6 },
+  aiAttribution: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  aiAttributionText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2,
+  },
+  paletteBlock: { marginTop: 18, gap: 8 },
+  swatchRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  swatch: { width: 22, height: 22, borderRadius: 11, borderWidth: 0.5 },
+  swatchCaption: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.3,
+    marginLeft: 4,
+  },
   relatedHeaderRow: {
     flexDirection: "row",
     alignItems: "center",

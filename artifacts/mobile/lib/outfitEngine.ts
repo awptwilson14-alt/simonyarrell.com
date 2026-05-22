@@ -2751,5 +2751,6 @@ export function generateLookFromAIPlan(
     style: plan.style,
     tags: ["ai stylist", plan.palette.toLowerCase(), pieces[0].brand.toLowerCase()],
     colorPalette: plan.palette,
+    paletteColors: plan.paletteColors,
   };
 }

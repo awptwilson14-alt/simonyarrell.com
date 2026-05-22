@@ -45,7 +45,7 @@ const RESPONSE_SCHEMA = {
   properties: {
     style: { type: "string", description: "Dominant aesthetic, e.g. Old Money, Luxury Streetwear, Vacation Luxe, Techwear, Clean Minimal, Y2K Revival, Business, Evening, Formal, Avant-garde" },
     palette: { type: "string", description: "Palette name, e.g. Champagne & Ivory, Midnight & Gold" },
-    paletteColors: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 5 },
+    paletteColors: { type: "array", items: { type: "string", description: "CSS hex color, format #RRGGBB" }, minItems: 2, maxItems: 5 },
     season: { type: "string", enum: ["Spring", "Summer", "Autumn", "Winter", "All Season"] },
     name: { type: "string", description: "Editorial look name, max 4 words" },
     description: { type: "string", description: "Two short sentences, editorial voice" },
@@ -88,6 +88,7 @@ router.post("/stylist/plan", async (req, res) => {
     prompt && prompt.trim() ? `- Additional brief: ${prompt.trim()}` : null,
     ``,
     `Return a JSON object with: style, palette, paletteColors[], season, name, description, slots[].`,
+    `paletteColors MUST be 3-5 valid CSS hex codes in #RRGGBB format (e.g. "#C6A75E", "#0B0B0C") — never color names. These render as visual swatches in the app.`,
     `Each slot needs: category, descriptor, brandPreferences[] (luxury houses in priority), colorPreferences[], formality.`,
     `2-6 slots total. Build a complete look (e.g. dress+shoes+bag OR top+bottom+shoes+outerwear).`,
   ].filter(Boolean).join("\n");

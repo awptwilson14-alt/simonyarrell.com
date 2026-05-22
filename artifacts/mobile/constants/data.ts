@@ -39,6 +39,11 @@ export interface Look {
   // detail page (and anywhere the look is later saved/displayed). Undefined
   // for regular generations and for the static LOOKS array.
   inspiredBy?: string;
+  // Hex color swatches the AI stylist composed this look around — rendered
+  // as a small swatch row on the look-detail page so users see the editorial
+  // palette, not just its name. Only set for AI Stylist looks; values are
+  // validated as #RRGGBB at render time so a malformed entry can't crash RN.
+  paletteColors?: string[];
 }
 
 export interface Celebrity {
