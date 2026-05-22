@@ -137,7 +137,7 @@ export const TRENDS: Trend[] = [
   { id: "t3", name: "Vacation Luxe", description: "Resort wear redefined — flowing silks, premium linens, sun-kissed sophistication", image: require("../assets/images/look_vacation.png"), tags: ["Zimmermann", "Loro Piana", "silk", "linen"], vibe: "Mediterranean billionaire summer" },
   { id: "t4", name: "Techwear", description: "Functional futurism — technical fabrics, utility pockets, dark palette precision", image: require("../assets/images/look_techwear.png"), tags: ["Acronym", "Stone Island", "Arc'teryx", "cargo"], vibe: "Cyberpunk meets luxury utility" },
   { id: "t5", name: "Clean Minimal", description: "Negative space as luxury — monochromatic palettes, perfect proportions, no excess", image: require("../assets/images/hero_banner.png"), tags: ["The Row", "Jil Sander", "COS", "minimal"], vibe: "Silence is the loudest statement" },
-  { id: "t6", name: "Y2K Revival", description: "2000s nostalgia elevated — low-rise silhouettes, metallics, butterfly details", image: require("../assets/images/look_streetwear.png"), tags: ["Versace", "D&G", "Von Dutch", "metallic"], vibe: "Paris Hilton meets Dua Lipa" },
+  { id: "t6", name: "Y2K Revival", description: "2000s nostalgia elevated — low-rise silhouettes, metallics, butterfly details", image: require("../assets/images/looks/y2k_soiree_women.png"), tags: ["Versace", "D&G", "Von Dutch", "metallic"], vibe: "Paris Hilton meets Dua Lipa" },
 ];
 
 // ─── Looks ──────────────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ export const LOOKS: Look[] = [
     name: "Côte d'Azur Evening",
     description: "A masterclass in resort elegance — fluid silk jersey meets sculptural jewelry for a dinner that demands attention without trying.",
     occasion: "Evening", season: "Summer", estimatedPrice: 3200,
-    image: require("../assets/images/look_vacation.png"),
+    image: require("../assets/images/looks/cote_dazur_evening_women.png"),
     style: "Vacation Luxe", tags: ["evening", "resort", "summer"],
     pieces: [
       { id: "p1", name: "Silk Jersey Column Dress", brand: "The Row", price: 1890, category: "Dress", color: "Ivory", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.therow.com" },
@@ -160,7 +160,7 @@ export const LOOKS: Look[] = [
     name: "Old Money Weekend",
     description: "The art of looking effortless when everything is intentional. Heritage fabrics, quiet logos, and the confidence of old wealth.",
     occasion: "Casual", season: "Autumn", estimatedPrice: 2800,
-    image: require("../assets/images/look_old_money.png"),
+    image: require("../assets/images/looks/old_money_weekend_men.png"),
     style: "Old Money", tags: ["weekend", "casual", "autumn"],
     pieces: [
       { id: "p4", name: "Cashmere Polo Sweater", brand: "Loro Piana", price: 1200, category: "Top", color: "Camel", imageUrl: UNS("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.loropiana.com" },
@@ -174,7 +174,7 @@ export const LOOKS: Look[] = [
     name: "Urban Architect",
     description: "For the city that never sleeps and the man who never blends in. Technical precision meets downtown edge.",
     occasion: "Street", season: "Winter", estimatedPrice: 4100,
-    image: require("../assets/images/look_techwear.png"),
+    image: require("../assets/images/looks/urban_architect_men.png"),
     style: "Techwear", tags: ["urban", "street", "winter"],
     pieces: [
       { id: "p8", name: "GORE-TEX Shell Jacket", brand: "Acronym", price: 1890, category: "Outerwear", color: "Black", imageUrl: UNS("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.acrnm.com" },
@@ -188,7 +188,7 @@ export const LOOKS: Look[] = [
     name: "Galerie Opening",
     description: "Art world royalty. Where minimalist fashion becomes the canvas and the collector's eye speaks through restraint.",
     occasion: "Cultural", season: "All Season", estimatedPrice: 5600,
-    image: require("../assets/images/hero_banner.png"),
+    image: require("../assets/images/looks/galerie_opening_women.png"),
     style: "Clean Minimal", tags: ["art", "gallery", "minimal"],
     pieces: [
       { id: "p13", name: "Wide-Leg Wool Trouser", brand: "Jil Sander", price: 890, category: "Bottom", color: "Ivory", imageUrl: UNS("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.jilsander.com" },
@@ -202,7 +202,7 @@ export const LOOKS: Look[] = [
     name: "Luxury Streetwear Icon",
     description: "Where the block meets the runway. Maximum drip, minimum effort, all designer.",
     occasion: "Street", season: "Spring", estimatedPrice: 3800,
-    image: require("../assets/images/look_streetwear.png"),
+    image: require("../assets/images/looks/luxury_streetwear_icon_men.png"),
     style: "Luxury Streetwear", tags: ["street", "spring", "logo"],
     pieces: [
       { id: "p18", name: "Logo Hoodie", brand: "Balenciaga", price: 890, category: "Top", color: "Black", imageUrl: UNS("1556821840-3a63f15732ce"), purchaseUrl: "https://www.balenciaga.com" },
@@ -216,7 +216,7 @@ export const LOOKS: Look[] = [
     name: "Y2K Soirée",
     description: "The early 2000s never looked this good. Low-rise sophistication with maximalist confidence.",
     occasion: "Party", season: "Summer", estimatedPrice: 2400,
-    image: require("../assets/images/look_streetwear.png"),
+    image: require("../assets/images/looks/y2k_soiree_women.png"),
     style: "Y2K Revival", tags: ["party", "y2k", "metallic"],
     pieces: [
       { id: "p23", name: "Crystal Mini Skirt", brand: "Versace", price: 1200, category: "Bottom", color: "Gold", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.versace.com" },
@@ -229,7 +229,7 @@ export const LOOKS: Look[] = [
     name: "Parisian Chic",
     description: "Effortless French sophistication — tailored silhouettes, neutral tones, luxurious fabrics with zero excess.",
     occasion: "Casual", season: "Spring", estimatedPrice: 3200,
-    image: require("../assets/images/look_old_money.png"),
+    image: require("../assets/images/looks/parisian_chic_women.png"),
     style: "Old Money", tags: ["french", "minimal", "chic"],
     pieces: [
       { id: "p26", name: "Silk Slip Dress", brand: "Sandro", price: 380, category: "Dress", color: "Champagne", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.sandro-paris.com" },
@@ -242,7 +242,7 @@ export const LOOKS: Look[] = [
     name: "Power Dressing",
     description: "Command any room. Structured shoulders, bold tailoring, Italian leather — authority made wearable.",
     occasion: "Work", season: "All Season", estimatedPrice: 4800,
-    image: require("../assets/images/look_old_money.png"),
+    image: require("../assets/images/looks/power_dressing_women.png"),
     style: "Business", tags: ["work", "power", "tailored"],
     pieces: [
       { id: "p29", name: "Double-Breasted Suit", brand: "Balmain", price: 2800, category: "Outerwear", color: "Black", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.balmain.com" },
@@ -256,7 +256,7 @@ export const LOOKS: Look[] = [
     name: "Resort Billionaire",
     description: "Mediterranean money — silk kaftans, handwoven hats, zero logos, maximum presence.",
     occasion: "Resort", season: "Summer", estimatedPrice: 5600,
-    image: require("../assets/images/look_vacation.png"),
+    image: require("../assets/images/looks/resort_billionaire_women.png"),
     style: "Vacation Luxe", tags: ["resort", "summer", "luxury"],
     pieces: [
       { id: "p33", name: "Cashmere Kaftan", brand: "Loro Piana", price: 3200, category: "Dress", color: "Sand", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.loropiana.com" },
@@ -269,7 +269,7 @@ export const LOOKS: Look[] = [
     name: "Dark Academia",
     description: "Books, tweed, and old libraries. Rich cognac leathers, plaid layers, and intellectual luxury.",
     occasion: "Casual", season: "Autumn", estimatedPrice: 2900,
-    image: require("../assets/images/look_old_money.png"),
+    image: require("../assets/images/looks/dark_academia_men.png"),
     style: "Old Money", tags: ["academic", "autumn", "tweed"],
     pieces: [
       { id: "p36", name: "Harris Tweed Blazer", brand: "Ralph Lauren", price: 1200, category: "Outerwear", color: "Brown Plaid", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.ralphlauren.com" },
@@ -283,7 +283,7 @@ export const LOOKS: Look[] = [
     name: "Gala Glamour",
     description: "Black-tie redefined — sculptural silhouettes, jewel-toned satins, statement jewellery, all eyes on you.",
     occasion: "Evening", season: "All Season", estimatedPrice: 7400,
-    image: require("../assets/images/hero_banner.png"),
+    image: require("../assets/images/looks/gala_glamour_women.png"),
     style: "Avant-garde", tags: ["gala", "evening", "glamour"],
     pieces: [
       { id: "p40", name: "Column Gown", brand: "Valentino Haute Couture", price: 4800, category: "Dress", color: "Crimson", imageUrl: UNS("1566174053879-31528523f8ae"), purchaseUrl: "https://www.valentino.com" },
@@ -296,7 +296,7 @@ export const LOOKS: Look[] = [
     name: "Urban Minimalist",
     description: "City uniform perfected — monochrome stacks, architectural cuts, premium basics that signal taste.",
     occasion: "Street", season: "All Season", estimatedPrice: 2100,
-    image: require("../assets/images/look_techwear.png"),
+    image: require("../assets/images/looks/urban_minimalist_men.png"),
     style: "Clean Minimal", tags: ["urban", "minimal", "monochrome"],
     pieces: [
       { id: "p43", name: "Oversized Wool Coat", brand: "COS", price: 380, category: "Outerwear", color: "Charcoal", imageUrl: UNS("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.cosstores.com" },
