@@ -37,6 +37,22 @@ interface Occasion {
   image: any;
 }
 
+// Curated AI inspiration briefs. The label is what the user sees on the
+// chip; the prompt is what the stylist endpoint actually receives. Keep
+// labels short (2-4 words) and prompts evocative but compact (≤120 chars).
+// Mix of locations, occasions, and pure vibe — the model handles range
+// well and HARD gender/season filters in the engine remain authoritative.
+const PROMPT_CHIPS: { label: string; prompt: string }[] = [
+  { label: "Rooftop in Paris", prompt: "Late dinner on a rooftop in Paris with quiet old-money polish" },
+  { label: "Aspen ski week", prompt: "Aprés-ski lounge in Aspen — fur-trim cashmere, technical luxe" },
+  { label: "Gallery opening", prompt: "Downtown gallery opening, monochrome with one architectural piece" },
+  { label: "First day at the office", prompt: "First week at a corner office — power-tailored but human" },
+  { label: "Tokyo after dark", prompt: "Walking Shibuya at night, technical streetwear with sharpened proportions" },
+  { label: "Yacht in Capri", prompt: "Long lunch on a yacht off Capri, breezy linen and Riviera color" },
+  { label: "Front row", prompt: "Front row at Paris Fashion Week — couture-adjacent, photographer bait" },
+  { label: "Weekend in Tulum", prompt: "Beach club weekend in Tulum, easy resort linen and gold accents" },
+];
+
 const OCCASIONS: Occasion[] = [
   { label: "Casual", image: require("../../assets/images/occasion_casual.png") },
   { label: "Date Night", image: require("../../assets/images/occasion_date.png") },
@@ -198,7 +214,7 @@ export default function StyleScreen() {
     setLoading(false);
   };
 
-  const generateWithAI = async () => {
+  const generateWithAI = async (overridePrompt?: string) => {
     if (aiLoading) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setAiError(null);
@@ -212,13 +228,17 @@ export default function StyleScreen() {
         ["Spring", "Summer", "Autumn", "Winter", "All Season"].includes(userProfile.season))
         ? (userProfile.season as "Spring" | "Summer" | "Autumn" | "Winter" | "All Season")
         : undefined;
+      // overridePrompt lets the chip handler pass a fresh brief without
+      // racing the async setPrompt — setState would not be flushed before
+      // the next render reads `prompt`.
+      const effectivePrompt = (overridePrompt ?? prompt).trim() || undefined;
       const looks = await generateAILooks(
         {
           gender: genderForReq,
           occasion: selectedOccasion || "Casual",
           budget: selectedBudget,
           season: seasonForReq,
-          prompt: prompt.trim() || undefined,
+          prompt: effectivePrompt,
           favoriteStyles: userProfile.favoriteStyles,
         },
         {
@@ -516,12 +536,51 @@ export default function StyleScreen() {
               </View>
             </View>
 
+            {/* AI inspiration chips — one-tap editorial briefs that fill the
+                prompt and immediately fire the AI stylist. Discoverability
+                for STYLE WITH AI; also shows off the model's range across
+                very different vibes. */}
+            <View style={s.fieldBlock}>
+              <Text style={[s.fieldLabel, { color: colors.mutedForeground }]}>
+                ✦ AI INSPIRATION  ·  TAP TO STYLE
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.aiChipRow}
+              >
+                {PROMPT_CHIPS.map((c) => (
+                  <Pressable
+                    key={c.label}
+                    onPress={() => {
+                      if (aiLoading) return;
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setPrompt(c.prompt);
+                      generateWithAI(c.prompt);
+                    }}
+                    disabled={aiLoading}
+                    style={({ pressed }) => [
+                      s.aiChip,
+                      {
+                        borderColor: colors.gold,
+                        opacity: pressed || aiLoading ? 0.55 : 1,
+                      },
+                    ]}
+                  >
+                    <Text style={[s.aiChipText, { color: colors.gold }]}>
+                      {c.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+
             <GoldButton label="GENERATE MY LOOKS" onPress={() => generate(false)} />
 
             <View style={{ height: 10 }} />
             <GoldButton
               label={aiLoading ? "✨ AI STYLIST AT WORK…" : "✨ STYLE WITH AI"}
-              onPress={generateWithAI}
+              onPress={() => generateWithAI()}
               disabled={aiLoading}
               variant="outline"
             />
@@ -753,6 +812,19 @@ const s = StyleSheet.create({
   budgetChipText: { fontSize: 12, fontFamily: "Inter_500Medium", letterSpacing: 0.3 },
   promptBox: { flexDirection: "row", alignItems: "flex-start", gap: 12, borderWidth: 0.5, borderRadius: 4, paddingHorizontal: 14, paddingVertical: 14 },
   promptInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 22, minHeight: 72 },
+  aiChipRow: { flexDirection: "row", gap: 8, paddingRight: 24 },
+  aiChip: {
+    borderWidth: 0.5,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "rgba(198,167,94,0.06)",
+  },
+  aiChipText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.6,
+  },
 
   sourceNote: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 4 },
   sourceNoteText: { fontSize: 11, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
