@@ -2125,11 +2125,22 @@ export function generateLooks(params: GenerateParams): Look[] {
       // OK: matches palette only — at least the colors won't fight
       const paletteOnly = pool_.filter((i) => paletteMatch(i.colors, selectedPalette.colors));
       if (paletteOnly.length > 0) return pick(paletteOnly);
-      // Final fallback: anything in the pool (rare — only when none of the
-      // above tiers find a match, which usually means a very thin catalog
-      // slice from brand-lock + tight budget). We accept the visual
-      // compromise rather than fail to assemble a look.
-      return pick(pool_);
+      // ─── Style-DNA floor ──────────────────────────────────────────────────
+      // Everything above tries hard to honor the dominant style + family +
+      // palette. If we got here, the pool has nothing matching even the
+      // family or palette — only true cross-vibe items remain. To keep the
+      // generated look faithful to the selected style DNA, we split here:
+      //  • Essential categories (top/bottom/dress/shoes) STILL fall through
+      //    so we don't end up with a broken card missing a core piece.
+      //  • Editorial occasions (Avant-garde / Formal Remix) also fall
+      //    through — cross-vibe IS their DNA.
+      //  • Everything else (bag, jewelry, outerwear, accessories) returns
+      //    null — better to drop a slot than land an off-DNA piece. The
+      //    outer loop already handles missing optional slots gracefully.
+      const isEssential =
+        category === "top" || category === "bottom" || category === "dress" || category === "shoes";
+      if (editorial || isEssential) return pick(pool_);
+      return null;
     };
 
     const addPiece = (item: CatalogItem) => {
