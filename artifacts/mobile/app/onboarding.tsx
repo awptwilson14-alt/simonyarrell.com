@@ -79,18 +79,33 @@ export default function OnboardingScreen() {
           style={splash.heroImage}
           resizeMode="cover"
         />
+        {/* Editorial framing gradient — solid dark at the very top so the
+            brand lockup reads on near-black, clears in the middle band so
+            the hero models are fully visible, then deepens to solid #0B0B0C
+            at the bottom so the gold CTA sits on a clean dark plate. */}
         <LinearGradient
-          colors={["rgba(11,11,12,0.15)", "rgba(11,11,12,0.55)", "#0B0B0C"]}
+          colors={[
+            "rgba(11,11,12,0.96)",
+            "rgba(11,11,12,0.78)",
+            "rgba(11,11,12,0.10)",
+            "rgba(11,11,12,0.55)",
+            "#0B0B0C",
+          ]}
+          locations={[0, 0.22, 0.45, 0.78, 1]}
           style={StyleSheet.absoluteFill}
         />
 
-        <View style={[splash.content, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 48 }]}>
-          {/* Brand lockup — Simon Yarrell stacked wordmark (rebrand May 2026,
-              composed lockup: transparent gold SY + white caps + 2-line
-              gold tagline, floats directly on the editorial hero. */}
+        <View style={[splash.content, { paddingTop: insets.top + 28, paddingBottom: insets.bottom + 36 }]}>
+          {/* Brand lockup — pinned to the TOP of the screen (not centered)
+              so the editorial hero photo of the models fills the middle band
+              of the composition, matching the reference splash layout. */}
           <View style={splash.brandSection}>
-            <BrandWordmark variant="stacked" height={120} />
+            <BrandWordmark variant="stacked" height={108} />
           </View>
+
+          {/* Spacer pushes the CTA to the bottom while leaving the middle
+              of the screen open for the hero photo to read through. */}
+          <View style={splash.spacer} />
 
           {/* CTA */}
           <View style={splash.footer}>
@@ -300,8 +315,11 @@ export default function OnboardingScreen() {
 const splash = StyleSheet.create({
   container: { flex: 1 },
   heroImage: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
-  content: { flex: 1, paddingHorizontal: 28, justifyContent: "space-between" },
-  brandSection: { flex: 1, alignItems: "center", justifyContent: "center" },
+  content: { flex: 1, paddingHorizontal: 28 },
+  // Brand pinned to top (no flex:1, no vertical centering) so the editorial
+  // hero photo of the models is visible through the middle of the splash.
+  brandSection: { alignItems: "center" },
+  spacer: { flex: 1 },
   logoImg: { width: 280, height: 153 },
   footer: { gap: 16 },
   guestBtn: { alignItems: "center", paddingVertical: 8 },
