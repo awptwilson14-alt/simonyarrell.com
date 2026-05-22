@@ -1866,3 +1866,9 @@ id = "PY7CqLgIAd6ZSuEN-FyZP"
 uri = "file://artifacts/mobile/assets/images/sy_monogram.png"
 type = "image"
 title = "SY ornate gold monogram"
+
+[[generated]]
+id = "3Y1pIWfcoZuPh-IWcnkZ8"
+uri = "file://artifacts/mobile/assets/images/sy_app_icon.png"
+type = "image"
+title = "SY app icon dark bg"
