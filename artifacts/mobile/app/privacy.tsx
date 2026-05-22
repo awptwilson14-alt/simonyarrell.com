@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
 
 type PolicySection = {
@@ -96,6 +97,9 @@ export default function PrivacyScreen() {
         <View style={s.hero}>
           <Text style={[s.eyebrow, { color: colors.gold }]}>LEGAL</Text>
           <Text style={[s.title, { color: colors.foreground }]}>Privacy{"\n"}Policy</Text>
+          {/* Shared TitleRule atom (batch 120) — same flourish as the
+              membership and partners heroes. 40px matches the 44px Playfair. */}
+          <TitleRule width={40} style={{ marginTop: 2 }} />
           <Text style={[s.effectiveDate, { color: colors.mutedForeground }]}>
             Effective date: May 19, 2026
           </Text>

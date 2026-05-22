@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -170,6 +171,11 @@ export default function MembershipScreen() {
             <Text style={[s.headline, { color: colors.foreground }]}>
               Dress Like{"\n"}You Mean It
             </Text>
+            {/* Shared TitleRule atom (batch 120) — extends the gold-rule
+                motif from tab/activity/celebrity/partners screens into the
+                membership upgrade hero. 40px wide matches the 42px Playfair
+                headline (same proportion as partners hero). */}
+            <TitleRule width={40} style={{ marginTop: 2 }} />
             <Text style={[s.sub, { color: colors.mutedForeground }]}>
               Unlock the full Maison Simon experience — AI styling, live try-on, and the world's most curated looks.
             </Text>
