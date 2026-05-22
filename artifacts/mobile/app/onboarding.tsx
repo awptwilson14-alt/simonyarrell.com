@@ -82,11 +82,10 @@ export default function OnboardingScreen() {
 
         <View style={[splash.content, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 48 }]}>
           {/* Brand lockup — Simon Yarrell stacked wordmark (rebrand May 2026,
-              replaces previous logo_ms.png lockup). Height tuned so the
-              monogram + caps occupy roughly the same vertical footprint as
-              the previous PNG. */}
+              composed lockup: transparent gold SY + white caps + 2-line
+              gold tagline, floats directly on the editorial hero. */}
           <View style={splash.brandSection}>
-            <BrandWordmark variant="stacked" height={220} />
+            <BrandWordmark variant="stacked" height={120} />
           </View>
 
           {/* CTA */}

@@ -67,13 +67,12 @@ export default function AboutScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 48 }]}
       >
-        {/* Brand sheet hero — full official lockup PNG (SY monogram +
-            SIMON YARRELL caps + gold tagline + flourish, all included in
-            the asset). height tuned so the full composition occupies the
-            same vertical space as the previous text + tagline + rule
-            stack. */}
+        {/* Brand hero — composed lockup: gold SY monogram (transparent
+            PNG, floats on the surface) + white SIMON YARRELL caps +
+            two-line gold tagline. Mirrors the user's brand mockup. No
+            decorative flourish, no card background. */}
         <View style={s.brandSheet}>
-          <BrandWordmark variant="stacked" height={200} />
+          <BrandWordmark variant="stacked" height={110} />
         </View>
 
         {/* Fashion house headline (matches the brand landing page). */}
