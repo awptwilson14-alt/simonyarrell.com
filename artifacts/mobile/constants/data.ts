@@ -105,6 +105,7 @@ export interface Product {
 // UNS returns undefined for blocked IDs so the look detail's ResilientImage
 // renders the editorial brand-monogram fallback instead.
 import { isBadUnsId } from "./badImageIds";
+import { LOCAL_PRODUCT_ASSETS } from "../assets/images/catalog/_index";
 
 const UNS = (id: string, w = 480, h = 600): string | undefined => {
   if (isBadUnsId(id)) return undefined;
@@ -305,6 +306,24 @@ export const LOOKS: Look[] = [
     ],
   },
 ];
+
+// ─── Static LOOKS piece-image autopatch ─────────────────────────────────────
+//
+// Walks every piece in every static LOOK at module load and stamps
+// `localImage` from `LOCAL_PRODUCT_ASSETS`. Mirrors the autopatch in
+// outfitEngine.ts for catalog items: keeps the asset registry in one file
+// instead of 43 inline `require()` calls scattered through LOOKS. Pieces
+// not present in the registry are left untouched and fall back to their
+// existing `imageUrl` (Unsplash placeholder) → ResilientImage editorial
+// monogram chain.
+for (const look of LOOKS) {
+  for (const piece of look.pieces) {
+    const localAsset = LOCAL_PRODUCT_ASSETS[piece.id];
+    if (localAsset && !piece.localImage) {
+      piece.localImage = localAsset;
+    }
+  }
+}
 
 // ─── Products ────────────────────────────────────────────────────────────────
 export const PRODUCTS: Product[] = [
