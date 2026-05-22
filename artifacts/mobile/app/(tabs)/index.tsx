@@ -444,18 +444,20 @@ export default function HomeScreen() {
         </View>
 
         <View style={[styles.brandStrip, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
-          {["GUCCI", "PRADA", "AMIRI", "BALENCIAGA", "SAINT LAURENT", "OFF-WHITE"].map((brand) => {
+          {/* Gold middle-dot separators between brand wordmarks (batch 128).
+              The strip previously rendered as a plain flex-gap row, which
+              read as a list rather than a deliberate editorial roll-call.
+              Inserting a · between siblings turns it into the classic
+              fashion-magazine "house roll" treatment (Vogue/W contributor
+              colophons). Gold @ 0.6 opacity matches the established
+              motif weight — present but never louder than the brand names
+              themselves. flexWrap is preserved: a dot may end a row, which
+              is the same visual behavior as a comma in print. */}
+          {["GUCCI", "PRADA", "AMIRI", "BALENCIAGA", "SAINT LAURENT", "OFF-WHITE"].map((brand, i, arr) => {
             const shoppable = brandCatalog.has(brand.toLowerCase());
-            if (!shoppable) {
-              return (
-                <Text key={brand} style={[styles.brandName, { color: colors.mutedForeground }]}>
-                  {brand}
-                </Text>
-              );
-            }
-            return (
+            const isLast = i === arr.length - 1;
+            const wordmark = shoppable ? (
               <Pressable
-                key={brand}
                 onPress={() => goShopBrand(brand)}
                 hitSlop={6}
                 accessibilityRole="button"
@@ -466,6 +468,25 @@ export default function HomeScreen() {
                   {brand}
                 </Text>
               </Pressable>
+            ) : (
+              <Text style={[styles.brandName, { color: colors.mutedForeground }]}>
+                {brand}
+              </Text>
+            );
+            return (
+              <React.Fragment key={brand}>
+                {wordmark}
+                {!isLast && (
+                  <Text
+                    style={[styles.brandDot, { color: colors.gold }]}
+                    accessible={false}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    ·
+                  </Text>
+                )}
+              </React.Fragment>
             );
           })}
         </View>
@@ -618,6 +639,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_700Bold",
     letterSpacing: 2,
+  },
+  brandDot: {
+    fontSize: 16,
+    fontFamily: "Inter_400Regular",
+    opacity: 0.6,
+    lineHeight: 13,
   },
   header: {
     position: "absolute",
