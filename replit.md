@@ -28,6 +28,9 @@ _Replace the heading above with the project's name, and this line with one sente
 - `artifacts/mobile/lib/catalogFeed.ts` — **auto-generated** Shopify product feed (2,940 real PDPs across 21 brand-direct stores); do not hand-edit, regenerate via the in-chat fetcher
 - `artifacts/mobile/lib/affiliate.ts` — click-time URL wrapper (Skimlinks / Rakuten / Impact / Awin / generic)
 - `artifacts/api-server/src/routes/stylist.ts` — OpenAI stylist plan endpoint
+- `artifacts/mobile/public/{manifest.webmanifest,sw.js,icon-*.png,apple-touch-icon.png}` — PWA assets served at web root
+- `artifacts/mobile/lib/pwa.ts` — runtime PWA bootstrap (head tag injection + service-worker registration); called once from `app/_layout.tsx`
+- `artifacts/mobile/app/+html.tsx` — custom HTML root used by Expo Router's **static export** (production); dev preview uses Metro's default template, which is why `lib/pwa.ts` exists
 
 ## Architecture decisions
 
@@ -36,6 +39,8 @@ _Replace the heading above with the project's name, and this line with one sente
 - **Affiliate wrapping is click-time only.** The catalog stores raw brand URLs; `applyAffiliate()` rewrites them on tap based on `EXPO_PUBLIC_AFFILIATE_NETWORK` + `EXPO_PUBLIC_AFFILIATE_ID`. No-op when env vars are unset.
 - **AI stylist resolves to catalog items only.** The OpenAI plan returns abstract slot specs; a local resolver picks real `CATALOG` items that match. Stylist never invents fake products.
 - **`SHOPIFY_FEED` uses `as unknown as CatalogItem[]`** because TS2590 (union-too-complex) fires when annotating 2,940 inline rows. Shape is generator-guaranteed.
+- **PWA tags are injected twice on purpose.** `+html.tsx` only runs during Expo's static export (production build); dev mode serves Metro's default template. To make Add-to-Home-Screen, theme-color, and the service worker work in *both* dev preview and production, `lib/pwa.ts` re-injects the same tags at runtime from `_layout.tsx`. The runtime injector is idempotent (selector-deduped) so it's a no-op when the static-export HTML already has them.
+- **Service worker is `/sw.js` at the web root, scope `/`.** App shell is network-first (fresh code online, cached fallback offline), images are cache-first with a 300-entry cap, `/api/*` is network-only (stylist/outfit responses must be fresh). Versioned cache name (`sy-v1`) so bumping invalidates everything.
 
 ## Product
 

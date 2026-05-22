@@ -24,7 +24,13 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider } from "@/context/AppContext";
+import { initPWA } from "@/lib/pwa";
 import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
+
+// Inject the Web App Manifest, theme-color, apple PWA meta tags, and
+// register the service worker. Web-only no-op on native; idempotent across
+// hot reloads. See lib/pwa.ts for the full rationale.
+initPWA();
 
 SplashScreen.preventAutoHideAsync();
 

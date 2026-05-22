@@ -1,0 +1,33 @@
+{
+  "name": "Simon Yarrell — Maison Simon",
+  "short_name": "Simon Yarrell",
+  "description": "Luxury Styling, Powered by Intelligence. AI-generated outfits from a real-product catalog of 3,000+ luxury fashion items.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0B0C",
+  "theme_color": "#0B0B0C",
+  "lang": "en-US",
+  "categories": ["lifestyle", "shopping", "personalization"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
