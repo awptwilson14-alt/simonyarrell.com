@@ -86,7 +86,7 @@ export default function OnboardingScreen() {
               monogram + caps occupy roughly the same vertical footprint as
               the previous PNG. */}
           <View style={splash.brandSection}>
-            <BrandWordmark variant="stacked" height={88} />
+            <BrandWordmark variant="stacked" height={220} />
           </View>
 
           {/* CTA */}

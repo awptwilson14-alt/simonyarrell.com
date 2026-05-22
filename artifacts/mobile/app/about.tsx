@@ -67,13 +67,13 @@ export default function AboutScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 48 }]}
       >
-        {/* Brand sheet hero — stacked SY / SIMON YARRELL lockup. */}
+        {/* Brand sheet hero — full official lockup PNG (SY monogram +
+            SIMON YARRELL caps + gold tagline + flourish, all included in
+            the asset). height tuned so the full composition occupies the
+            same vertical space as the previous text + tagline + rule
+            stack. */}
         <View style={s.brandSheet}>
-          <BrandWordmark variant="stacked" height={84} />
-          <Text style={[s.tagline, { color: colors.gold }]}>
-            Luxury Styling, Powered by Intelligence.
-          </Text>
-          <TitleRule width={56} style={{ marginTop: 14 }} />
+          <BrandWordmark variant="stacked" height={200} />
         </View>
 
         {/* Fashion house headline (matches the brand landing page). */}

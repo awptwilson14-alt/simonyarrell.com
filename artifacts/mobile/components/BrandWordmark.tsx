@@ -1,7 +1,10 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
+
+const logoLockup = require("../assets/images/sy_logo.png");
+const LOCKUP_ASPECT = 1536 / 1024; // 1.5
 
 interface Props {
   centered?: boolean;
@@ -13,20 +16,22 @@ interface Props {
 /**
  * Simon Yarrell brand wordmark.
  *
- * Renders the SY monogram (Playfair italic, gold) alongside the
- * "SIMON YARRELL" caps lockup (Playfair, off-white). All sizing is
- * derived from the `height` prop so existing call-sites that pass a
- * height continue to lay out the same vertical footprint.
+ * - `variant="stacked"` (used by onboarding splash + About page) renders
+ *   the supplied brand-sheet PNG directly so the lockup matches the
+ *   official artwork pixel-for-pixel — SY monogram, "SIMON YARRELL"
+ *   caps, gold italic tagline, and decorative flourish all included.
+ *   Width is derived from `height` via the source PNG aspect ratio
+ *   (1536×1024 → 1.5).
  *
- * - `variant="inline"` (default) — SY · SIMON YARRELL on one row,
- *   used by every header / top-bar (matches the SY website navbar).
- * - `variant="stacked"` — SY monogram above SIMON YARRELL caps,
- *   used by the onboarding splash + the new About page (matches the
- *   Simon Yarrell brand sheet).
+ * - `variant="inline"` (default — every header / top-bar) renders a
+ *   compact text version of the same lockup: gold upright Playfair "SY"
+ *   monogram + spaced-caps "SIMON YARRELL" in Playfair_700Bold.
+ *   Upright (not italic) to match the official artwork's font style.
  *
- * Replaces the previous PNG-based wordmark during the May 2026
- * rebrand from Maison Simon. Text-based so it scales perfectly and
- * picks up the existing PlayfairDisplay / Inter font registrations.
+ * Replaces the previous Maison Simon PNG wordmark during the May 2026
+ * rebrand. Inline variant preserves the original BrandWordmark API
+ * (`centered`, `style`, `height`) so every existing header call-site
+ * keeps the same vertical footprint.
  */
 export function BrandWordmark({
   centered = false,
@@ -37,37 +42,20 @@ export function BrandWordmark({
   const colors = useColors();
 
   if (variant === "stacked") {
-    const monoSize = Math.round(height * 1.6);
-    const nameSize = Math.max(11, Math.round(height * 0.4));
     return (
-      <View style={[styles.stacked, style]}>
-        <Text
-          style={[
-            styles.mono,
-            { color: colors.gold, fontSize: monoSize, lineHeight: monoSize },
-          ]}
-          accessible={false}
-        >
-          SY
-        </Text>
-        <Text
-          style={[
-            styles.nameStacked,
-            {
-              color: colors.foreground,
-              fontSize: nameSize,
-              marginTop: Math.round(height * 0.18),
-            },
-          ]}
-          accessibilityLabel="Simon Yarrell"
-        >
-          SIMON YARRELL
-        </Text>
+      <View style={[styles.stackedWrap, style]}>
+        <Image
+          source={logoLockup}
+          style={{ height, width: height * LOCKUP_ASPECT }}
+          resizeMode="contain"
+          accessibilityLabel="Simon Yarrell — Luxury Styling, Powered by Intelligence."
+        />
       </View>
     );
   }
 
-  // Inline (default header treatment).
+  // Inline (default header treatment) — text-based so it scales cleanly
+  // at small header sizes where the full PNG lockup would be illegible.
   const monoSize = Math.round(height * 0.95);
   const nameSize = Math.max(10, Math.round(height * 0.36));
   return (
@@ -79,7 +67,7 @@ export function BrandWordmark({
             color: colors.gold,
             fontSize: monoSize,
             lineHeight: monoSize,
-            marginRight: Math.round(height * 0.28),
+            marginRight: Math.round(height * 0.3),
           },
         ]}
         accessible={false}
@@ -107,20 +95,16 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: "center",
   },
-  stacked: {
+  stackedWrap: {
     alignItems: "center",
+    justifyContent: "center",
   },
   mono: {
     fontFamily: "PlayfairDisplay_700Bold",
-    fontStyle: "italic",
     letterSpacing: -0.5,
   },
   name: {
-    fontFamily: "PlayfairDisplay_600SemiBold",
+    fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: 3,
-  },
-  nameStacked: {
-    fontFamily: "PlayfairDisplay_600SemiBold",
-    letterSpacing: 4,
   },
 });
