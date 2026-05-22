@@ -20,7 +20,7 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
 
-const CONTACT_EMAIL = "mail@maisonsimon.app";
+const CONTACT_EMAIL = "fashion@simonyarrell.com";
 
 const PERKS = [
   {
@@ -31,7 +31,7 @@ const PERKS = [
   {
     icon: "trending-up" as const,
     title: "Performance-Based",
-    body: "Earn commission on every sale referred through Maison Simon. Transparent tracking, monthly payouts.",
+    body: "Earn commission on every sale referred through Simon Yarrell. Transparent tracking, monthly payouts.",
   },
   {
     icon: "zap" as const,
@@ -98,7 +98,7 @@ export default function PartnersScreen() {
 
     const body = encodeURIComponent(
       [
-        `Hi Maison Simon,`,
+        `Hi Simon Yarrell,`,
         ``,
         `I'm reaching out about an affiliate partnership opportunity.`,
         ``,
@@ -161,7 +161,7 @@ export default function PartnersScreen() {
             <Text style={[s.heroBadgeText, { color: colors.gold }]}>AFFILIATE PROGRAMME</Text>
           </View>
           <Text style={[s.heroTitle, { color: colors.foreground }]}>
-            Partner with{"\n"}Maison Simon.
+            Partner with{"\n"}Simon Yarrell.
           </Text>
           {/* Shared TitleRule atom (batch 119). */}
           <TitleRule width={40} />

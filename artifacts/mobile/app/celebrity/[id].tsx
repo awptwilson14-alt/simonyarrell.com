@@ -124,7 +124,7 @@ export default function CelebrityDetailScreen() {
                 the natural 8px to the italic role line. width:34 matches the
                 heroName font-size (1:1, same proportion as look batch 126).
                 Note: rule stays gold (not celeb.accentColor) so it reads as
-                the consistent MAISON SIMON brand mark rather than a
+                the consistent SIMON YARRELL brand mark rather than a
                 per-celeb accent — same intent as the gold BrandWordmark in
                 the top bar above. */}
             <TitleRule width={34} style={{ marginTop: -3 }} />

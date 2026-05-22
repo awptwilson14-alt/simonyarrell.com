@@ -5,6 +5,10 @@ import React, { useEffect, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
+// NOTE: AsyncStorage key intentionally retains the legacy "maisonSimon"
+// prefix during the Simon Yarrell rebrand (May 2026) so existing users'
+// hero-audio mute preferences are NOT silently reset on next launch.
+// This is an internal-only identifier — never user-visible.
 const DEFAULT_MUTE_PREF_KEY = "maisonSimon:heroAudioMuted";
 
 /**

@@ -1,5 +1,5 @@
 /**
- * Maison Simon — Dynamic Outfit Engine
+ * Simon Yarrell — Dynamic Outfit Engine
  *
  * Assembles unique, budget-filtered outfit looks from a 200+ item catalog
  * spanning 80+ brands across all price tiers. Respects gender, occasion,

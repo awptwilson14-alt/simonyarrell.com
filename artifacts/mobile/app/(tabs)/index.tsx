@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
+import { BrandWordmark } from "@/components/BrandWordmark";
 import { LookCard } from "@/components/LookCard";
 import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -496,11 +497,11 @@ export default function HomeScreen() {
       <View style={[styles.header, { paddingTop: topPad }]} pointerEvents="box-none">
         <View style={styles.headerInner} pointerEvents="box-none">
           <View style={styles.logoRow}>
-            <Image
-              source={require("../../assets/images/logo_ms.png")}
-              style={styles.logoImg}
-              resizeMode="contain"
-            />
+            {/* Simon Yarrell wordmark (rebrand May 2026, replaces logo_ms.png).
+                height:26 preserves the previous 32px vertical footprint of
+                the floating header logo while leaving room for the inline
+                SY + SIMON YARRELL lockup. */}
+            <BrandWordmark height={26} />
           </View>
           <View style={styles.headerRight}>
             <Pressable

@@ -26,7 +26,7 @@ const SECTIONS: PolicySection[] = [
   {
     title: "Information We Collect",
     icon: "database",
-    body: "Maison Simon collects only what is necessary to personalise your experience. This includes your style preferences, saved looks, and closet items — all stored locally on your device by default. If you choose to create an account in a future update, only your profile name and preferences will be stored.\n\nWe do not collect names, email addresses, phone numbers, or any payment information.",
+    body: "Simon Yarrell collects only what is necessary to personalise your experience. This includes your style preferences, saved looks, and closet items — all stored locally on your device by default. If you choose to create an account in a future update, only your profile name and preferences will be stored.\n\nWe do not collect names, email addresses, phone numbers, or any payment information.",
   },
   {
     title: "Camera & Live Try-On",
@@ -41,7 +41,7 @@ const SECTIONS: PolicySection[] = [
   {
     title: "Third-Party Services",
     icon: "link",
-    body: "Outfit images and product references may link to third-party retailers (e.g. Gucci, Loro Piana, The Row). When you follow a purchase link, you leave Maison Simon and are subject to that retailer's own privacy policy.\n\nWe are not responsible for the privacy practices of third-party websites or services.",
+    body: "Outfit images and product references may link to third-party retailers (e.g. Gucci, Loro Piana, The Row). When you follow a purchase link, you leave Simon Yarrell and are subject to that retailer's own privacy policy.\n\nWe are not responsible for the privacy practices of third-party websites or services.",
   },
   {
     title: "Data Retention & Deletion",
@@ -51,17 +51,17 @@ const SECTIONS: PolicySection[] = [
   {
     title: "Children's Privacy",
     icon: "shield",
-    body: "Maison Simon is intended for users aged 13 and above. We do not knowingly collect personal information from children under 13. If you believe a child has provided personal information through our app, please contact us immediately.",
+    body: "Simon Yarrell is intended for users aged 13 and above. We do not knowingly collect personal information from children under 13. If you believe a child has provided personal information through our app, please contact us immediately.",
   },
   {
     title: "Changes to This Policy",
     icon: "edit-3",
-    body: "We may update this Privacy Policy from time to time. When we do, we will revise the effective date below and notify you within the app. Continued use of Maison Simon after any changes constitutes your acceptance of the updated policy.",
+    body: "We may update this Privacy Policy from time to time. When we do, we will revise the effective date below and notify you within the app. Continued use of Simon Yarrell after any changes constitutes your acceptance of the updated policy.",
   },
   {
     title: "Contact Us",
     icon: "mail",
-    body: "If you have any questions or concerns about this Privacy Policy or how your data is handled, please reach out:\n\nprivacy@maisonsimonfashion.app\n\nMaison Simon Fashion, Inc.\nNew York, NY",
+    body: "If you have any questions or concerns about this Privacy Policy or how your data is handled, please reach out:\n\nprivacy@simonyarrell.com\n\nSimon Yarrell Fashion, Inc.\nNew York, NY",
   },
 ];
 
@@ -109,7 +109,7 @@ export default function PrivacyScreen() {
         <View style={[s.intro, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Feather name="lock" size={18} color={colors.gold} style={{ marginBottom: 2 }} />
           <Text style={[s.introText, { color: colors.mutedForeground }]}>
-            Your privacy is fundamental to Maison Simon. This policy explains what information we collect, how we use it, and the choices available to you. We keep this simple — luxury should never come at the cost of your privacy.
+            Your privacy is fundamental to Simon Yarrell. This policy explains what information we collect, how we use it, and the choices available to you. We keep this simple — luxury should never come at the cost of your privacy.
           </Text>
         </View>
 
@@ -129,7 +129,7 @@ export default function PrivacyScreen() {
         {/* Footer */}
         <View style={[s.footer, { borderTopColor: colors.border }]}>
           <Text style={[s.footerText, { color: colors.mutedForeground }]}>
-            © 2026 Maison Simon Fashion, Inc.{"\n"}All rights reserved.
+            © 2026 Simon Yarrell Fashion, Inc.{"\n"}All rights reserved.
           </Text>
         </View>
       </ScrollView>

@@ -1,5 +1,5 @@
 /**
- * Maison Simon — Verified Catalog Extras
+ * Simon Yarrell — Verified Catalog Extras
  *
  * Hand-curated items with REAL product images and DIRECT product-detail-page
  * (PDP) URLs verified via web search on May 20, 2026. When a piece in a

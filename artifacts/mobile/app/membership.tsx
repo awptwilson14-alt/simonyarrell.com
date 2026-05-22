@@ -79,7 +79,7 @@ export default function MembershipScreen() {
     if (!confirmed || !selectedPkg) return;
     try {
       await purchase(selectedPkg);
-      setStatusMsg("Welcome to Maison Simon membership!");
+      setStatusMsg("Welcome to Simon Yarrell membership!");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => router.back(), 1800);
     } catch (e: any) {
@@ -119,7 +119,7 @@ export default function MembershipScreen() {
           </View>
           <Text style={[s.activeTitle, { color: colors.foreground }]}>You're a Member</Text>
           <Text style={[s.activeSub, { color: colors.mutedForeground }]}>
-            Your Maison Simon membership is active. Enjoy unlimited access to every feature.
+            Your Simon Yarrell membership is active. Enjoy unlimited access to every feature.
           </Text>
           <Pressable onPress={() => router.back()} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
             <Text style={s.goldBtnText}>CONTINUE</Text>
@@ -167,7 +167,7 @@ export default function MembershipScreen() {
             style={StyleSheet.absoluteFill}
           />
           <View style={s.hero}>
-            <Text style={[s.eyebrow, { color: colors.gold }]}>MAISON SIMON</Text>
+            <Text style={[s.eyebrow, { color: colors.gold }]}>SIMON YARRELL</Text>
             <Text style={[s.headline, { color: colors.foreground }]}>
               Dress Like{"\n"}You Mean It
             </Text>
@@ -177,7 +177,7 @@ export default function MembershipScreen() {
                 headline (same proportion as partners hero). */}
             <TitleRule width={40} style={{ marginTop: 2 }} />
             <Text style={[s.sub, { color: colors.mutedForeground }]}>
-              Unlock the full Maison Simon experience — AI styling, live try-on, and the world's most curated looks.
+              Unlock the full Simon Yarrell experience — AI styling, live try-on, and the world's most curated looks.
             </Text>
           </View>
         </View>

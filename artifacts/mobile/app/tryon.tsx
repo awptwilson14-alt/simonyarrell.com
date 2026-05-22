@@ -119,8 +119,8 @@ export default function TryOnScreen() {
     const look = LOOKS[activeLookIdx];
     try {
       await Share.share({
-        message: `✨ Styled myself in the "${look.name}" look on Maison Simon!\n\nPieces: ${look.pieces.map((p) => `${p.name} by ${p.brand}`).join(", ")}\n\nTotal: $${look.estimatedPrice?.toLocaleString() ?? "—"}\n\n#MaisonSimon #VirtualTryOn #LuxuryFashion`,
-        title: `Maison Simon — ${look.name}`,
+        message: `✨ Styled myself in the "${look.name}" look on Simon Yarrell!\n\nPieces: ${look.pieces.map((p) => `${p.name} by ${p.brand}`).join(", ")}\n\nTotal: $${look.estimatedPrice?.toLocaleString() ?? "—"}\n\n#SimonYarrell #VirtualTryOn #LuxuryFashion`,
+        title: `Simon Yarrell — ${look.name}`,
       });
     } catch { /* dismissed */ }
   };
@@ -170,7 +170,7 @@ export default function TryOnScreen() {
                 where rule and title visually pair). */}
             <TitleRule width={32} style={{ marginTop: -12 }} />
             <Text style={[s.permSub, { color: colors.mutedForeground }]}>
-              Maison Simon uses your camera to show outfits on your body in real time — nothing is recorded or stored.
+              Simon Yarrell uses your camera to show outfits on your body in real time — nothing is recorded or stored.
             </Text>
             <Pressable onPress={requestPermission} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
               <Feather name="camera" size={15} color="#0B0B0C" />

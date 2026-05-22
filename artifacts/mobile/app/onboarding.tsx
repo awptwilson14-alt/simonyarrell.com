@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BrandWordmark } from "@/components/BrandWordmark";
 import { GoldButton } from "@/components/GoldButton";
 import { TitleRule } from "@/components/TitleRule";
 import { MultiFilterChips } from "@/components/FilterChips";
@@ -80,13 +81,12 @@ export default function OnboardingScreen() {
         />
 
         <View style={[splash.content, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 48 }]}>
-          {/* Brand lockup */}
+          {/* Brand lockup — Simon Yarrell stacked wordmark (rebrand May 2026,
+              replaces previous logo_ms.png lockup). Height tuned so the
+              monogram + caps occupy roughly the same vertical footprint as
+              the previous PNG. */}
           <View style={splash.brandSection}>
-            <Image
-              source={require("../assets/images/logo_ms.png")}
-              style={splash.logoImg}
-              resizeMode="contain"
-            />
+            <BrandWordmark variant="stacked" height={88} />
           </View>
 
           {/* CTA */}
@@ -236,7 +236,7 @@ export default function OnboardingScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: colors.gold }]}>MAISON SIMON</Text>
+          <Text style={[styles.logo, { color: colors.gold }]}>SIMON YARRELL</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>{current.title}</Text>
           {/* Gold rule (batch 125) — completes the editorial-hero motif
               coverage. Onboarding was the first-impression hero the rest of

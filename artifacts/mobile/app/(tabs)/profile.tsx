@@ -433,7 +433,7 @@ export default function ProfileScreen() {
               <Feather name="star" size={15} color={colors.gold} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.memberBannerTitle, { color: colors.foreground }]}>Maison Simon Membership</Text>
+              <Text style={[styles.memberBannerTitle, { color: colors.foreground }]}>Simon Yarrell Membership</Text>
               <Text style={[styles.memberBannerSub, { color: colors.mutedForeground }]}>
                 From $2.99/mo<GoldDot />Unlock everything
               </Text>
@@ -705,7 +705,7 @@ export default function ProfileScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[styles.affiliateTitle, { color: colors.foreground }]}>Affiliate Partners</Text>
             <Text style={[styles.affiliateSub, { color: colors.mutedForeground }]}>
-              List your brand · mail@maisonsimon.app
+              List your brand<GoldDot />fashion@simonyarrell.com
             </Text>
           </View>
           <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
@@ -713,6 +713,11 @@ export default function ProfileScreen() {
 
         {/* Footer links */}
         <View style={styles.footerLinks}>
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/about"); }} style={styles.footerLink}>
+            <Feather name="info" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>About</Text>
+          </Pressable>
+          <View style={[styles.footerDot, { backgroundColor: colors.border }]} />
           <Pressable onPress={() => router.push("/privacy")} style={styles.footerLink}>
             <Feather name="lock" size={11} color={colors.mutedForeground} />
             <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Privacy Policy</Text>
