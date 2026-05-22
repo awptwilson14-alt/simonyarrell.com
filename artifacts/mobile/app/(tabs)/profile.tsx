@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSubscription } from "@/lib/revenuecat";
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -14,12 +15,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { LookCard } from "@/components/LookCard";
 import { ProductCard } from "@/components/ProductCard";
 import { GoldButton } from "@/components/GoldButton";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { STYLE_CATEGORIES, BUDGETS, GENDERS, TRENDS, isLookInTrend } from "@/constants/data";
+import { SPLASH_HEROES } from "@/constants/heroImages";
 import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -228,8 +231,24 @@ export default function ProfileScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <BrandWordmark style={{ marginBottom: 20 }} />
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        {/* Profile Header — wrapped in an editorial gendered banner. Same
+            SPLASH_HEROES pattern used by onboarding (batch 104) and the empty
+            states (batches 106/107), but tuned much subtler (0.30 opacity +
+            gentler gradient) since this panel is always-on screen content,
+            not a one-off empty/welcome moment. Gives the header a magazine-
+            cover feel instead of stark text on a dark void. */}
+        <View style={[styles.profileHeaderWrap, { borderColor: colors.border }]}>
+          <Image
+            source={SPLASH_HEROES[userProfile.gender === "Men" ? "men" : "women"]}
+            style={styles.profileHeaderBackdrop}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={["rgba(11,11,12,0.65)", "rgba(11,11,12,0.85)", "rgba(11,11,12,0.95)"]}
+            locations={[0, 0.6, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.profileHeader}>
           <View style={[styles.avatar, { backgroundColor: colors.card, borderColor: colors.gold }]}>
             <Text style={[styles.avatarText, { color: colors.gold }]}>{initials}</Text>
           </View>
@@ -305,6 +324,7 @@ export default function ProfileScreen() {
           >
             <Feather name={editing ? "x" : "edit-2"} size={14} color={colors.mutedForeground} />
           </Pressable>
+        </View>
         </View>
 
         {/* Most-channeled celeb — editorial signature for the user's taste.
@@ -671,6 +691,18 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 20, gap: 24 },
+  profileHeaderWrap: {
+    borderWidth: 0.5,
+    borderRadius: 2,
+    overflow: "hidden",
+    padding: 16,
+  },
+  profileHeaderBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    opacity: 0.3,
+  },
   profileHeader: { flexDirection: "row", alignItems: "flex-start", gap: 16 },
   avatar: { width: 68, height: 68, borderRadius: 34, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   avatarText: { fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: 1 },
