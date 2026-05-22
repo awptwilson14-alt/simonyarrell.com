@@ -507,23 +507,34 @@ export default function StyleScreen() {
                     gender-specific brand, or cheapest outfit over budget. */}
                 {results.length === 0 && activeBrand && (() => {
                   const avail = getBrandAvailability(activeBrand, selectedGender || userProfile.gender, selectedBudget);
+                  // Three distinct empty-state reasons:
+                  //   1. No items for this gender → gender-specific brand
+                  //   2. Items exist but can't form an outfit (e.g. brand only
+                  //      stocks accessories in this gender) → limited coverage
+                  //   3. Outfit assemblable but cheapest combo > budget → over budget
+                  const reason = !avail.hasGenderItems
+                    ? "gender"
+                    : !avail.hasAssemblableOutfit
+                    ? "coverage"
+                    : "budget";
+                  const iconName = reason === "gender" ? "user-x" : reason === "coverage" ? "archive" : "dollar-sign";
+                  const title =
+                    reason === "gender"
+                      ? `${activeBrand} is gender-specific`
+                      : reason === "coverage"
+                      ? `Limited ${activeBrand} pieces`
+                      : "Look is over your budget";
+                  const body =
+                    reason === "gender"
+                      ? `${activeBrand} doesn't carry ${(selectedGender || userProfile.gender).toLowerCase()}'s pieces in our catalog. Try a different gender or remove the brand lock.`
+                      : reason === "coverage"
+                      ? `${activeBrand} has ${(selectedGender || userProfile.gender).toLowerCase()}'s pieces in our catalog but not enough categories to assemble a full look. Try removing the brand lock to mix with other houses.`
+                      : `Looks from ${activeBrand} start around $${avail.cheapestOutfitPrice.toLocaleString()}. Try raising your budget or removing the brand lock.`;
                   return (
                     <View style={s.brandEmptyBox}>
-                      <Feather
-                        name={!avail.hasGenderItems ? "user-x" : "dollar-sign"}
-                        size={28}
-                        color={colors.gold}
-                      />
-                      <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>
-                        {!avail.hasGenderItems
-                          ? `${activeBrand} is gender-specific`
-                          : "Look is over your budget"}
-                      </Text>
-                      <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>
-                        {!avail.hasGenderItems
-                          ? `${activeBrand} doesn't carry ${(selectedGender || userProfile.gender).toLowerCase()}'s pieces in our catalog. Try a different gender or remove the brand lock.`
-                          : `Looks from ${activeBrand} start around $${avail.cheapestOutfitPrice.toLocaleString()}. Try raising your budget or removing the brand lock.`}
-                      </Text>
+                      <Feather name={iconName} size={28} color={colors.gold} />
+                      <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>{title}</Text>
+                      <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>{body}</Text>
                       <View style={s.brandEmptyActions}>
                         <GoldButton label="REMOVE BRAND LOCK" onPress={() => { setActiveBrand(undefined); setTimeout(() => generate(false), 50); }} variant="outline" />
                         <GoldButton label="START OVER" onPress={reset} variant="ghost" />

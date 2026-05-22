@@ -727,6 +727,56 @@ function preferredShoeTypes(occasion: string): Array<NonNullable<CatalogItem["sh
   }
 }
 
+// ─── Outfit-level formality coherence ──────────────────────────────────────
+// Infer how dressed-up a piece is from its name + category. Used to keep an
+// outfit visually uniform — jeans + tee should never land a dress oxford,
+// and a tuxedo jacket should never land a graphic sneaker. Three tiers:
+//   "casual"  — denim, tees, hoodies, joggers, sweats, shorts, sundresses
+//   "dress"   — tuxedos, gowns, black-tie / evening / sequin pieces
+//   "smart"   — blazers, tailored trousers, silk blouses, knits, chinos,
+//               wool coats — the middle ground that goes either way
+type Formality = "casual" | "smart" | "dress";
+function inferPieceFormality(p: { name: string; category: string; shoeType?: CatalogItem["shoeType"] }): Formality {
+  const n = p.name.toLowerCase();
+  if (p.category === "shoes") {
+    const t = p.shoeType
+      ?? inferShoeType({ name: p.name, category: "shoes" } as CatalogItem);
+    if (t === "sneakers" || t === "casual") return "casual";
+    if (t === "dress") return "dress";
+    return "smart";
+  }
+  if (/\b(tuxedo|gown|black.?tie|evening|sequin|ball.?gown|opera)\b/.test(n)) return "dress";
+  if (/\b(tee|t-?shirt|graphic|hoodie|sweatshirt|tank|jogger|sweatpant|sweat pant|cargo|denim|jean|jeans|short|shorts|legging|tracksuit|track pant|crewneck sweatshirt)\b/.test(n)) return "casual";
+  return "smart";
+}
+
+// Given the pieces already chosen for an outfit, return the shoe sub-types
+// that will look coherent with them. Casual pieces ban dress shoes; dress
+// pieces ban sneakers/casual shoes; an all-smart outfit avoids sneakers.
+// Always intersected with the occasion preference so a Work look still
+// can't end up in flip-flops just because the top is a polo.
+function coherentShoeTypes(
+  picked: Array<{ name: string; category: string; shoeType?: CatalogItem["shoeType"] }>,
+  occasionPrefs: Array<NonNullable<CatalogItem["shoeType"]>>,
+): Array<NonNullable<CatalogItem["shoeType"]>> {
+  const formalities = picked
+    .filter((p) => p.category !== "shoes" && p.category !== "bag" && p.category !== "jewelry" && p.category !== "accessories")
+    .map((p) => inferPieceFormality(p));
+  if (formalities.length === 0) return occasionPrefs;
+  const hasCasual = formalities.includes("casual");
+  const hasDress = formalities.includes("dress");
+  let allowed: Array<NonNullable<CatalogItem["shoeType"]>>;
+  if (hasDress && !hasCasual) allowed = ["dress", "work"];
+  else if (hasCasual && !hasDress) allowed = ["sneakers", "casual"];
+  else if (hasCasual && hasDress) allowed = ["casual", "dress"]; // rare mixed
+  else allowed = ["casual", "dress", "work"]; // smart only — skip sneakers
+  const intersected = occasionPrefs.filter((t) => allowed.includes(t));
+  // Fall back to outfit-derived allowed list if occasion prefs left nothing
+  // (e.g. occasion=Event prefers only "dress" but outfit is jeans+tee — we'd
+  // rather honor the outfit's casualness than force a clashing oxford).
+  return intersected.length > 0 ? intersected : allowed;
+}
+
 // ─── Purchase URL builder — converts brand homepage to product search page ────
 // So tapping "BUY" on any piece lands the user at a search results page
 // for that exact product on the brand's own website.
@@ -1469,6 +1519,14 @@ export function getBrandAvailability(
   budget: string,
 ): {
   hasGenderItems: boolean;
+  /** True only when the brand has enough categories in this gender to
+   *  assemble a 2-piece outfit (dress+shoe / top+bottom / etc). False
+   *  means the catalog has SOME items for this gender but they don't
+   *  cover enough categories to compose a look — UI surfaces a distinct
+   *  "limited catalog coverage" message instead of a misleading $0
+   *  "over budget" line. */
+  hasAssemblableOutfit: boolean;
+  /** Cheapest 2-piece combo price, or 0 when hasAssemblableOutfit=false. */
   cheapestOutfitPrice: number;
   budgetMax: number;
 } {
@@ -1481,7 +1539,7 @@ export function getBrandAvailability(
       (i.genders.includes(genderKey) || i.genders.includes("unisex")),
   );
   if (pool.length === 0) {
-    return { hasGenderItems: false, cheapestOutfitPrice: 0, budgetMax };
+    return { hasGenderItems: false, hasAssemblableOutfit: false, cheapestOutfitPrice: 0, budgetMax };
   }
   const cheapest = (cat: string): number => {
     const items = pool.filter((i) => i.category === cat);
@@ -1503,9 +1561,11 @@ export function getBrandAvailability(
     cDress + cOuter,
   ];
   const min = Math.min(...combos);
+  const assemblable = isFinite(min);
   return {
     hasGenderItems: true,
-    cheapestOutfitPrice: isFinite(min) ? min : 0,
+    hasAssemblableOutfit: assemblable,
+    cheapestOutfitPrice: assemblable ? min : 0,
     budgetMax,
   };
 }
@@ -1578,7 +1638,13 @@ export function generateLooks(params: GenerateParams): Look[] {
       return item.price <= budgetMax * 0.8;
     }
     function matchesGenderLocal(item: CatalogItem): boolean {
-      if (!useGender) return true;
+      // HARD RULE: never wrong-gender model. Even when this pass relaxes
+      // gender (the deepest tier 4 fallback), brand-locked sessions MUST
+      // keep gender enforced — otherwise "ONLY {BRAND}" + Men can leak a
+      // women's-only piece from that brand into the look, which violates
+      // the no-wrong-gender promise the chip makes and bypasses the new
+      // "{brand} is gender-specific" empty-state explanation.
+      if (!useGender && !brandLock) return true;
       return matchesGender(item);
     }
     function matchesOccasionLocal(item: CatalogItem): boolean {
@@ -1648,9 +1714,14 @@ export function generateLooks(params: GenerateParams): Look[] {
     const shoeTypePrefs = preferredShoeTypes(occasion);
     const pickShoe = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
+      // Outfit-coherent prefs: re-derive shoe types from the pieces ALREADY
+      // added (top+bottom or dress) so the shoe matches the outfit's
+      // formality, not just the occasion's nominal preference. This is what
+      // prevents jeans+tee → dress oxford, or tuxedo → graphic sneaker.
+      const coherentPrefs = coherentShoeTypes(pieces, shoeTypePrefs);
       const preferred = pool_.filter((s) => {
         const t = inferShoeType(s);
-        return t ? shoeTypePrefs.includes(t) : false;
+        return t ? coherentPrefs.includes(t) : false;
       });
       return stylePick(preferred.length > 0 ? preferred : pool_);
     };
