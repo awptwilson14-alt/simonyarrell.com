@@ -1891,14 +1891,17 @@ export function generateLooks(params: GenerateParams): Look[] {
           // occasion, or gender are loosened.
           (!brandLock || item.brand === brandLock)
       );
-      // Season filter (batch 132): soft-narrow to items whose inferred
-      // seasons include the user's chosen season. If the narrowing would
-      // starve a category (< 3 items survive) we DROP the season filter
-      // for that category — better to ship a slightly off-season piece
-      // than break a look. "All Season" / undefined skip the filter.
+      // Season filter (HARDENED): when the user picks a specific season,
+      // every clothing/outerwear/shoe item MUST be season-appropriate. No
+      // <3-item bypass — wool cashmere never lands in a Summer look, linen
+      // sundresses never land in a Winter look. Accessories/bag/jewelry
+      // already return EVERY_SEASON from inferItemSeasons so they pass
+      // through year-round. If the seasonal pool genuinely starves, the
+      // look slot is dropped rather than ship an off-season piece — the
+      // tiered passes and empty-state UI surface the gap honestly.
+      // "All Season" / undefined skip the filter (user opted out).
       if (season && season !== "All Season") {
-        const seasonal = base.filter((item) => matchesSeason(item, season));
-        if (seasonal.length >= 3) return seasonal;
+        return base.filter((item) => matchesSeason(item, season));
       }
       return base;
     }
@@ -2466,16 +2469,14 @@ export function generateLooks(params: GenerateParams): Look[] {
         (i.genders.includes(genderKey) || i.genders.includes("unisex")) &&
         (budgetMax === 0 || i.price <= budgetMax),
     );
-    // Season-respect (batch 132): try the seasonally-correct subset first;
-    // only fall back to the unfiltered brand pool if season narrowing would
-    // starve the brand-lock outfit (no top/bottom/dress pair survives).
-    const brandPoolSeasonal = (season && season !== "All Season")
+    // Season-respect (HARDENED): the brand-lock fallback also obeys the
+    // hard season rule. If the user picked a specific season, we ONLY
+    // consider seasonal items — even at the deepest brand-lock fallback.
+    // If that subset can't assemble an outfit, we ship no fallback rather
+    // than violate the no-mixed-season promise. Empty-state UI explains.
+    const brandPool = (season && season !== "All Season")
       ? brandPoolBase.filter((i) => matchesSeason(i, season))
       : brandPoolBase;
-    const brandPoolHasOutfit =
-      (brandPoolSeasonal.some((i) => i.category === "dress") && brandPoolSeasonal.some((i) => i.category === "shoes")) ||
-      (brandPoolSeasonal.some((i) => i.category === "top") && brandPoolSeasonal.some((i) => i.category === "bottom"));
-    const brandPool = brandPoolHasOutfit ? brandPoolSeasonal : brandPoolBase;
     const bTop = brandPool.find((i) => i.category === "top");
     const bBottom = brandPool.find((i) => i.category === "bottom");
     // Formal Remix safety-net: brand-lock fallback must respect the sneaker
@@ -2538,16 +2539,13 @@ export function generateLooks(params: GenerateParams): Look[] {
     const gPoolBase = CATALOG.filter(
       (i) => i.genders.includes(genderKey) || i.genders.includes("unisex"),
     );
-    // Season-respect in ultra-fallback (batch 132): same starve-guard as
-    // brand-lock fallback — prefer the seasonal subset, drop to unfiltered
-    // only if season narrowing would leave us without a complete outfit.
-    const gPoolSeasonal = (season && season !== "All Season")
+    // Season-respect in ultra-fallback (HARDENED): same rule as brand-lock
+    // — strict seasonal subset only. If even the entire-catalog seasonal
+    // pool can't assemble a 2-piece, we return the (possibly empty) looks
+    // array rather than ship a cross-season fallback.
+    const gPool = (season && season !== "All Season")
       ? gPoolBase.filter((i) => matchesSeason(i, season))
       : gPoolBase;
-    const gPoolHasOutfit =
-      (gPoolSeasonal.some((i) => i.category === "dress") && gPoolSeasonal.some((i) => i.category === "shoes")) ||
-      (gPoolSeasonal.some((i) => i.category === "top") && gPoolSeasonal.some((i) => i.category === "bottom"));
-    const gPool = gPoolHasOutfit ? gPoolSeasonal : gPoolBase;
     const anyTop = gPool.find((i) => i.category === "top");
     const anyBottom = gPool.find((i) => i.category === "bottom");
     const anyShoe = gPool.find((i) => i.category === "shoes");
