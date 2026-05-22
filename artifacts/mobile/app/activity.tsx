@@ -16,9 +16,11 @@ import { Feather } from "@expo/vector-icons";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { LookCard } from "@/components/LookCard";
 import { GoldButton } from "@/components/GoldButton";
+import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { findCelebByName } from "@/lib/celebLookup";
+import { LinearGradient } from "expo-linear-gradient";
 
 /**
  * Activity inbox — the destination for the home header bell. Surfaces signals
@@ -40,7 +42,7 @@ export default function ActivityScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { savedLooks } = useApp();
+  const { savedLooks, userProfile } = useApp();
 
   const topPad = Platform.OS === "web" ? 56 : insets.top;
 
@@ -165,26 +167,46 @@ export default function ActivityScreen() {
           </View>
         )}
 
-        {/* ── Empty state CTA ── */}
-        {empty && (
-          <View style={[styles.emptyBlock, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name="bookmark" size={28} color={colors.gold} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              No activity yet
-            </Text>
-            <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>
-              Generate looks and save the ones you love. They'll appear here so you
-              can pick up where you left off.
-            </Text>
-            <GoldButton
-              label="Explore Styles"
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.replace("/(tabs)/explore");
-              }}
-            />
-          </View>
-        )}
+        {/* ── Empty state CTA ── Editorial hero backdrop using gendered
+            SPLASH_HEROES (same pattern as onboarding batch 104). Heavily
+            dimmed via 3-stop gradient so the gold bookmark icon, title,
+            body copy, and CTA remain perfectly legible. Replaces the
+            previous solid `colors.card` background which read as flat. */}
+        {empty && (() => {
+          const heroKey: "men" | "women" =
+            userProfile.gender === "Men" ? "men" : "women";
+          return (
+            <View style={[styles.emptyBlock, { borderColor: colors.border }]}>
+              <Image
+                source={SPLASH_HEROES[heroKey]}
+                style={styles.emptyBackdrop}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={["rgba(11,11,12,0.55)", "rgba(11,11,12,0.88)", "rgba(11,11,12,0.96)"]}
+                locations={[0, 0.5, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.emptyContent}>
+                <Feather name="bookmark" size={28} color={colors.gold} />
+                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+                  No activity yet
+                </Text>
+                <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>
+                  Generate looks and save the ones you love. They'll appear here so you
+                  can pick up where you left off.
+                </Text>
+                <GoldButton
+                  label="Explore Styles"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.replace("/(tabs)/explore");
+                  }}
+                />
+              </View>
+            </View>
+          );
+        })()}
       </ScrollView>
     </View>
   );
@@ -270,9 +292,18 @@ const styles = StyleSheet.create({
   },
   emptyBlock: {
     marginHorizontal: 20,
-    padding: 24,
     borderWidth: 0.5,
     borderRadius: 2,
+    overflow: "hidden",
+  },
+  emptyBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    opacity: 0.55,
+  },
+  emptyContent: {
+    padding: 24,
     alignItems: "center",
     gap: 12,
   },
