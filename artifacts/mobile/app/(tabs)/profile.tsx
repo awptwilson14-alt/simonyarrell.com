@@ -277,8 +277,24 @@ export default function ProfileScreen() {
             <Text style={[styles.name, { color: colors.foreground }]}>
               {userProfile.name || "Your Profile"}
             </Text>
+            {/* Gold middle-dot separators (batch 130) — second usage of the
+                inline gold-dot pattern from batch 129 (look heroCrumb).
+                The styleTag is ALREADY entirely gold (color: colors.gold),
+                so the · already inherits gold. Here we instead invert: the
+                surrounding tokens (gender / Size N / budget) get tinted
+                down so the dots stand out as the editorial accent, giving
+                this triplet the same "off-white text + gold dot accent"
+                rhythm as the heroCrumb. Implementation: nested Text spans
+                with a slightly muted gold-tinted off-white (rgba derived
+                from colors.foreground at 0.85) so the row still reads as
+                identity-meta, not body copy. Two dots in one phrase
+                amplifies the accent vs the single-dot heroCrumb. */}
             <Text style={[styles.styleTag, { color: colors.gold }]}>
-              {userProfile.gender} · Size {userProfile.size ?? "M"} · {userProfile.budget}
+              <Text style={{ color: "rgba(245,245,240,0.85)" }}>{userProfile.gender}</Text>
+              {" · "}
+              <Text style={{ color: "rgba(245,245,240,0.85)" }}>Size {userProfile.size ?? "M"}</Text>
+              {" · "}
+              <Text style={{ color: "rgba(245,245,240,0.85)" }}>{userProfile.budget}</Text>
             </Text>
             {userProfile.favoriteStyles.length > 0 && (
               // Favorite styles as chips. When a favorite is a known TREND
