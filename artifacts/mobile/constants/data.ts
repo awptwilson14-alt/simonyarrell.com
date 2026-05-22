@@ -325,6 +325,14 @@ for (const look of LOOKS) {
   }
 }
 
+// ─── PRODUCTS shop array piece-image autopatch ─────────────────────────────
+// Same pattern as LOOKS above and the CATALOG autopatch in outfitEngine.ts:
+// every product whose id is present in LOCAL_PRODUCT_ASSETS gets `localImage`
+// stamped at module load so ProductCard / ResilientImage prefer the
+// editorial PNG over the Unsplash placeholder. Applied AFTER the PRODUCTS
+// declaration below — see further down.
+
+
 // ─── Products ────────────────────────────────────────────────────────────────
 export const PRODUCTS: Product[] = [
   // Ultra Luxury
@@ -383,6 +391,17 @@ export const PRODUCTS: Product[] = [
   { id: "pr39", name: "Falabella Chain Bag", brand: "Stella McCartney", price: 1150, category: "Bag", style: "Luxury", description: "Iconic chain-trim bag, fully vegan", imageUrl: UNS("1584917865442-de89df76afd3"), purchaseUrl: "https://www.stellamccartney.com" },
   { id: "pr40", name: "Face Logo Hoodie", brand: "Acne Studios", price: 380, category: "Top", style: "Luxury Streetwear", description: "The face-patch graphic that made Acne iconic", imageUrl: UNS("1556821840-3a63f15732ce"), purchaseUrl: "https://www.acnestudios.com" },
 ];
+
+// PRODUCTS autopatch — stamps localImage on every shop product whose id has
+// a registered editorial PNG. See the explanatory comment block above the
+// PRODUCTS declaration. Runs once at module load; the guard prevents reload
+// clobbering of any explicit override.
+for (const product of PRODUCTS) {
+  const localAsset = LOCAL_PRODUCT_ASSETS[product.id];
+  if (localAsset && !product.localImage) {
+    product.localImage = localAsset;
+  }
+}
 
 export const OCCASIONS = ["Casual", "Work", "Evening", "Street", "Resort", "Party", "Wedding", "Cultural"];
 export const SEASONS = ["Spring", "Summer", "Autumn", "Winter", "All Season"];
