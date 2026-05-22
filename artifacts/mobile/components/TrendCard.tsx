@@ -1,5 +1,6 @@
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { Trend } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
@@ -41,6 +42,20 @@ export function TrendCard({
         style={[styles.image, isLarge ? styles.imageLarge : styles.imageSmall]}
         resizeMode="cover"
       />
+      {/* Top scrim — only rendered when the savedBadge would otherwise sit
+          on raw pixels at the top-right corner. Matches the ProductCard
+          treatment from batch 114: top 35% darkens subtly so the gold "★ N
+          SAVED" pill always reads cleanly across editorial trend images.
+          Bottom of the card already has its own opaque 55% black overlay
+          (styles.overlay) so no bottom scrim needed here. */}
+      {savedCount > 0 && (
+        <LinearGradient
+          colors={["rgba(0,0,0,0.38)", "transparent"]}
+          locations={[0, 0.35]}
+          style={styles.topScrim}
+          pointerEvents="none"
+        />
+      )}
       {savedCount > 0 && (
         <View
           style={[
@@ -84,6 +99,13 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
+  },
+  topScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   imageLarge: {
     height: 260,

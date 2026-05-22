@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
 import { ResilientImage } from "@/components/ResilientImage";
 import { Product } from "@/constants/data";
@@ -92,6 +93,18 @@ export function ProductCard({ product }: ProductCardProps) {
           size="lg"
           transition={300}
         />
+        {/* Top scrim — mirrors batch 113's LookCard bottom scrim, but at the
+            top edge since this card's overlay (tierBadge) sits top-left.
+            Only the top 40% of the image gets a subtle dark wash so the
+            tier badge always reads cleanly regardless of underlying product
+            pixels (cream handbag → previously washed out the chip text).
+            pointerEvents:'none' so the badge stays non-blocking. */}
+        <LinearGradient
+          colors={["rgba(0,0,0,0.4)", "transparent"]}
+          locations={[0, 0.4]}
+          style={styles.topScrim}
+          pointerEvents="none"
+        />
         {/* Tier badge */}
         <View style={[styles.tierBadge, { backgroundColor: "rgba(11,11,12,0.72)" }]}>
           <Text style={[styles.tierBadgeText, { color: tierColor(product.price) }]}>
@@ -123,12 +136,17 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.brand.toUpperCase()}
             </Text>
           )}
+          {/* Filled heart on save (batch 113 parity) — Feather has no
+              filled-heart glyph, so the prior color-only diff was weak.
+              Saved → FontAwesome solid heart in gold; unsaved → outlined
+              Feather heart in muted. Size kept identical (15) since the
+              inline brand-row context can't tolerate any vertical jitter. */}
           <Pressable onPress={toggleSave} hitSlop={12}>
-            <Feather
-              name="heart"
-              size={15}
-              color={saved ? colors.gold : colors.mutedForeground}
-            />
+            {saved ? (
+              <FontAwesome name="heart" size={14} color={colors.gold} />
+            ) : (
+              <Feather name="heart" size={15} color={colors.mutedForeground} />
+            )}
           </Pressable>
         </View>
 
@@ -218,6 +236,13 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  topScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   tierBadge: {
     position: "absolute",
