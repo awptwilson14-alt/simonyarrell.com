@@ -2,6 +2,7 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -12,8 +13,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { GoldButton } from "@/components/GoldButton";
+import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
@@ -26,7 +29,7 @@ const COLORS_LIST = ["Black", "White", "Navy", "Camel", "Beige", "Ivory", "Grey"
 export default function ClosetScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { closetItems, addClosetItem, removeClosetItem } = useApp();
+  const { closetItems, addClosetItem, removeClosetItem, userProfile } = useApp();
   const router = useRouter();
   // Batch 64 surfaced goShopBrand for the WARDROBE SIGNATURE MOST WORN
   // brand (which skipped the catalog gate — the user's own most-worn brand
@@ -337,23 +340,41 @@ export default function ClosetScreen() {
           </View>
         </ScrollView>
 
-        {/* Closet Grid */}
-        {filtered.length === 0 ? (
-          <View style={styles.empty}>
-            <Feather name="shopping-bag" size={40} color={colors.border} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {closetItems.length === 0
-                ? "Your closet is empty"
-                : activeColor
-                ? `No ${activeColor.toLowerCase()} items${activeCategory !== "All" ? ` in ${activeCategory}` : ""}`
-                : "No items in this category"}
-            </Text>
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Add pieces from your wardrobe to get personalized outfit recommendations using items you already own.
-            </Text>
-            <GoldButton label="Add First Item" onPress={() => setShowAddForm(true)} variant="outline" />
-          </View>
-        ) : (
+        {/* Closet Grid — empty state mirrors activity inbox (batch 106) with
+            a gendered editorial backdrop. Same SPLASH_HEROES + 3-stop dark
+            gradient pattern so legibility is preserved across the app. */}
+        {filtered.length === 0 ? (() => {
+          const heroKey: "men" | "women" =
+            userProfile.gender === "Men" ? "men" : "women";
+          return (
+            <View style={[styles.empty, { borderColor: colors.border }]}>
+              <Image
+                source={SPLASH_HEROES[heroKey]}
+                style={styles.emptyBackdrop}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={["rgba(11,11,12,0.55)", "rgba(11,11,12,0.88)", "rgba(11,11,12,0.96)"]}
+                locations={[0, 0.5, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.emptyContent}>
+                <Feather name="shopping-bag" size={40} color={colors.gold} />
+                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+                  {closetItems.length === 0
+                    ? "Your closet is empty"
+                    : activeColor
+                    ? `No ${activeColor.toLowerCase()} items${activeCategory !== "All" ? ` in ${activeCategory}` : ""}`
+                    : "No items in this category"}
+                </Text>
+                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                  Add pieces from your wardrobe to get personalized outfit recommendations using items you already own.
+                </Text>
+                <GoldButton label="Add First Item" onPress={() => setShowAddForm(true)} variant="outline" />
+              </View>
+            </View>
+          );
+        })() : (
           <View style={styles.grid}>
             {filtered.map((item) => (
               <View key={item.id} style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -430,7 +451,9 @@ const styles = StyleSheet.create({
   itemBrand: { fontSize: 11, fontFamily: "Inter_500Medium", letterSpacing: 1 },
   itemBrandLinkRow: { flexDirection: "row", alignItems: "center", gap: 3, alignSelf: "flex-start" },
   itemMeta: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  empty: { alignItems: "center", paddingVertical: 60, gap: 16 },
+  empty: { marginHorizontal: 20, marginTop: 16, borderWidth: 0.5, borderRadius: 2, overflow: "hidden" },
+  emptyBackdrop: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.55 },
+  emptyContent: { alignItems: "center", paddingVertical: 60, paddingHorizontal: 24, gap: 16 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
   emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, textAlign: "center", maxWidth: 280 },
   closetActions: { marginTop: 8 },
