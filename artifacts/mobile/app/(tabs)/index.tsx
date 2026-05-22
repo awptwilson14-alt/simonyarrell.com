@@ -346,7 +346,9 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hList}
           >
-            {TRENDS.slice(0, 4).map((trend) => {
+            {/* Show 5 trends so the newly-added "Formal Remix" leads the rail
+                alongside the existing top 4 — see TRENDS in data.ts. */}
+            {TRENDS.slice(0, 5).map((trend) => {
               const savedCount = savedLooks.reduce(
                 (n, l) => (isLookInTrend(l, trend.name) ? n + 1 : n),
                 0,
