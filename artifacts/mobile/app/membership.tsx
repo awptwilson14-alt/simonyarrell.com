@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -16,6 +17,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { SPLASH_HEROES } from "@/constants/heroImages";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useSubscription } from "@/lib/revenuecat";
 
@@ -40,6 +43,12 @@ export default function MembershipScreen() {
     useSubscription();
 
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("annual");
+  const { userProfile } = useApp();
+  // Gendered backdrop for the upgrade hero — mirrors the SPLASH_HEROES
+  // pattern adopted across onboarding (104), empty states (106/107), and
+  // profile header (108). Membership is a conversion surface, so the
+  // hero is the prime real estate to dress up. Defaults/Unisex → women.
+  const heroKey: "men" | "women" = userProfile.gender === "Men" ? "men" : "women";
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
@@ -140,15 +149,31 @@ export default function MembershipScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
       >
-        {/* Hero */}
-        <View style={s.hero}>
-          <Text style={[s.eyebrow, { color: colors.gold }]}>MAISON SIMON</Text>
-          <Text style={[s.headline, { color: colors.foreground }]}>
-            Dress Like{"\n"}You Mean It
-          </Text>
-          <Text style={[s.sub, { color: colors.mutedForeground }]}>
-            Unlock the full Maison Simon experience — AI styling, live try-on, and the world's most curated looks.
-          </Text>
+        {/* Hero — editorial gendered backdrop. 0.40 opacity (between the
+            always-on profile header at 0.30 and the empty-state moments at
+            0.55) since this is a high-conversion surface where the photo
+            should *feel* present without distracting from the headline.
+            3-stop gradient keeps the gold eyebrow + ivory headline crisp. */}
+        <View style={s.heroWrap}>
+          <Image
+            source={SPLASH_HEROES[heroKey]}
+            style={s.heroBackdrop}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={["rgba(11,11,12,0.55)", "rgba(11,11,12,0.82)", "rgba(11,11,12,0.95)"]}
+            locations={[0, 0.55, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={s.hero}>
+            <Text style={[s.eyebrow, { color: colors.gold }]}>MAISON SIMON</Text>
+            <Text style={[s.headline, { color: colors.foreground }]}>
+              Dress Like{"\n"}You Mean It
+            </Text>
+            <Text style={[s.sub, { color: colors.mutedForeground }]}>
+              Unlock the full Maison Simon experience — AI styling, live try-on, and the world's most curated looks.
+            </Text>
+          </View>
         </View>
 
         {/* Perks */}
@@ -327,7 +352,19 @@ const s = StyleSheet.create({
 
   content: { paddingHorizontal: 24, gap: 20, paddingTop: 8 },
 
-  hero: { gap: 12 },
+  heroWrap: {
+    borderRadius: 2,
+    overflow: "hidden",
+    borderWidth: 0.5,
+    borderColor: "rgba(198,167,94,0.25)",
+  },
+  heroBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    opacity: 0.4,
+  },
+  hero: { gap: 12, padding: 20 },
   eyebrow: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 3 },
   headline: {
     fontSize: 42,
