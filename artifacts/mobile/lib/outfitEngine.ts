@@ -793,6 +793,40 @@ function coherentShoeTypes(
   return intersected.length > 0 ? intersected : allowed;
 }
 
+// ─── Look-level formality anchor ────────────────────────────────────────────
+// Decide BEFORE we pick pieces whether the whole look should read casual,
+// smart, or dress. Every clothing pool is then filtered to that target
+// (plus the adjacent neutral bucket) so a tuxedo trouser never lands with
+// a graphic tee, and a wool blazer never lands on top of a hoodie. Shoe
+// coherence is still enforced separately by `coherentShoeTypes` once the
+// clothing is locked in.
+//
+// Formal Remix returns null on purpose: its identity IS mixing dressy
+// pieces with statement sneakers, so the anchor must not constrain it.
+function targetLookFormality(occasion: string, dominantStyle: string): Formality | null {
+  if (occasion === "Formal Remix") return null;
+  // Style first — by this point in the loop the engine has committed to a
+  // visual vibe, so style outranks occasion as a formality signal.
+  if (/Evening|Old Money/.test(dominantStyle)) return "dress";
+  if (/Streetwear|Y2K|Vacation Luxe/.test(dominantStyle)) return "casual";
+  if (/Business|Clean Minimal|Techwear/.test(dominantStyle)) return "smart";
+  // Occasion fallback.
+  if (/Formal|Event|Evening|Party|Date Night/.test(occasion)) return "dress";
+  if (/Work|Business/.test(occasion)) return "smart";
+  if (/Streetwear|Casual|Vacation|Resort|Street/.test(occasion)) return "casual";
+  return "smart";
+}
+
+// Allowed formality buckets for a given anchor. "smart" is the neutral
+// middle and pairs cleanly with either end; "casual" and "dress" are
+// each other's hard opposites and never co-mingle (that's the whole bug
+// we're closing — t-shirt + tuxedo trousers in the same look).
+function compatibleFormalities(target: Formality): Formality[] {
+  if (target === "casual") return ["casual", "smart"];
+  if (target === "dress") return ["dress", "smart"];
+  return ["smart", "dress"]; // smart leans up for the luxury vibe
+}
+
 // ─── Purchase URL builder — converts brand homepage to product search page ────
 // So tapping "BUY" on any piece lands the user at a search results page
 // for that exact product on the brand's own website.
@@ -1798,6 +1832,30 @@ export function generateLooks(params: GenerateParams): Look[] {
     // Pick a dominant style and color palette for this look
     const dominantStyle = pick(stylePool.length > 0 ? stylePool : occasionStyles);
     const selectedPalette = pickPaletteForStyle(dominantStyle);
+
+    // Anchor THIS look's formality so the clothing pieces coordinate.
+    // Without this, a Date Night look can pick "Vintage Gel Logo T-Shirt"
+    // (casual) + "Satin-Stripe Tuxedo Trousers" (dress) + Oxford (dress)
+    // because each pool is filtered independently and nothing checks
+    // whether the pieces visually agree. Formal Remix returns null and
+    // therefore skips this filter — it is intentionally mixed.
+    const lookFormality = targetLookFormality(occasion, dominantStyle);
+    const okFormalities: Formality[] | null = lookFormality
+      ? compatibleFormalities(lookFormality)
+      : null;
+    const filterByFormality = <T extends CatalogItem>(pool_: T[]): T[] => {
+      if (!okFormalities) return pool_;
+      const matched = pool_.filter((i) =>
+        okFormalities.includes(
+          inferPieceFormality({ name: i.name, category: i.category, shoeType: i.shoeType }),
+        ),
+      );
+      // Graceful fallback: if the formality filter would empty the pool
+      // (e.g. tiny brand-locked catalog with only off-formality pieces),
+      // return the original pool so we still produce a look. The shoe
+      // coherence layer downstream will at least keep the shoes sane.
+      return matched.length > 0 ? matched : pool_;
+    };
     // Editorial brand bias — when the dominant style has curated signature
     // houses (see STYLE_SIGNATURE_BRANDS), prefer pieces from those houses so
     // the shop panel actually reflects the "SIGNATURE HOUSES" label shown on
@@ -1910,7 +1968,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     if (useDress) {
       // Structure: dress + shoes + (optional bag) + (optional jewelry)
       const dressPool = filterByUnique(
-        dresses.filter((d) => d.price <= cap * 0.7),
+        filterByFormality(dresses.filter((d) => d.price <= cap * 0.7)),
         usedPrimaryIds,
         usedPrimaryBrands,
       );
@@ -1940,7 +1998,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     } else {
       // Structure: top + bottom + shoes + (optional outerwear) + (optional bag/accessory)
       const topPool = filterByUnique(
-        tops.filter((t) => t.price <= cap * 0.5),
+        filterByFormality(tops.filter((t) => t.price <= cap * 0.5)),
         usedPrimaryIds,
         usedPrimaryBrands,
       );
@@ -1948,8 +2006,39 @@ export function generateLooks(params: GenerateParams): Look[] {
       if (!top) continue;
       addPiece(top);
 
+      // Bottom: in addition to the look-level formality anchor, also
+      // narrow to bottoms whose formality matches the TOP we just
+      // picked. Top is the visual anchor of the upper half, so once
+      // we commit to (e.g.) a graphic tee, a tuxedo trouser is off the
+      // table even if both are "smart-compatible" in the global anchor.
+      const topFormality = inferPieceFormality({
+        name: top.name, category: top.category, shoeType: top.shoeType,
+      });
+      const bottomAllowedFromTop: Formality[] =
+        topFormality === "casual" ? ["casual", "smart"]
+        : topFormality === "dress" ? ["dress", "smart"]
+        : ["smart", "dress"];
+      // Intersect with the look anchor so a casual-anchored look with a
+      // smart top can't still pick a dress bottom. Top-compat AND
+      // anchor-compat must both hold for the strictest pool.
+      const bottomAllowed: Formality[] = okFormalities
+        ? bottomAllowedFromTop.filter((f) => okFormalities.includes(f))
+        : bottomAllowedFromTop;
       const affordableBottoms = bottoms.filter((b) => b.price + total <= cap * 0.7);
-      const bottomPool = filterByUnique(affordableBottoms, usedBottomIds);
+      const bottomFormalityFiltered = okFormalities
+        ? affordableBottoms.filter((b) =>
+            bottomAllowed.includes(
+              inferPieceFormality({ name: b.name, category: b.category, shoeType: b.shoeType }),
+            ),
+          )
+        : affordableBottoms;
+      // Two-stage fallback: if strict (top+anchor) intersection empties
+      // the pool, relax to anchor-only (filterByFormality), then to the
+      // raw affordable pool — never starve generation entirely.
+      const bottomBase = bottomFormalityFiltered.length > 0
+        ? bottomFormalityFiltered
+        : (okFormalities ? filterByFormality(affordableBottoms) : affordableBottoms);
+      const bottomPool = filterByUnique(bottomBase, usedBottomIds);
       const bottom = stylePick(bottomPool);
       if (!bottom) continue;
       addPiece(bottom);
@@ -1962,7 +2051,9 @@ export function generateLooks(params: GenerateParams): Look[] {
 
       // Optional outerwear (50% chance, or if budget has room)
       if (outerwear.length > 0 && total < cap * 0.6 && Math.random() > 0.5) {
-        const affordableOuter = outerwear.filter((o) => o.price + total <= cap * 0.95);
+        const affordableOuter = filterByFormality(
+          outerwear.filter((o) => o.price + total <= cap * 0.95),
+        );
         const outer = stylePick(affordableOuter);
         if (outer) addPiece(outer);
       }
