@@ -49,7 +49,10 @@ export function BrandWordmark({
   if (variant === "stacked") {
     // Caps + tagline sizes are derived from the monogram height so the
     // entire composition scales as one unit when callers tweak height.
-    const capsSize = Math.round(height * 0.34);
+    // Caps sized smaller on narrower phones so "SIMON YARRELL" never wraps
+    // mid-word (the previous 0.34 × height + 0.18 tracking pushed the word
+    // off-canvas on iPhone widths, splitting "YARRELL" across two lines).
+    const capsSize = Math.round(height * 0.26);
     const taglineSize = Math.max(11, Math.round(height * 0.13));
     return (
       <View style={[styles.stackedWrap, style]}>
@@ -66,10 +69,13 @@ export function BrandWordmark({
               color: colors.foreground,
               fontSize: capsSize,
               marginTop: Math.round(height * 0.18),
-              letterSpacing: capsSize * 0.18,
+              letterSpacing: capsSize * 0.12,
             },
           ]}
           accessibilityLabel="Simon Yarrell"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.5}
         >
           SIMON YARRELL
         </Text>
