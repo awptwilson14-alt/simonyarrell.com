@@ -21,7 +21,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { TitleRule } from "@/components/TitleRule";
 import { GoldButton } from "@/components/GoldButton";
 import { HeroAudio } from "@/components/HeroAudio";
-import { LOOKS, TRENDS, isLookInTrend, type Trend } from "@/constants/data";
+import { LOOKS, TRENDS, isLookInTrend, filterLooksForProfile, type Trend } from "@/constants/data";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
@@ -57,6 +57,11 @@ export default function HomeScreen() {
   // Sort by score desc, tie-broken by original index (stable). When no signal
   // exists, fall back to plain reversed LOOKS so the strip never goes empty.
   // Subtitle reflects the active signal source so the line isn't a lie.
+  // Gender + season filter applied ONCE at the top of the screen — every
+  // LOOKS-derived rail below (For You, Trending Looks) ranks/renders from
+  // this pool so a Men profile can't see women's looks anywhere on the home
+  // tab. See `filterLooksForProfile` in constants/data.ts for the rules.
+  const visibleLooks = filterLooksForProfile(LOOKS, userProfile);
   const forYou = (() => {
     const savedStyleCounts = new Map<string, number>();
     for (const l of savedLooks) {
@@ -64,8 +69,8 @@ export default function HomeScreen() {
     }
     const favSet = new Set(userProfile.favoriteStyles);
     const hasSignal = savedStyleCounts.size > 0 || favSet.size > 0;
-    if (!hasSignal) return [...LOOKS].reverse();
-    const scored = LOOKS.map((look, idx) => {
+    if (!hasSignal) return [...visibleLooks].reverse();
+    const scored = visibleLooks.map((look, idx) => {
       const savedHits = savedStyleCounts.get(look.style) ?? 0;
       const score = savedHits * 3 + (favSet.has(look.style) ? 2 : 0);
       return { look, score, idx };
@@ -175,7 +180,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.hList}
           >
             {assignUniqueLookImages(
-              LOOKS.map((look) => ({ ...look, image: lookHero(look.name, look.id) ?? heroFor(look.style, look.id) ?? look.image })),
+              visibleLooks.map((look) => ({ ...look, image: lookHero(look.name, look.id) ?? heroFor(look.style, look.id) ?? look.image })),
               userProfile.gender,
             ).map((look) => (
               <LookCard key={look.id} look={look} />

@@ -23,6 +23,7 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
+- `artifacts/mobile/constants/data.ts` — `Look` interface (gender-tagged), static `LOOKS` seed (12 entries), `filterLooksForProfile(looks, profile)` — HARD gender + SOFT season filter every LOOKS consumer must route through
 - `artifacts/mobile/lib/outfitEngine.ts` — outfit generation, `CatalogItem` interface, in-line `CATALOG`
 - `artifacts/mobile/lib/catalogExtras.ts` — hand-curated luxury PDPs with verified images/links
 - `artifacts/mobile/lib/catalogFeed.ts` — **auto-generated** Shopify product feed (2,940 real PDPs across 21 brand-direct stores); do not hand-edit, regenerate via the in-chat fetcher
@@ -56,6 +57,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - Don't add a type annotation to `SHOPIFY_FEED` — TS2590 will fire. Trust the trailing `as unknown as CatalogItem[]`.
 - Don't break the deterministic Shopify URL pattern (`domain/products/<handle>`). If a brand moves off Shopify, drop it from the fetcher rather than hard-coding URLs.
 - All click-out URLs must go through `applyAffiliate()` before `Linking.openURL` — adding a new BUY site means adding the call site, not bypassing it.
+- `LOOKS` in `constants/data.ts` is **gender-tagged static seed**. Every screen that surfaces a static look to the user (home `(tabs)/index.tsx`, `tryon.tsx`, related-looks in `look/[id].tsx`) MUST filter through `filterLooksForProfile(LOOKS, userProfile)`. Iterating `LOOKS` directly will leak women's looks into a Men profile (and vice versa). AI-generated looks already stamp `gender` from `genderKey` in `outfitEngine.ts`, so they obey the same Look-interface contract.
 
 ## Pointers
 

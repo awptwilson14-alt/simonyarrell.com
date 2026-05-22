@@ -24,6 +24,12 @@ export interface Look {
   description: string;
   occasion: string;
   season: string;
+  // Who the look is styled for. HARD constraint at render time — a profile
+  // set to "Men" must never see a look tagged "women", and vice versa.
+  // "unisex" matches every profile. Required on the static LOOKS array and
+  // every AI-generated look (the AI stylist resolver stamps this from the
+  // requesting profile's gender so dynamic looks honour the same rule).
+  gender: "men" | "women" | "unisex";
   estimatedPrice: number;
   image: any;
   pieces: OutfitPiece[];
@@ -151,7 +157,7 @@ export const LOOKS: Look[] = [
     id: "l1",
     name: "Côte d'Azur Evening",
     description: "A masterclass in resort elegance — fluid silk jersey meets sculptural jewelry for a dinner that demands attention without trying.",
-    occasion: "Evening", season: "Summer", estimatedPrice: 3200,
+    occasion: "Evening", season: "Summer", gender: "women", estimatedPrice: 3200,
     image: require("../assets/images/looks/cote_dazur_evening_women.png"),
     style: "Vacation Luxe", tags: ["evening", "resort", "summer"],
     pieces: [
@@ -164,7 +170,7 @@ export const LOOKS: Look[] = [
     id: "l2",
     name: "Old Money Weekend",
     description: "The art of looking effortless when everything is intentional. Heritage fabrics, quiet logos, and the confidence of old wealth.",
-    occasion: "Casual", season: "Autumn", estimatedPrice: 2800,
+    occasion: "Casual", season: "Autumn", gender: "men", estimatedPrice: 2800,
     image: require("../assets/images/looks/old_money_weekend_men.png"),
     style: "Old Money", tags: ["weekend", "casual", "autumn"],
     pieces: [
@@ -178,7 +184,7 @@ export const LOOKS: Look[] = [
     id: "l3",
     name: "Urban Architect",
     description: "For the city that never sleeps and the man who never blends in. Technical precision meets downtown edge.",
-    occasion: "Street", season: "Winter", estimatedPrice: 4100,
+    occasion: "Street", season: "Winter", gender: "men", estimatedPrice: 4100,
     image: require("../assets/images/looks/urban_architect_men.png"),
     style: "Techwear", tags: ["urban", "street", "winter"],
     pieces: [
@@ -192,7 +198,7 @@ export const LOOKS: Look[] = [
     id: "l4",
     name: "Galerie Opening",
     description: "Art world royalty. Where minimalist fashion becomes the canvas and the collector's eye speaks through restraint.",
-    occasion: "Cultural", season: "All Season", estimatedPrice: 5600,
+    occasion: "Cultural", season: "All Season", gender: "women", estimatedPrice: 5600,
     image: require("../assets/images/looks/galerie_opening_women.png"),
     style: "Clean Minimal", tags: ["art", "gallery", "minimal"],
     pieces: [
@@ -206,7 +212,7 @@ export const LOOKS: Look[] = [
     id: "l5",
     name: "Luxury Streetwear Icon",
     description: "Where the block meets the runway. Maximum drip, minimum effort, all designer.",
-    occasion: "Street", season: "Spring", estimatedPrice: 3800,
+    occasion: "Street", season: "Spring", gender: "men", estimatedPrice: 3800,
     image: require("../assets/images/looks/luxury_streetwear_icon_men.png"),
     style: "Luxury Streetwear", tags: ["street", "spring", "logo"],
     pieces: [
@@ -220,7 +226,7 @@ export const LOOKS: Look[] = [
     id: "l6",
     name: "Y2K Soirée",
     description: "The early 2000s never looked this good. Low-rise sophistication with maximalist confidence.",
-    occasion: "Party", season: "Summer", estimatedPrice: 2400,
+    occasion: "Party", season: "Summer", gender: "women", estimatedPrice: 2400,
     image: require("../assets/images/looks/y2k_soiree_women.png"),
     style: "Y2K Revival", tags: ["party", "y2k", "metallic"],
     pieces: [
@@ -233,7 +239,7 @@ export const LOOKS: Look[] = [
     id: "l7",
     name: "Parisian Chic",
     description: "Effortless French sophistication — tailored silhouettes, neutral tones, luxurious fabrics with zero excess.",
-    occasion: "Casual", season: "Spring", estimatedPrice: 3200,
+    occasion: "Casual", season: "Spring", gender: "women", estimatedPrice: 3200,
     image: require("../assets/images/looks/parisian_chic_women.png"),
     style: "Old Money", tags: ["french", "minimal", "chic"],
     pieces: [
@@ -246,7 +252,7 @@ export const LOOKS: Look[] = [
     id: "l8",
     name: "Power Dressing",
     description: "Command any room. Structured shoulders, bold tailoring, Italian leather — authority made wearable.",
-    occasion: "Work", season: "All Season", estimatedPrice: 4800,
+    occasion: "Work", season: "All Season", gender: "women", estimatedPrice: 4800,
     image: require("../assets/images/looks/power_dressing_women.png"),
     style: "Business", tags: ["work", "power", "tailored"],
     pieces: [
@@ -260,7 +266,7 @@ export const LOOKS: Look[] = [
     id: "l9",
     name: "Resort Billionaire",
     description: "Mediterranean money — silk kaftans, handwoven hats, zero logos, maximum presence.",
-    occasion: "Resort", season: "Summer", estimatedPrice: 5600,
+    occasion: "Resort", season: "Summer", gender: "women", estimatedPrice: 5600,
     image: require("../assets/images/looks/resort_billionaire_women.png"),
     style: "Vacation Luxe", tags: ["resort", "summer", "luxury"],
     pieces: [
@@ -273,7 +279,7 @@ export const LOOKS: Look[] = [
     id: "l10",
     name: "Dark Academia",
     description: "Books, tweed, and old libraries. Rich cognac leathers, plaid layers, and intellectual luxury.",
-    occasion: "Casual", season: "Autumn", estimatedPrice: 2900,
+    occasion: "Casual", season: "Autumn", gender: "men", estimatedPrice: 2900,
     image: require("../assets/images/looks/dark_academia_men.png"),
     style: "Old Money", tags: ["academic", "autumn", "tweed"],
     pieces: [
@@ -287,7 +293,7 @@ export const LOOKS: Look[] = [
     id: "l11",
     name: "Gala Glamour",
     description: "Black-tie redefined — sculptural silhouettes, jewel-toned satins, statement jewellery, all eyes on you.",
-    occasion: "Evening", season: "All Season", estimatedPrice: 7400,
+    occasion: "Evening", season: "All Season", gender: "women", estimatedPrice: 7400,
     image: require("../assets/images/looks/gala_glamour_women.png"),
     style: "Avant-garde", tags: ["gala", "evening", "glamour"],
     pieces: [
@@ -300,7 +306,7 @@ export const LOOKS: Look[] = [
     id: "l12",
     name: "Urban Minimalist",
     description: "City uniform perfected — monochrome stacks, architectural cuts, premium basics that signal taste.",
-    occasion: "Street", season: "All Season", estimatedPrice: 2100,
+    occasion: "Street", season: "All Season", gender: "men", estimatedPrice: 2100,
     image: require("../assets/images/looks/urban_minimalist_men.png"),
     style: "Clean Minimal", tags: ["urban", "minimal", "monochrome"],
     pieces: [
@@ -406,6 +412,37 @@ for (const product of PRODUCTS) {
   if (localAsset && !product.localImage) {
     product.localImage = localAsset;
   }
+}
+
+// ─── Profile-aware look filter ──────────────────────────────────────────────
+// HARD rule — every consumer of LOOKS that surfaces them to the user must
+// route through this helper. A "Men" profile must never see a women's look
+// (and vice versa). Season is a SOFT preference — looks tagged with the
+// user's selected season (or "All Season") are preferred, but if every
+// look in the matching-gender pool would be filtered out by season we
+// keep the gender-only pool rather than ship an empty rail. "Unisex"
+// profiles see everything.
+//
+// Size intentionally does NOT participate: the static LOOKS array carries
+// no per-piece size and the catalog stores no SKU-level size grid, so any
+// "size filter" here would be theatre, not enforcement. If/when size data
+// is added per piece, plug it in alongside gender.
+export function filterLooksForProfile<L extends Look>(
+  looks: L[],
+  profile: { gender?: string; season?: string },
+): L[] {
+  const g = (profile.gender ?? "").toLowerCase();
+  const wantsAny = g === "" || g === "unisex";
+  const byGender = wantsAny
+    ? looks
+    : looks.filter((l) => l.gender === g || l.gender === "unisex");
+
+  const season = profile.season;
+  if (!season || season === "All Season") return byGender;
+  const bySeason = byGender.filter(
+    (l) => l.season === season || l.season === "All Season",
+  );
+  return bySeason.length > 0 ? bySeason : byGender;
 }
 
 export const OCCASIONS = ["Casual", "Work", "Evening", "Street", "Resort", "Party", "Wedding", "Cultural"];

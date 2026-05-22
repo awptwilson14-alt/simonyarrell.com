@@ -20,7 +20,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
-import { LOOKS, TRENDS } from "@/constants/data";
+import { LOOKS, TRENDS, filterLooksForProfile } from "@/constants/data";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -65,9 +65,18 @@ export default function TryOnScreen() {
   const [opacityLevel, setOpacityLevel] = useState<OpacityLevel>("vivid");
   const [verticalOffset, setVerticalOffset] = useState(0); // px: negative = up, positive = down
 
+  // Carousel pool is profile-filtered — a Men profile can't swipe into a
+  // women's look here. If the deep-linked `lookId` survives the gender filter
+  // we honour it; otherwise we silently land on index 0 of the filtered pool.
+  // Falls back to full LOOKS only if the filter produced nothing (defensive —
+  // shouldn't happen because every static look is gender-tagged).
+  const availableLooks = (() => {
+    const filtered = filterLooksForProfile(LOOKS, userProfile);
+    return filtered.length > 0 ? filtered : LOOKS;
+  })();
   const [activeLookIdx, setActiveLookIdx] = useState(() => {
     if (lookId) {
-      const idx = LOOKS.findIndex((l) => l.id === lookId);
+      const idx = availableLooks.findIndex((l) => l.id === lookId);
       return idx >= 0 ? idx : 0;
     }
     return 0;
@@ -92,7 +101,7 @@ export default function TryOnScreen() {
       Animated.timing(lookFade, { toValue: 0, duration: 110, useNativeDriver: isNative }),
       Animated.timing(lookFade, { toValue: 1, duration: 200, useNativeDriver: isNative }),
     ]).start();
-    setActiveLookIdx((i) => (dir === "next" ? (i + 1) % LOOKS.length : (i - 1 + LOOKS.length) % LOOKS.length));
+    setActiveLookIdx((i) => (dir === "next" ? (i + 1) % availableLooks.length : (i - 1 + availableLooks.length) % availableLooks.length));
   };
 
   const changeOpacity = (level: OpacityLevel) => {
@@ -116,7 +125,7 @@ export default function TryOnScreen() {
 
   const shareStyleCard = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const look = LOOKS[activeLookIdx];
+    const look = availableLooks[activeLookIdx];
     try {
       await Share.share({
         message: `✨ Styled myself in the "${look.name}" look on Simon Yarrell!\n\nPieces: ${look.pieces.map((p) => `${p.name} by ${p.brand}`).join(", ")}\n\nTotal: $${look.estimatedPrice?.toLocaleString() ?? "—"}\n\n#SimonYarrell #VirtualTryOn #LuxuryFashion`,
@@ -125,7 +134,7 @@ export default function TryOnScreen() {
     } catch { /* dismissed */ }
   };
 
-  const activeLook = LOOKS[activeLookIdx];
+  const activeLook = availableLooks[activeLookIdx];
   const topPad = Platform.OS === "web" ? 56 : insets.top;
 
   // ── PERMISSION SCREEN ─────────────────────────────────────────────────
@@ -400,7 +409,7 @@ export default function TryOnScreen() {
 
         {/* Dot indicators */}
         <View style={s.dots}>
-          {LOOKS.map((_, i) => (
+          {availableLooks.map((_, i) => (
             <Pressable
               key={i}
               onPress={() => { Haptics.selectionAsync(); setActiveLookIdx(i); }}

@@ -19,7 +19,7 @@ import { Feather } from "@expo/vector-icons";
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
-import { LOOKS, TRENDS } from "@/constants/data";
+import { LOOKS, TRENDS, filterLooksForProfile } from "@/constants/data";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
@@ -64,7 +64,14 @@ export default function LookDetailScreen() {
   // the section header can switch to "More from {Icon}" only when celeb is
   // actually the driver — never mislabel a pure style-tier rail.
   const { allRelated, relatedDrivenByCeleb } = (() => {
-    if (!look) return { allRelated: LOOKS.slice(0, 3), relatedDrivenByCeleb: false };
+    // Profile-filter the static LOOKS pool before any tier picks so related
+    // suggestions can never cross gender (a women's look detail must not
+    // recommend men's looks and vice versa). savedLooks is intentionally
+    // left unfiltered: it's the user's own history, and hiding a saved
+    // look because their current profile gender drifted from when they
+    // saved it would be more confusing than helpful.
+    const catalogPool = filterLooksForProfile(LOOKS, userProfile);
+    if (!look) return { allRelated: catalogPool.slice(0, 3), relatedDrivenByCeleb: false };
     const picked: Look[] = [];
     const seen = new Set<string>([id ?? ""]);
     const take = (source: Look[], predicate: (l: Look) => boolean) => {
@@ -84,12 +91,12 @@ export default function LookDetailScreen() {
       // passes via the same `take` helper share the seen-set so a savedLook
       // and its catalog twin can't double-fill.
       take(savedLooks, (l) => l.inspiredBy === look.inspiredBy);
-      take(LOOKS, (l) => l.inspiredBy === look.inspiredBy);
+      take(catalogPool, (l) => l.inspiredBy === look.inspiredBy);
       if (picked.length > before) celebDriven = true;
     }
-    take(LOOKS, (l) => l.style === look.style);
-    take(LOOKS, (l) => l.occasion === look.occasion);
-    take(LOOKS, () => true);
+    take(catalogPool, (l) => l.style === look.style);
+    take(catalogPool, (l) => l.occasion === look.occasion);
+    take(catalogPool, () => true);
     return { allRelated: picked, relatedDrivenByCeleb: celebDriven };
   })();
 
