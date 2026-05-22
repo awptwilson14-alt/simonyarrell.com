@@ -2,6 +2,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -131,6 +132,14 @@ export default function ActivityScreen() {
                 },
               ]}
             >
+              {/* Celeb portrait — bundled local asset from constants/celebrities.ts.
+                  Square 56pt thumbnail with a thin accent-tinted border so the
+                  card reads as a personal signature, not a generic chip. */}
+              <Image
+                source={topCeleb.image}
+                style={[styles.signaturePortrait, { borderColor: `${topCeleb.accentColor}cc` }]}
+                resizeMode="cover"
+              />
               <View style={[styles.signatureAccent, { backgroundColor: topCeleb.accentColor }]} />
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={[styles.signatureName, { color: colors.foreground }]}>
@@ -238,6 +247,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderWidth: 0.5,
     borderRadius: 2,
+  },
+  signaturePortrait: {
+    width: 56,
+    height: 56,
+    borderRadius: 2,
+    borderWidth: 0.5,
   },
   signatureAccent: {
     width: 4,
