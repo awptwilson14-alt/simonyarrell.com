@@ -793,6 +793,40 @@ function coherentShoeTypes(
   return intersected.length > 0 ? intersected : allowed;
 }
 
+// ─── Aesthetic-family grouping ───────────────────────────────────────────────
+// Styles inside the same family share visual DNA (silhouette, fabric
+// language, brand cohort) and can be mixed in one look without clashing.
+// Mixing ACROSS families is what produced the user complaint —
+// e.g. Y2K Revival shoes + Old Money tailoring + Techwear outerwear.
+// Used as a tighter fallback than the catch-all "anything in pool" tier
+// inside stylePick: if no piece matches the dominant style or palette,
+// we'd rather pick a family-cousin than a true cross-family clash.
+const STYLE_FAMILIES: Record<string, string> = {
+  "Old Money":         "heritage",
+  "Business":          "heritage",
+  "Clean Minimal":     "heritage",
+  "Evening":           "evening",
+  "Avant-garde":       "evening",
+  "Luxury Streetwear": "street",
+  "Streetwear":        "street",
+  "Y2K Revival":       "street",
+  "Techwear":          "street",
+  "Vacation Luxe":     "resort",
+  // Casual is the broad default — group with heritage so a Casual-dominant
+  // look still gets a sensible family fallback rather than no-op'ing.
+  "Casual":            "heritage",
+};
+function familyOf(style: string): string | undefined {
+  return STYLE_FAMILIES[style];
+}
+function inSameFamily(style: string, dominant: string): boolean {
+  const f = familyOf(dominant);
+  return f !== undefined && familyOf(style) === f;
+}
+function itemSharesFamily(item: CatalogItem, dominant: string): boolean {
+  return item.styles.some((s) => s === dominant || inSameFamily(s, dominant));
+}
+
 // ─── Look-level formality anchor ────────────────────────────────────────────
 // Decide BEFORE we pick pieces whether the whole look should read casual,
 // smart, or dress. Every clothing pool is then filtered to that target
@@ -1909,6 +1943,39 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     const stylePick = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
+
+      // Continuity bias — once we've placed the first piece, prefer items
+      // that share a style tag AND a palette color with what's already in
+      // the look. This is what stops the engine from following a Loro Piana
+      // cashmere top with a Versace neon belt: both might score "ok" on
+      // the dominant style, but they don't speak the same visual language.
+      // Skipped for Formal Remix because cross-vibe is its identity.
+      if (pieces.length > 0 && occasion !== "Formal Remix") {
+        const placedStyles = new Set(pieces.flatMap((p) => {
+          const src = CATALOG.find((c) => c.id === p.id);
+          return src ? src.styles : [];
+        }));
+        const placedColors = pieces.map((p) => p.color.toLowerCase());
+        const continuity = pool_.filter((i) => {
+          const styleShared = i.styles.some((s) => placedStyles.has(s));
+          const colorShared = i.colors.some((c) =>
+            placedColors.some((pc) => c.toLowerCase().includes(pc) || pc.includes(c.toLowerCase())),
+          );
+          return styleShared && colorShared;
+        });
+        // Preserve signature-brand bias INSIDE continuity: when curated
+        // houses exist for this style, prefer the continuity ∩ sig subset
+        // first so we don't trade signature attribution for color/style
+        // continuity. Only fall to generic continuity if no sig piece fits.
+        if (continuity.length > 0) {
+          if (sigBrands.size > 0) {
+            const sigContinuity = continuity.filter((i) => sigBrands.has(i.brand));
+            if (sigContinuity.length > 0) return pick(sigContinuity);
+          }
+          return pick(continuity);
+        }
+      }
+
       // Signature-brand-biased tiers run FIRST when the style has curated
       // houses. Falls through to the legacy tiers if no signature item exists
       // in the pool — guarantees we never fail to place a piece just because
@@ -1934,10 +2001,24 @@ export function generateLooks(params: GenerateParams): Look[] {
       // Good: matches dominant style
       const styleMatch = pool_.filter((i) => i.styles.includes(dominantStyle));
       if (styleMatch.length > 0) return pick(styleMatch);
-      // OK: matches palette only
+      // Family match + palette — pieces from the same aesthetic family as
+      // the dominant style that also harmonize on color. This is the new
+      // safety net that replaces the old "anything in pool" final tier
+      // for the common case where the exact style isn't available.
+      const familyAndPalette = pool_.filter(
+        (i) => itemSharesFamily(i, dominantStyle) && paletteMatch(i.colors, selectedPalette.colors)
+      );
+      if (familyAndPalette.length > 0) return pick(familyAndPalette);
+      // Family match alone (still better than cross-family)
+      const familyOnly = pool_.filter((i) => itemSharesFamily(i, dominantStyle));
+      if (familyOnly.length > 0) return pick(familyOnly);
+      // OK: matches palette only — at least the colors won't fight
       const paletteOnly = pool_.filter((i) => paletteMatch(i.colors, selectedPalette.colors));
       if (paletteOnly.length > 0) return pick(paletteOnly);
-      // Fallback: anything in the pool
+      // Final fallback: anything in the pool (rare — only when none of the
+      // above tiers find a match, which usually means a very thin catalog
+      // slice from brand-lock + tight budget). We accept the visual
+      // compromise rather than fail to assemble a look.
       return pick(pool_);
     };
 
