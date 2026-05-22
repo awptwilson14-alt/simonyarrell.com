@@ -160,17 +160,17 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
   "Luxury Streetwear_women": [
     require("../assets/images/looks/luxury_streetwear_icon_women.png"),
     require("../assets/images/trends/luxury_streetwear_women.png"),
-    require("../assets/images/looks_named/downtown_edit_women.png"),
-    require("../assets/images/looks_named/the_culture_women.png"),
-    require("../assets/images/looks_named/concrete_luxe_women.png"),
+    require("../assets/images/looks/luxury_streetwear_icon_women.png"),
+    require("../assets/images/looks/urban_minimalist_women.png"),
+    require("../assets/images/looks/urban_architect_women.png"),
   ],
   "Luxury Streetwear_men": [
     require("../assets/images/looks/luxury_streetwear_icon_men.png"),
     require("../assets/images/trends/luxury_streetwear_men.png"),
     require("../assets/images/streetwear_hero_men.png"),
-    require("../assets/images/looks_named/downtown_edit_men.png"),
-    require("../assets/images/looks_named/the_culture_men.png"),
-    require("../assets/images/looks_named/concrete_luxe_men.png"),
+    require("../assets/images/streetwear_hero_men.png"),
+    require("../assets/images/looks/urban_minimalist_men.png"),
+    require("../assets/images/looks/urban_architect_men.png"),
     require("../assets/images/look_streetwear.png"),
   ],
 
@@ -178,12 +178,12 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
   "Techwear_women": [
     require("../assets/images/trends/techwear_women.png"),
     require("../assets/images/looks/urban_architect_women.png"),
-    require("../assets/images/looks_named/concrete_luxe_women.png"),
+    require("../assets/images/looks/urban_architect_women.png"),
   ],
   "Techwear_men": [
     require("../assets/images/trends/techwear_men.png"),
     require("../assets/images/looks/urban_architect_men.png"),
-    require("../assets/images/looks_named/concrete_luxe_men.png"),
+    require("../assets/images/looks/urban_architect_men.png"),
     require("../assets/images/look_techwear.png"),
   ],
 
@@ -426,9 +426,9 @@ export function assignUniqueLookImages<T extends { id: string; name: string; sty
 // the generic style pool. Both gender variants supplied so profile switching works.
 const NAMED_LOOK_IMAGES: Record<string, { men: number; women: number }> = {
   // ── STREETWEAR ────────────────────────────────────────────────────────────
-  "Downtown Edit":     { men: require("../assets/images/looks_named/downtown_edit_men.png"),       women: require("../assets/images/looks_named/downtown_edit_women.png") },
-  "Concrete Luxe":     { men: require("../assets/images/looks_named/concrete_luxe_men.png"),       women: require("../assets/images/looks_named/concrete_luxe_women.png") },
-  "The Culture":       { men: require("../assets/images/looks_named/the_culture_men.png"),         women: require("../assets/images/looks_named/the_culture_women.png") },
+  "Downtown Edit":     { men: require("../assets/images/streetwear_hero_men.png"),       women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
+  "Concrete Luxe":     { men: require("../assets/images/looks/urban_architect_men.png"),       women: require("../assets/images/looks/urban_architect_women.png") },
+  "The Culture":       { men: require("../assets/images/looks/urban_minimalist_men.png"),         women: require("../assets/images/looks/urban_minimalist_women.png") },
   "Block-to-Runway":   { men: require("../assets/images/looks/luxury_streetwear_icon_men.png"),    women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
   "The Drop":          { men: require("../assets/images/trends/luxury_streetwear_men.png"),        women: require("../assets/images/trends/luxury_streetwear_women.png") },
   "Street Archives":   { men: require("../assets/images/streetwear_hero_men.png"),                 women: require("../assets/images/looks/luxury_streetwear_icon_women.png") },
