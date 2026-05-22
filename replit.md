@@ -10,6 +10,7 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Optional env (mobile/web): `EXPO_PUBLIC_AFFILIATE_NETWORK` (`skimlinks` | `rakuten` | `impact` | `awin` | `generic`) + `EXPO_PUBLIC_AFFILIATE_ID` — when both set, every BUY link is wrapped through the network's redirector so taps earn commission. Leave unset for un-monetised dev / preview.
 
 ## Stack
 

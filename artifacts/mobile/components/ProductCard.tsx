@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
+import { applyAffiliate } from "@/lib/affiliate";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -54,7 +55,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const openShop = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Linking.openURL(product.purchaseUrl).catch(() => {});
+    Linking.openURL(applyAffiliate(product.purchaseUrl)).catch(() => {});
   };
 
   const openSourceLook = () => {

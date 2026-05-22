@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
+import { applyAffiliate } from "@/lib/affiliate";
 
 const WEBSITE_URL = "https://Simonyarrell.com";
 const WEBSITE_LABEL = "Simonyarrell.com";
@@ -38,7 +39,7 @@ export default function AboutScreen() {
   const openLink = async (url: string) => {
     try {
       const ok = await Linking.canOpenURL(url);
-      if (ok) await Linking.openURL(url);
+      if (ok) await Linking.openURL(applyAffiliate(url));
       else Alert.alert("Unable to open", url);
     } catch {
       Alert.alert("Unable to open", url);

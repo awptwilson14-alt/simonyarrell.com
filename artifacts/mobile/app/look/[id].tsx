@@ -24,6 +24,7 @@ import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
+import { applyAffiliate } from "@/lib/affiliate";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -115,7 +116,7 @@ export default function LookDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     look.pieces.forEach((piece) => {
       if (piece.purchaseUrl) {
-        setTimeout(() => Linking.openURL(piece.purchaseUrl!).catch(() => {}), 200);
+        setTimeout(() => Linking.openURL(applyAffiliate(piece.purchaseUrl!)).catch(() => {}), 200);
       }
     });
   };
@@ -457,7 +458,7 @@ export default function LookDetailScreen() {
               return (
                 <Pressable
                   key={piece.id}
-                  onPress={() => piece.purchaseUrl && Linking.openURL(piece.purchaseUrl).catch(() => {})}
+                  onPress={() => piece.purchaseUrl && Linking.openURL(applyAffiliate(piece.purchaseUrl)).catch(() => {})}
                   style={({ pressed }) => [
                     styles.shopRow,
                     { borderBottomColor: colors.border, opacity: pressed ? 0.75 : 1 },
@@ -575,7 +576,7 @@ export default function LookDetailScreen() {
           {look.pieces.map((piece) => (
             <Pressable
               key={piece.id}
-              onPress={() => piece.purchaseUrl && Linking.openURL(piece.purchaseUrl).catch(() => {})}
+              onPress={() => piece.purchaseUrl && Linking.openURL(applyAffiliate(piece.purchaseUrl)).catch(() => {})}
               style={[styles.stripThumb, { backgroundColor: colors.secondary }]}
             >
               <ResilientImage
