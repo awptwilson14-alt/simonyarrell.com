@@ -348,7 +348,7 @@ export default function LookDetailScreen() {
                 20px Playfair sectionTitle proportion. */}
             <TitleRule width={24} style={styles.sectionRule} />
             <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
-              {look.pieces.length} pieces · Est. ${look.estimatedPrice.toLocaleString()}
+              {look.pieces.length} pieces<GoldDot />Est. ${look.estimatedPrice.toLocaleString()}
             </Text>
 
             {look.pieces.map((piece, idx) => (
@@ -382,7 +382,9 @@ export default function LookDetailScreen() {
                     <Text style={[styles.pieceBrand, { color: colors.gold }]}>{piece.brand.toUpperCase()}</Text>
                   )}
                   <Text style={[styles.pieceName, { color: colors.foreground }]}>{piece.name}</Text>
-                  <Text style={[styles.pieceCategory, { color: colors.mutedForeground }]}>{piece.category} · {piece.color}</Text>
+                  <Text style={[styles.pieceCategory, { color: colors.mutedForeground }]}>
+                    {piece.category}<GoldDot />{piece.color}
+                  </Text>
                 </View>
                 <Text style={[styles.piecePrice, { color: colors.foreground }]}>
                   ${piece.price.toLocaleString()}

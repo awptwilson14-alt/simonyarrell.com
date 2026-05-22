@@ -23,6 +23,7 @@ import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { useRouter } from "expo-router";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
+import { GoldDot } from "@/components/GoldDot";
 
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Bags", "Accessories", "Jewelry"];
 const COLORS_LIST = ["Black", "White", "Navy", "Camel", "Beige", "Ivory", "Grey", "Brown", "Gold", "Silver", "Red", "Green", "Blue"];
@@ -406,7 +407,9 @@ export default function ClosetScreen() {
                   ) : (
                     <Text style={[styles.itemBrand, { color: colors.gold }]} numberOfLines={1}>{item.brand}</Text>
                   )}
-                  <Text style={[styles.itemMeta, { color: colors.mutedForeground }]}>{item.category} · {item.color}</Text>
+                  <Text style={[styles.itemMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {item.category}<GoldDot />{item.color}
+                  </Text>
                 </View>
                 <Pressable onPress={() => handleDelete(item.id, item.name)} hitSlop={12}>
                   <Feather name="trash-2" size={14} color={colors.mutedForeground} />
