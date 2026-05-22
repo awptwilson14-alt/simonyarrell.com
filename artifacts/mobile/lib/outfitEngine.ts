@@ -1690,6 +1690,41 @@ export function generateLooks(params: GenerateParams): Look[] {
     useGender: boolean;
   };
 
+  // Per-batch dedup tracker — Formal Remix only. The user's hard rule
+  // is that every curated look surface a different sneaker, different
+  // designer, and different clothing piece (men, women, unisex alike).
+  // The global fingerprint dedup only blocks identical full outfits, so
+  // two looks could legitimately share a shoe or brand and still pass —
+  // that's what produced the "same sneakers / same designer in every
+  // card" complaint. Sets live at generateLooks scope (NOT inside
+  // runPass) so they persist across tiered passes: when pass 1 yields
+  // 2 looks under tight filters and pass 2 fills in the remaining 4,
+  // pass 2 still sees what pass 1 already used and avoids repeats.
+  // Relaxation policy in `filterByUnique` keeps the batch from starving
+  // when supply is genuinely exhausted.
+  const enforceUniquePerLook = occasion === "Formal Remix";
+  const usedShoeIds = new Set<string>();
+  const usedShoeBrands = new Set<string>();
+  const usedPrimaryIds = new Set<string>();    // top OR dress
+  const usedPrimaryBrands = new Set<string>(); // top OR dress brand
+  const usedBottomIds = new Set<string>();
+  const filterByUnique = <T extends CatalogItem>(
+    pool_: T[],
+    ids: Set<string>,
+    brands?: Set<string>,
+  ): T[] => {
+    if (!enforceUniquePerLook) return pool_;
+    const strict = pool_.filter(
+      (i) => !ids.has(i.id) && (!brands || !brands.has(i.brand)),
+    );
+    if (strict.length > 0) return strict;
+    // Brand pool exhausted (≥N looks committed where N = unique brands
+    // available). Relax brand uniqueness but keep id uniqueness so the
+    // exact same item never repeats.
+    const idOnly = pool_.filter((i) => !ids.has(i.id));
+    return idOnly.length > 0 ? idOnly : pool_;
+  };
+
   function runPass(opts: PassOpts): void {
     const { useBudget, useOccasion, useGender } = opts;
     // Effective budget cap — Infinity disables every per-piece price gate.
@@ -1711,6 +1746,22 @@ export function generateLooks(params: GenerateParams): Look[] {
     }
     function matchesOccasionLocal(item: CatalogItem): boolean {
       if (!useOccasion) return true;
+      // Formal Remix bypass for sneakers: the entire identity of this
+      // occasion is "dressy clothes + statement sneakers", but almost
+      // no sneakers in catalog carry Formal/Event/Evening/Party tags —
+      // they're tagged Casual/Streetwear. Without this bypass the
+      // sneaker pool collapses to 1-2 items and every generated look
+      // shows the same shoe. Open the gate to the entire sneaker
+      // catalog for this occasion only; clothing items still respect
+      // the Formal/Event/Evening/Party filter so the formality of the
+      // outfit base is preserved.
+      if (
+        occasion === "Formal Remix" &&
+        item.category === "shoes" &&
+        inferShoeType(item) === "sneakers"
+      ) {
+        return true;
+      }
       return matchesOccasion(item);
     }
 
@@ -1858,12 +1909,18 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     if (useDress) {
       // Structure: dress + shoes + (optional bag) + (optional jewelry)
-      const dress = stylePick(dresses.filter((d) => d.price <= cap * 0.7));
+      const dressPool = filterByUnique(
+        dresses.filter((d) => d.price <= cap * 0.7),
+        usedPrimaryIds,
+        usedPrimaryBrands,
+      );
+      const dress = stylePick(dressPool);
       if (!dress) continue;
       addPiece(dress);
 
       const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.9);
-      const shoe = pickShoe(affordableShoes);
+      const shoePool = filterByUnique(affordableShoes, usedShoeIds, usedShoeBrands);
+      const shoe = pickShoe(shoePool);
       if (!shoe) continue;
       addPiece(shoe);
 
@@ -1882,17 +1939,24 @@ export function generateLooks(params: GenerateParams): Look[] {
       }
     } else {
       // Structure: top + bottom + shoes + (optional outerwear) + (optional bag/accessory)
-      const top = stylePick(tops.filter((t) => t.price <= cap * 0.5));
+      const topPool = filterByUnique(
+        tops.filter((t) => t.price <= cap * 0.5),
+        usedPrimaryIds,
+        usedPrimaryBrands,
+      );
+      const top = stylePick(topPool);
       if (!top) continue;
       addPiece(top);
 
       const affordableBottoms = bottoms.filter((b) => b.price + total <= cap * 0.7);
-      const bottom = stylePick(affordableBottoms);
+      const bottomPool = filterByUnique(affordableBottoms, usedBottomIds);
+      const bottom = stylePick(bottomPool);
       if (!bottom) continue;
       addPiece(bottom);
 
       const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.85);
-      const shoe = pickShoe(affordableShoes);
+      const shoePool = filterByUnique(affordableShoes, usedShoeIds, usedShoeBrands);
+      const shoe = pickShoe(shoePool);
       if (!shoe) continue;
       addPiece(shoe);
 
@@ -1918,6 +1982,24 @@ export function generateLooks(params: GenerateParams): Look[] {
     const fp = fingerprint(pieces.map((p) => p.id));
     if (_shownFingerprints.has(fp)) continue;
     _shownFingerprints.add(fp);
+
+    // Record per-batch unique-piece reservations so the NEXT look in this
+    // batch picks a different sneaker, designer, and primary clothing
+    // piece. See `filterByUnique` above for the relaxation policy when
+    // a pool would otherwise be exhausted.
+    if (enforceUniquePerLook) {
+      for (const p of pieces) {
+        if (p.category === "shoes") {
+          usedShoeIds.add(p.id);
+          usedShoeBrands.add(p.brand);
+        } else if (p.category === "top" || p.category === "dress") {
+          usedPrimaryIds.add(p.id);
+          usedPrimaryBrands.add(p.brand);
+        } else if (p.category === "bottom") {
+          usedBottomIds.add(p.id);
+        }
+      }
+    }
 
     // Build the Look — use fp as image seed so each unique outfit gets a unique, consistent photo
     const lookName = generateLookName(occasion, dominantStyle);
