@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -10,7 +11,7 @@ import {
   View,
   type ImageSourcePropType,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
 import { Look, TRENDS } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
@@ -85,9 +86,34 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
           resizeMode="cover"
           onError={() => setImgFailed(true)}
         />
+        {/* Editorial bottom scrim — guarantees the gold styleTag pill at the
+            image's bottom-left reads cleanly regardless of underlying pixel
+            colour (was previously legibility-by-luck on light models / sky
+            backdrops). Top 60% of the image stays untouched so the model
+            is unaltered; only the bottom edge gets a subtle dark wash. */}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.45)"]}
+          locations={[0.6, 1]}
+          style={styles.bottomScrim}
+          pointerEvents="none"
+        />
         {showSave && (
-          <Pressable onPress={toggleSave} style={styles.saveBtn} hitSlop={12}>
-            <Feather name={saved ? "heart" : "heart"} size={18} color={saved ? colors.gold : "#fff"} />
+          // Saved state: switch to FontAwesome's FILLED heart (Feather only
+          // has the outlined variant), and turn the chip background gold so
+          // the save status is immediately legible at a glance across a
+          // grid of cards. Unsaved: outlined Feather heart on dark scrim
+          // — same as before. The filled glyph is intentionally a hair
+          // smaller (17 vs 18) since solid shapes optically read larger.
+          <Pressable
+            onPress={toggleSave}
+            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+            hitSlop={12}
+          >
+            {saved ? (
+              <FontAwesome name="heart" size={17} color="#0B0B0C" />
+            ) : (
+              <Feather name="heart" size={18} color="#fff" />
+            )}
           </Pressable>
         )}
         {/* Batch 68: styleTag is tappable when look.style is a TREND →
@@ -185,6 +211,13 @@ const styles = StyleSheet.create({
   image: {
     height: 320,
   },
+  bottomScrim: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   saveBtn: {
     position: "absolute",
     top: 12,
@@ -192,6 +225,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 20,
     padding: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 34,
+    height: 34,
+  },
+  saveBtnSaved: {
+    backgroundColor: "rgba(198,167,94,0.95)",
   },
   styleTag: {
     position: "absolute",
