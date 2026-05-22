@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: stylist
+    description: AI stylist — generates structured outfit plans
 paths:
   /healthz:
     get:
@@ -24,6 +26,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /stylist/plan:
+    post:
+      operationId: stylistPlan
+      tags: [stylist]
+      summary: Generate an AI stylist outfit plan
+      description: |
+        Returns a structured outfit plan (style, palette, slot specs) given
+        the user's gender, occasion, budget, season, prompt, and favorite
+        styles. The plan is consumed by the mobile outfit engine, which
+        resolves each slot to a real catalog item while enforcing hard
+        gender/season/aesthetic rules.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StylistPlanRequest"
+      responses:
+        "200":
+          description: Plan generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StylistPlanResponse"
+        "400":
+          description: Invalid request body
+        "502":
+          description: Upstream AI provider error
 components:
   schemas:
     HealthStatus:
@@ -33,4 +63,89 @@ components:
           type: string
       required:
         - status
-
+    StylistPlanRequest:
+      type: object
+      properties:
+        gender:
+          type: string
+          enum: [Women, Men, Unisex]
+        occasion:
+          type: string
+          description: "Casual, Date Night, Work, Vacation, Event, Streetwear, Evening, Party, Formal, Formal Remix, etc."
+        budget:
+          type: string
+          description: "e.g. 'Under $500', '$500–$1500', '$1500–$3000', '$3000–$6000', '$6000+'"
+        season:
+          type: string
+          enum: [Spring, Summer, Autumn, Winter, "All Season"]
+        prompt:
+          type: string
+          maxLength: 500
+        favoriteStyles:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+      required:
+        - gender
+        - occasion
+        - budget
+    StylistPlanSlot:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [top, bottom, dress, outerwear, shoes, bag, accessories, jewelry]
+        descriptor:
+          type: string
+          description: One short editorial phrase, e.g. "fluid silk-jersey column dress"
+        brandPreferences:
+          type: array
+          items:
+            type: string
+          description: Preferred luxury houses for this slot, in priority order
+        colorPreferences:
+          type: array
+          items:
+            type: string
+        formality:
+          type: string
+          enum: [casual, smart, dress]
+      required:
+        - category
+        - descriptor
+    StylistPlanResponse:
+      type: object
+      properties:
+        style:
+          type: string
+          description: Dominant aesthetic, e.g. "Old Money", "Luxury Streetwear"
+        palette:
+          type: string
+          description: Palette name, e.g. "Champagne & Ivory"
+        paletteColors:
+          type: array
+          items:
+            type: string
+        season:
+          type: string
+          enum: [Spring, Summer, Autumn, Winter, "All Season"]
+        name:
+          type: string
+          description: Editorial look name, e.g. "Côte d'Azur Evening"
+        description:
+          type: string
+          description: Two-sentence editorial blurb
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/StylistPlanSlot"
+          minItems: 2
+          maxItems: 6
+      required:
+        - style
+        - palette
+        - paletteColors
+        - name
+        - description
+        - slots

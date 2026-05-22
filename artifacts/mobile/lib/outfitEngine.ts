@@ -2617,3 +2617,139 @@ export function generateLooks(params: GenerateParams): Look[] {
 
   return shuffle(looks);
 }
+
+// ─── AI Stylist plan resolver ────────────────────────────────────────────────
+// Takes a structured outfit plan from the OpenAI stylist (style, palette,
+// slot specs with brand preferences) and resolves each slot to a real
+// catalog item — enforcing the same HARD gender + season rules as
+// generateLooks(). Brand preferences are SOFT (preferred first, then any
+// matching item). Categories from the plan map 1:1 to CatalogItem.category.
+
+export interface AIStylistSlot {
+  category: CatalogItem["category"];
+  descriptor: string;
+  brandPreferences: string[];
+  colorPreferences: string[];
+  formality: "casual" | "smart" | "dress";
+}
+
+export interface AIStylistPlan {
+  style: string;
+  palette: string;
+  paletteColors: string[];
+  season?: string;
+  name: string;
+  description: string;
+  slots: AIStylistSlot[];
+}
+
+export interface ResolveAIPlanParams {
+  gender: string;       // "Women" | "Men" | "Unisex"
+  budget: string;
+  season?: string;      // user's onboarding season — overrides plan.season
+}
+
+export function generateLookFromAIPlan(
+  plan: AIStylistPlan,
+  params: ResolveAIPlanParams,
+): Look | null {
+  const genderKey = params.gender.toLowerCase() as "women" | "men" | "unisex";
+  const effectiveSeason = params.season ?? plan.season;
+  const { max: budgetMax } = parseBudget(params.budget);
+
+  const matchesGender = (item: CatalogItem): boolean => {
+    if (genderKey === "unisex") return true;
+    return item.genders.includes(genderKey) || item.genders.includes("unisex");
+  };
+
+  const seasonOk = (item: CatalogItem): boolean => {
+    if (!effectiveSeason || effectiveSeason === "All Season") return true;
+    return matchesSeason(item, effectiveSeason);
+  };
+
+  const slotPool = (slot: AIStylistSlot): CatalogItem[] => {
+    // HARD: category + gender + season. Brand preference is a soft sort.
+    const base = CATALOG.filter(
+      (item) =>
+        item.category === slot.category &&
+        matchesGender(item) &&
+        seasonOk(item) &&
+        item.price <= budgetMax,
+    );
+    if (base.length === 0) {
+      // Drop the budget ceiling rather than gender/season — those are HARD.
+      return CATALOG.filter(
+        (item) =>
+          item.category === slot.category &&
+          matchesGender(item) &&
+          seasonOk(item),
+      );
+    }
+    return base;
+  };
+
+  const rankBySlot = (pool: CatalogItem[], slot: AIStylistSlot): CatalogItem | null => {
+    if (pool.length === 0) return null;
+    const brandSet = new Set(slot.brandPreferences.map((b) => b.toLowerCase()));
+    const colorSet = new Set(slot.colorPreferences.map((c) => c.toLowerCase()));
+    const styleKey = plan.style.toLowerCase();
+    const ranked = [...pool].sort((a, b) => scoreFor(b) - scoreFor(a));
+    // Top-3 random pick so back-to-back AI generations don't always return
+    // the literal same item for the same plan.
+    const top = ranked.slice(0, Math.min(3, ranked.length));
+    return top[Math.floor(Math.random() * top.length)];
+
+    function scoreFor(item: CatalogItem): number {
+      let s = 0;
+      if (brandSet.has(item.brand.toLowerCase())) s += 10;
+      if (item.styles.some((st) => st.toLowerCase() === styleKey)) s += 4;
+      if (item.colors.some((c) => colorSet.has(c.toLowerCase()))) s += 3;
+      // Tiny jitter so equal-score items don't always sort the same way.
+      s += Math.random() * 0.5;
+      return s;
+    }
+  };
+
+  const pieces: OutfitPiece[] = [];
+  const usedIds = new Set<string>();
+  let total = 0;
+
+  for (const slot of plan.slots) {
+    const pool = slotPool(slot).filter((i) => !usedIds.has(i.id));
+    const item = rankBySlot(pool, slot);
+    if (!item) continue; // catalog gap for this slot — drop honestly
+    usedIds.add(item.id);
+    total += item.price;
+    pieces.push({
+      id: item.id,
+      name: item.name,
+      brand: item.brand,
+      price: item.price,
+      category: item.category,
+      color: item.colors[0] ?? plan.paletteColors[0] ?? "",
+      imageUrl: item.productImageUrl ?? item.imageUrl,
+      localImage: item.localProductImage,
+      purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
+      signature: true,
+    });
+  }
+
+  if (pieces.length < 2) return null;
+
+  const fp = fingerprint(pieces.map((p) => p.id));
+  return {
+    id: `ai_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
+    name: plan.name,
+    description: plan.description,
+    occasion: "AI Stylist",
+    season: effectiveSeason && effectiveSeason !== "All Season"
+      ? effectiveSeason
+      : (plan.season ?? "All Season"),
+    estimatedPrice: total,
+    image: getLookImage(plan.style, fp, genderKey, plan.name),
+    pieces,
+    style: plan.style,
+    tags: ["ai stylist", plan.palette.toLowerCase(), pieces[0].brand.toLowerCase()],
+    colorPalette: plan.palette,
+  };
+}

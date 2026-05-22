@@ -25,6 +25,7 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero, SPLASH_HEROES } from "@/constants/heroImages";
 import { LinearGradient } from "expo-linear-gradient";
 import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
+import { generateAILook, AIStylistError } from "@/lib/aiStylist";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebById } from "@/lib/celebLookup";
 
@@ -103,6 +104,8 @@ export default function StyleScreen() {
   const [selectedGender, setSelectedGender] = useState(userProfile.gender || "Women");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Look[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [generateCount, setGenerateCount] = useState(0);
 
   // Fresh dedup state every time the Style flow mounts — no duplicate names
@@ -193,6 +196,48 @@ export default function StyleScreen() {
     setResults((prev) => (isMore ? [...prev, ...generatedLooks] : generatedLooks));
     setGenerateCount((c) => c + 1);
     setLoading(false);
+  };
+
+  const generateWithAI = async () => {
+    if (aiLoading) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setAiError(null);
+    setAiLoading(true);
+    setStep("results");
+    try {
+      const genderForReq = (selectedGender === "Women" || selectedGender === "Men")
+        ? selectedGender
+        : "Unisex";
+      const seasonForReq = (userProfile.season &&
+        ["Spring", "Summer", "Autumn", "Winter", "All Season"].includes(userProfile.season))
+        ? (userProfile.season as "Spring" | "Summer" | "Autumn" | "Winter" | "All Season")
+        : undefined;
+      const look = await generateAILook(
+        {
+          gender: genderForReq,
+          occasion: selectedOccasion || "Casual",
+          budget: selectedBudget,
+          season: seasonForReq,
+          prompt: prompt.trim() || undefined,
+          favoriteStyles: userProfile.favoriteStyles,
+        },
+        {
+          gender: selectedGender,
+          budget: selectedBudget,
+          season: userProfile.season,
+        },
+      );
+      registerGeneratedLooks([look]);
+      setResults((prev) => [look, ...prev]);
+      setGenerateCount((c) => c + 1);
+    } catch (err) {
+      const msg = err instanceof AIStylistError
+        ? err.message
+        : "The AI stylist is unavailable right now. Try again in a moment.";
+      setAiError(msg);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const reset = () => {
@@ -471,6 +516,19 @@ export default function StyleScreen() {
             </View>
 
             <GoldButton label="GENERATE MY LOOKS" onPress={() => generate(false)} />
+
+            <View style={{ height: 10 }} />
+            <GoldButton
+              label={aiLoading ? "✨ AI STYLIST AT WORK…" : "✨ STYLE WITH AI"}
+              onPress={generateWithAI}
+              disabled={aiLoading}
+              variant="outline"
+            />
+            {aiError ? (
+              <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 8, textAlign: "center" }}>
+                {aiError}
+              </Text>
+            ) : null}
 
             {/* Source note */}
             <View style={s.sourceNote}>
