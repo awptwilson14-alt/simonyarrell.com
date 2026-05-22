@@ -1,0 +1,192 @@
+an AI luxury stylist
+a runway-inspired outfit curator
+a luxury shopping experience
+an affiliate-commerce fashion platform
+
+The system must NOT generate fake AI clothing.
+
+All outfits must use:
+
+real designer items
+real retailer products
+real product images
+real pricing
+real product URLs
+
+Users must be able to click and purchase the actual products.
+
+CORE SYSTEM OBJECTIVE
+
+The AI’s role is NOT to invent clothes.
+
+The AI’s role IS to:
+
+curate
+coordinate
+style
+layer
+color match
+silhouette balance
+generate editorial outfit compositions
+
+using REAL luxury fashion products.
+
+REQUIRED SYSTEM FEATURES
+1. RUNWAY STYLING ENGINE
+
+Build an AI styling engine that:
+
+creates complete outfits
+coordinates fashion pieces cohesively
+maintains runway/editorial aesthetics
+understands luxury fashion theory
+balances silhouettes and textures
+supports gender-neutral styling
+explains styling logic
+
+The AI should generate outfits in this order:
+
+Outerwear
+Tops
+Bottoms
+Footwear
+Accessories
+
+Each item must visually complement the others.
+
+2. REAL PRODUCT CATALOG SYSTEM
+
+Build a structured luxury product catalog.
+
+Products must include:
+
+{
+  id,
+  brand,
+  name,
+  category,
+  image,
+  price,
+  retailer,
+  productUrl,
+  affiliateUrl,
+  colors,
+  styleTags,
+  runwayTags,
+  aestheticTags,
+  gender,
+  season
+}
+3. SUPPORTED RETAILERS
+
+Integrate products from:
+
+SSENSE
+Farfetch
+Mytheresa
+Net-a-Porter
+Mr Porter
+Saks Fifth Avenue
+Nordstrom
+Luisaviaroma
+
+Use:
+
+affiliate APIs
+OR
+manually curated product feeds
+OR
+approved retailer product imports
+4. DESIGNER BRANDS TO SUPPORT
+
+Support runway-inspired styling using products from:
+
+Louis Vuitton
+Dior
+Prada
+Balenciaga
+Rick Owens
+Saint Laurent
+Amiri
+Valentino
+Off-White
+Fear of God
+Maison Margiela
+Bottega Veneta
+Alexander McQueen
+Givenchy
+Tom Ford
+
+The AI should understand:
+
+each brand’s aesthetic language
+silhouette tendencies
+layering styles
+runway color palettes
+luxury styling principles
+5. RUNWAY MODES
+
+Users can select styling modes:
+
+[
+  "Quiet Luxury",
+  "Old Money",
+  "Editorial",
+  "Streetwear Elite",
+  "Avant-Garde",
+  "Monochrome",
+  "Red Carpet",
+  "Soft Luxury",
+  "Techwear",
+  "Runway Rebel"
+]
+6. FASHION WEEK MODES
+
+Support styling inspired by:
+
+Paris Fashion Week
+Milan Fashion Week
+New York Fashion Week
+Tokyo Avant-Garde
+London Experimental Fashion
+7. AI STYLING RULES
+
+The AI must:
+
+maintain cohesive outfit flow
+coordinate colors
+balance textures
+coordinate silhouettes
+avoid conflicting aesthetics
+maintain editorial quality
+generate luxury-level styling
+
+System Prompt:
+
+“Ensure every fashion item works cohesively through complementary colors, balanced silhouettes, coordinated textures, and unified luxury styling so the entire outfit flows naturally as one intentional editorial-quality runway look.”
+
+8. STYLIST COMMENTARY SYSTEM
+
+Every generated outfit should include stylist commentary.
+
+Example:
+
+“The oversized wool coat balances the structured trousers while the monochrome palette creates a sleek editorial silhouette inspired by Paris runway styling.”
+
+This makes the app feel premium and luxury-focused.
+
+9. SHOPPING SYSTEM
+
+Each product card must include:
+
+product image
+designer
+retailer
+price
+affiliate link
+“Shop Now” button
+
+When clicked:
+
+open retailer product page
+preserve affiliate tracking

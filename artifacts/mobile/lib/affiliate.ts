@@ -6,15 +6,15 @@
  * note below). The moment the user signs up to an affiliate network we earn
  * commission on every tap without touching the catalog or the engine.
  *
- * Configuration is env-driven so credentials never live in source:
- *   EXPO_PUBLIC_AFFILIATE_NETWORK — one of: "skimlinks" | "rakuten" |
- *     "impact" | "awin" | "generic"
- *   EXPO_PUBLIC_AFFILIATE_ID — the publisher / site ID from the network
+ * Configuration is two-layer:
+ *   1. RUNTIME override from `./affiliateSettings.ts` (in-app toggle UI,
+ *      persisted in AsyncStorage, takes precedence when enabled).
+ *   2. Env vars — `EXPO_PUBLIC_AFFILIATE_NETWORK` + `EXPO_PUBLIC_AFFILIATE_ID`
+ *      (build-time fallback for server-side / no-UI deployments).
  *
- * When either is unset OR the network is not a recognised value,
- * `applyAffiliate` is a no-op and returns the original URL unchanged —
- * keeps dev / first-run installs working without surprise link mangling
- * and prevents an env-var typo from silently mutating every outbound link.
+ * Supported networks: skimlinks, rakuten, impact, awin, cj, ltk, shareasale,
+ * generic. When neither layer is configured (or the runtime kill-switch is
+ * OFF), `applyAffiliate` is a no-op and returns the original URL unchanged.
  *
  * ── Architecture: WRAP AT CLICK TIME ONLY ────────────────────────────────
  * The engine stores RAW destination URLs on every OutfitPiece. We wrap
@@ -27,47 +27,122 @@
  *     pass an already-wrapped URL.
  */
 
-const ALLOWED_NETWORKS = ["skimlinks", "rakuten", "impact", "awin", "generic"] as const;
+import {
+  effectiveRuntimeConfig,
+  hasUserAffiliateOverride,
+  isAffiliateConfigLoaded,
+  type AffiliateNetwork,
+} from "./affiliateSettings";
+
+const ALLOWED_NETWORKS = [
+  "skimlinks",
+  "rakuten",
+  "impact",
+  "awin",
+  "cj",
+  "ltk",
+  "shareasale",
+  "generic",
+] as const;
 type Network = (typeof ALLOWED_NETWORKS)[number];
 
 const RAW_NETWORK = (process.env.EXPO_PUBLIC_AFFILIATE_NETWORK ?? "")
   .toLowerCase()
   .trim();
-const NETWORK: Network | "" = (ALLOWED_NETWORKS as readonly string[]).includes(RAW_NETWORK)
+const ENV_NETWORK: Network | "" = (ALLOWED_NETWORKS as readonly string[]).includes(RAW_NETWORK)
   ? (RAW_NETWORK as Network)
   : "";
-const PUBLISHER_ID = (process.env.EXPO_PUBLIC_AFFILIATE_ID ?? "").trim();
+const ENV_PUBLISHER_ID = (process.env.EXPO_PUBLIC_AFFILIATE_ID ?? "").trim();
 
 const isValidHttp = (u: string): boolean => /^https?:\/\//i.test(u);
+
+interface ActiveConfig {
+  network: Network;
+  publisherId: string;
+}
+
+/**
+ * Resolve the active affiliate config at call time. Precedence:
+ *
+ *   1. NOT yet hydrated → no-op (null). Returning early is what closes
+ *      the architect-flagged hydration race: a first-tick BUY tap that
+ *      fires before `loadAffiliateConfig()` resolves cannot accidentally
+ *      get tagged with the env-var network when the user has stored a
+ *      different (or OFF) preference.
+ *
+ *   2. User HAS stored an override (toggled at least once) → runtime config
+ *      is AUTHORITATIVE. Env vars are ignored, even when the runtime
+ *      toggle is OFF. This is what makes the in-app switch a real master
+ *      kill-switch (architect feedback).
+ *
+ *   3. No stored override yet → env vars are the legacy fallback for
+ *      deployments that pre-date this UI.
+ */
+function activeConfig(): ActiveConfig | null {
+  if (!isAffiliateConfigLoaded()) return null;
+  if (hasUserAffiliateOverride()) {
+    const runtime = effectiveRuntimeConfig();
+    return runtime ? { network: runtime.network as Network, publisherId: runtime.publisherId } : null;
+  }
+  if (ENV_NETWORK && ENV_PUBLISHER_ID) {
+    return { network: ENV_NETWORK, publisherId: ENV_PUBLISHER_ID };
+  }
+  return null;
+}
 
 /**
  * Wrap a destination URL with the configured affiliate redirector. Returns
  * the original URL unchanged when not configured, when the input is not a
- * valid http(s) URL, when the env's NETWORK value isn't one we recognise,
- * or when the URL is already tagged for the active network.
+ * valid http(s) URL, or when the URL is already tagged for the active
+ * network.
  */
 export function applyAffiliate(url: string): string {
-  if (!url || !isValidHttp(url) || !NETWORK || !PUBLISHER_ID) return url;
+  if (!url || !isValidHttp(url)) return url;
+  const cfg = activeConfig();
+  if (!cfg) return url;
+  const { network, publisherId } = cfg;
   try {
-    switch (NETWORK) {
+    switch (network) {
       case "skimlinks": {
         if (url.includes("go.skimresources.com")) return url;
-        return `https://go.skimresources.com/?id=${encodeURIComponent(PUBLISHER_ID)}&xs=1&url=${encodeURIComponent(url)}`;
+        return `https://go.skimresources.com/?id=${encodeURIComponent(publisherId)}&xs=1&url=${encodeURIComponent(url)}`;
       }
       case "awin": {
         if (url.includes("awin1.com")) return url;
-        return setQueryParam(url, "awc", PUBLISHER_ID);
+        return setQueryParam(url, "awc", publisherId);
       }
       case "rakuten": {
         if (url.includes("click.linksynergy.com")) return url;
-        return setQueryParam(url, "u1", PUBLISHER_ID);
+        return setQueryParam(url, "u1", publisherId);
       }
       case "impact": {
         if (/\bpxf\.io\b/.test(url)) return url;
-        return setQueryParam(url, "irclickid", PUBLISHER_ID);
+        return setQueryParam(url, "irclickid", publisherId);
+      }
+      case "cj": {
+        // CJ Affiliate (Commission Junction). Standard deep-link tagging
+        // adds `sid` for sub-affiliate tracking; full PID-based redirector
+        // links (anrdoezrs.net) can be configured per-advertiser in CJ's
+        // dashboard and pasted into the catalog if needed.
+        if (url.includes("anrdoezrs.net") || url.includes("dpbolvw.net")) return url;
+        return setQueryParam(url, "sid", publisherId);
+      }
+      case "ltk": {
+        // LTK (LiketoKnow.it) uses `subid` for creator/publisher attribution
+        // on direct retailer links. Native LTK shortlinks (shopltk.com)
+        // remain untouched.
+        if (url.includes("shopltk.com") || url.includes("liketk.it")) return url;
+        return setQueryParam(url, "subid", publisherId);
+      }
+      case "shareasale": {
+        // ShareASale uses `afftrack` for publisher sub-id tracking on
+        // merchant links; merchant-specific shareasale.com redirectors are
+        // left untouched.
+        if (url.includes("shareasale.com")) return url;
+        return setQueryParam(url, "afftrack", publisherId);
       }
       case "generic": {
-        return setQueryParam(url, "ref", PUBLISHER_ID);
+        return setQueryParam(url, "ref", publisherId);
       }
     }
     return url;
@@ -79,8 +154,8 @@ export function applyAffiliate(url: string): string {
 /**
  * Set (not append) a query param — if the key already exists with our
  * publisher ID, return the URL unchanged; otherwise overwrite. This is the
- * idempotency guarantee for query-param networks (rakuten/impact/awin/
- * generic) so accidental double-wrapping cannot produce `?u1=id&u1=id`.
+ * idempotency guarantee for query-param networks so accidental double-
+ * wrapping cannot produce `?subid=id&subid=id`.
  *
  * Uses the WHATWG URL parser (available in Hermes/RN 0.81+ and all modern
  * browsers). A parser failure falls through to a naive append rather than
@@ -99,12 +174,13 @@ function setQueryParam(url: string, key: string, value: string): string {
   }
 }
 
-/** True if an affiliate network has been configured at build/runtime. */
+/** True if EITHER the runtime override OR the env vars are configured. */
 export function isAffiliateConfigured(): boolean {
-  return Boolean(NETWORK && PUBLISHER_ID);
+  return activeConfig() !== null;
 }
 
-/** The configured network name (for diagnostics / settings screens). */
-export function affiliateNetwork(): Network | null {
-  return NETWORK ? NETWORK : null;
+/** The currently-active network name (for diagnostics / settings screens). */
+export function affiliateNetwork(): AffiliateNetwork | null {
+  const cfg = activeConfig();
+  return cfg ? (cfg.network as AffiliateNetwork) : null;
 }

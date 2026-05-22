@@ -168,6 +168,35 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ── Real Luxury Runway Styling Engine (additive entry point) ── */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push("/runway");
+          }}
+          style={styles.runwayCard}
+        >
+          <LinearGradient
+            colors={["#1A1612", "#0B0B0C"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.runwayInner}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.runwayEyebrow}>RUNWAY STYLING ENGINE</Text>
+              <Text style={styles.runwayTitle}>Real Luxury Runway Looks</Text>
+              <Text style={styles.runwaySub}>
+                Editorial outfits from real designer pieces — Quiet Luxury, Paris,
+                Avant-Garde and more.
+              </Text>
+            </View>
+            <View style={styles.runwayChevron}>
+              <Feather name="arrow-up-right" size={16} color="#C6A75E" />
+            </View>
+          </View>
+        </Pressable>
+
         {/* ── Trending Looks ── */}
         <View style={styles.section}>
           <SectionHeader
@@ -570,6 +599,49 @@ const styles = StyleSheet.create({
   heroActions: { marginTop: 8, flexDirection: "row", alignItems: "center", gap: 12 },
   tryOnHeroBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 2, borderWidth: 0.5, borderColor: "rgba(198,167,94,0.5)", backgroundColor: "rgba(198,167,94,0.08)" },
   tryOnHeroBtnText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#C6A75E" },
+  runwayCard: {
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 28,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: "rgba(198,167,94,0.45)",
+    overflow: "hidden",
+  },
+  runwayInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 18,
+    gap: 12,
+  },
+  runwayEyebrow: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2.2,
+    color: "#C6A75E",
+    marginBottom: 8,
+  },
+  runwayTitle: {
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_400Regular",
+    color: "#F5F5F0",
+    letterSpacing: 0.3,
+    marginBottom: 6,
+  },
+  runwaySub: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: "rgba(245,245,240,0.6)",
+  },
+  runwayChevron: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    borderColor: "rgba(198,167,94,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   section: { marginBottom: 36 },
   continueCard: { width: 130, height: 170, marginRight: 10, borderRadius: 4, borderWidth: 0.5, overflow: "hidden", position: "relative" },
   continueImg: { width: "100%", height: "100%" },

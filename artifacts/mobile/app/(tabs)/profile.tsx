@@ -727,6 +727,11 @@ export default function ProfileScreen() {
             <Feather name="briefcase" size={11} color={colors.mutedForeground} />
             <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Partner with Us</Text>
           </Pressable>
+          <View style={[styles.footerDot, { backgroundColor: colors.border }]} />
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/affiliate-settings"); }} style={styles.footerLink}>
+            <Feather name="link-2" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Affiliate Settings</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

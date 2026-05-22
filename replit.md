@@ -27,7 +27,10 @@ _Replace the heading above with the project's name, and this line with one sente
 - `artifacts/mobile/lib/outfitEngine.ts` — outfit generation, `CatalogItem` interface, in-line `CATALOG`
 - `artifacts/mobile/lib/catalogExtras.ts` — hand-curated luxury PDPs with verified images/links
 - `artifacts/mobile/lib/catalogFeed.ts` — **auto-generated** Shopify product feed (2,940 real PDPs across 21 brand-direct stores); do not hand-edit, regenerate via the in-chat fetcher
-- `artifacts/mobile/lib/affiliate.ts` — click-time URL wrapper (Skimlinks / Rakuten / Impact / Awin / generic)
+- `artifacts/mobile/lib/affiliate.ts` — click-time URL wrapper (Skimlinks / Rakuten / Impact / Awin / CJ / LTK / ShareASale / generic). Reads runtime override from `affiliateSettings.ts` first, then env vars
+- `artifacts/mobile/lib/affiliateSettings.ts` — AsyncStorage-backed runtime toggle (`enabled`, `network`, `publisherId`) with master kill-switch; in-app UI at `app/affiliate-settings.tsx`
+- `artifacts/mobile/lib/runwayModes.ts` — runway + fashion-week vocab + `composeRunwayBrief()` for the Runway Styling Engine
+- `artifacts/mobile/app/runway.tsx` — Real Luxury Runway Styling Engine screen (entry CTA on home hero). Pipes runway/fashion-week selections through the existing `/api/stylist/plan` endpoint
 - `artifacts/api-server/src/routes/stylist.ts` — OpenAI stylist plan endpoint
 - `artifacts/mobile/public/{manifest.webmanifest,sw.js,icon-*.png,apple-touch-icon.png}` — PWA assets served at web root
 - `artifacts/mobile/lib/pwa.ts` — runtime PWA bootstrap (head tag injection + service-worker registration); called once from `app/_layout.tsx`
@@ -57,6 +60,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 - Don't add a type annotation to `SHOPIFY_FEED` — TS2590 will fire. Trust the trailing `as unknown as CatalogItem[]`.
 - Don't break the deterministic Shopify URL pattern (`domain/products/<handle>`). If a brand moves off Shopify, drop it from the fetcher rather than hard-coding URLs.
 - All click-out URLs must go through `applyAffiliate()` before `Linking.openURL` — adding a new BUY site means adding the call site, not bypassing it.
+- Affiliate tracking precedence (in `activeConfig()` in `affiliate.ts`): (1) unhydrated → no-op (closes first-tap race), (2) user has saved any settings → runtime is authoritative, env vars ignored even when OFF, (3) no saved override → env vars fall back for legacy deployments. The in-app toggle in `app/affiliate-settings.tsx` is the single master switch once touched. Adding a new network means: (1) add it to `AFFILIATE_NETWORKS` in `affiliateSettings.ts`, (2) add the URL-tagging switch case in `affiliate.ts`, (3) add labels/hints in `affiliate-settings.tsx`.
+- Runway engine is **additive** — never bypasses the AI stylist's HARD gender + season + budget constraints. `composeRunwayBrief()` only augments the free-text `prompt` field.
 - `LOOKS` in `constants/data.ts` is **gender-tagged static seed**. Every screen that surfaces a static look to the user (home `(tabs)/index.tsx`, `tryon.tsx`, related-looks in `look/[id].tsx`) MUST filter through `filterLooksForProfile(LOOKS, userProfile)`. Iterating `LOOKS` directly will leak women's looks into a Men profile (and vice versa). AI-generated looks already stamp `gender` from `genderKey` in `outfitEngine.ts`, so they obey the same Look-interface contract.
 
 ## Pointers

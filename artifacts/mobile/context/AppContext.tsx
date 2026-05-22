@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { loadAffiliateConfig } from "@/lib/affiliateSettings";
 import React, {
   createContext,
   useCallback,
@@ -76,6 +77,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadPersistedData();
+    // Hydrate the in-app affiliate toggle (runtime override). Fire-and-
+    // forget — until this resolves, `applyAffiliate()` is a strict no-op
+    // (raw URLs), which is the safe default that closes the first-tap
+    // race. Hydration failure is non-fatal and stays no-op.
+    loadAffiliateConfig().catch(() => {});
   }, []);
 
   const loadPersistedData = async () => {
