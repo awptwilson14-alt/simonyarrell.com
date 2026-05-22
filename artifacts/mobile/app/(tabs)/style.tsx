@@ -22,7 +22,8 @@ import { BUDGETS, GENDERS, Look } from "@/constants/data";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
-import { pickOccasionHero } from "@/constants/heroImages";
+import { pickOccasionHero, SPLASH_HEROES } from "@/constants/heroImages";
+import { LinearGradient } from "expo-linear-gradient";
 import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebById } from "@/lib/celebLookup";
@@ -480,28 +481,56 @@ export default function StyleScreen() {
         {/* ── Step 3: Results ── */}
         {step === "results" && (
           <View style={s.section}>
-            {loading && results.length === 0 ? (
-              <View style={s.loadingBox}>
-                <ActivityIndicator color={activeCeleb?.accentColor ?? colors.gold} size="large" />
-                <Text style={[s.loadingTitle, { color: colors.foreground }]}>
-                  {activeCeleb
-                    ? activeLookHint
-                      ? `Channeling ${activeCeleb.name.split(" ")[0]}'s ${activeLookHint}...`
-                      : `Channeling ${activeCeleb.name.split(" ")[0]}...`
-                    : "Curating your looks..."}
-                </Text>
-                <Text style={[s.loadingText, { color: colors.mutedForeground }]}>
-                  {activeCeleb
-                    ? `Pulling from ${activeCeleb.signatureBrands.slice(0, 3).join(", ")} & more`
-                    : `Consulting ${SOURCE_COUNT} premium brands`}
-                </Text>
-                <View style={s.loadingMeta}>
-                  <Text style={[s.loadingMetaText, { color: "rgba(198,167,94,0.6)" }]}>
-                    {selectedOccasion} · {selectedGender} · {selectedBudget}
-                  </Text>
+            {loading && results.length === 0 ? (() => {
+              // Editorial backdrop for the generation wait — prefer an
+              // occasion-themed hero (e.g. "Black Tie", "Office") that maps
+              // to the user's actual selection so the loading moment feels
+              // thematically tied to what they're about to see. Falls back
+              // to the gendered SPLASH_HEROES when no occasion match exists
+              // (e.g. celebrity-led generation with no occasion picked).
+              // Opacity 0.30 — quiet enough that the gold spinner +
+              // headline stay the focal point, but the screen no longer
+              // reads as a stark dark void during the 1.8s+ wait.
+              const heroGender = selectedGender || userProfile.gender;
+              const heroKey: "men" | "women" = heroGender === "Men" ? "men" : "women";
+              const backdrop =
+                pickOccasionHero(selectedOccasion ?? "", heroGender) ??
+                SPLASH_HEROES[heroKey];
+              return (
+                <View style={s.loadingBox}>
+                  <Image
+                    source={backdrop}
+                    style={s.loadingBackdrop}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={["rgba(11,11,12,0.65)", "rgba(11,11,12,0.88)", "rgba(11,11,12,0.97)"]}
+                    locations={[0, 0.55, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={s.loadingContent}>
+                    <ActivityIndicator color={activeCeleb?.accentColor ?? colors.gold} size="large" />
+                    <Text style={[s.loadingTitle, { color: colors.foreground }]}>
+                      {activeCeleb
+                        ? activeLookHint
+                          ? `Channeling ${activeCeleb.name.split(" ")[0]}'s ${activeLookHint}...`
+                          : `Channeling ${activeCeleb.name.split(" ")[0]}...`
+                        : "Curating your looks..."}
+                    </Text>
+                    <Text style={[s.loadingText, { color: colors.mutedForeground }]}>
+                      {activeCeleb
+                        ? `Pulling from ${activeCeleb.signatureBrands.slice(0, 3).join(", ")} & more`
+                        : `Consulting ${SOURCE_COUNT} premium brands`}
+                    </Text>
+                    <View style={s.loadingMeta}>
+                      <Text style={[s.loadingMetaText, { color: "rgba(198,167,94,0.6)" }]}>
+                        {selectedOccasion} · {selectedGender} · {selectedBudget}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            ) : (
+              );
+            })() : (
               <>
                 {/* Brand-lock empty-state — explains WHY this brand has 0 looks.
                     Per product rule, only two acceptable empty reasons exist:
@@ -645,7 +674,9 @@ const s = StyleSheet.create({
   sourceNoteText: { fontSize: 11, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
 
   // Loading
-  loadingBox: { alignItems: "center", paddingVertical: 60, gap: 16 },
+  loadingBox: { borderRadius: 2, overflow: "hidden", borderWidth: 0.5, borderColor: "rgba(198,167,94,0.18)" },
+  loadingBackdrop: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.3 },
+  loadingContent: { alignItems: "center", paddingVertical: 60, paddingHorizontal: 24, gap: 16 },
   loadingTitle: { fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", letterSpacing: 0.2 },
   loadingText: { fontSize: 13, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
   loadingMeta: { marginTop: 4 },
