@@ -3,8 +3,12 @@ import { Image, StyleSheet, Text, View } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
 
-const syMonogram = require("../assets/images/sy_monogram.png");
-const MONO_ASPECT = 359 / 310; // ~1.158 — cropped gold SY only, no surrounding text/flourish
+// Maison Simon "MS" monogram — ornate interlocking gold serif lockup on a
+// transparent background. Replaces the previous flat upright "SY" mark and
+// is rendered for both the stacked hero variant AND the compact inline
+// header variant so the new format reads consistently across the app.
+const msMonogram = require("../assets/images/ms_monogram.png");
+const MONO_ASPECT = 572 / 636; // ~0.899 — native px ratio of the transparent PNG
 
 interface Props {
   centered?: boolean;
@@ -50,7 +54,7 @@ export function BrandWordmark({
     return (
       <View style={[styles.stackedWrap, style]}>
         <Image
-          source={syMonogram}
+          source={msMonogram}
           style={{ height, width: height * MONO_ASPECT }}
           resizeMode="contain"
           accessible={false}
@@ -86,26 +90,24 @@ export function BrandWordmark({
     );
   }
 
-  // Inline (default header treatment) — text-based so it scales cleanly
-  // at small header sizes.
-  const monoSize = Math.round(height * 0.95);
+  // Inline (default header treatment) — uses the same ornate MS monogram
+  // image as the stacked hero variant, sized to the row height so it sits
+  // cleanly inside header bars. Image instead of text since the
+  // interlocking serif lockup isn't a real installed font.
+  const monoHeight = Math.round(height * 1.05);
   const nameSize = Math.max(10, Math.round(height * 0.36));
   return (
     <View style={[styles.row, centered && styles.centered, style]}>
-      <Text
-        style={[
-          styles.monoInline,
-          {
-            color: colors.gold,
-            fontSize: monoSize,
-            lineHeight: monoSize,
-            marginRight: Math.round(height * 0.3),
-          },
-        ]}
+      <Image
+        source={msMonogram}
+        style={{
+          height: monoHeight,
+          width: monoHeight * MONO_ASPECT,
+          marginRight: Math.round(height * 0.35),
+        }}
+        resizeMode="contain"
         accessible={false}
-      >
-        SY
-      </Text>
+      />
       <Text
         style={[
           styles.name,
@@ -130,10 +132,6 @@ const styles = StyleSheet.create({
   stackedWrap: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  monoInline: {
-    fontFamily: "PlayfairDisplay_700Bold",
-    letterSpacing: -0.5,
   },
   name: {
     fontFamily: "PlayfairDisplay_700Bold",
