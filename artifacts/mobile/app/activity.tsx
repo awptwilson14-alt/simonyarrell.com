@@ -89,6 +89,9 @@ export default function ActivityScreen() {
         <View style={styles.titleBlock}>
           <Text style={[styles.eyebrow, { color: colors.gold }]}>INBOX</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>Activity</Text>
+          {/* Gold hairline rule — unifies the screen-title motif across
+              tabs (batches 115-117) and now into modal/stack routes. */}
+          <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             {empty
               ? "Quiet for now. Save a look to start your feed."
@@ -240,6 +243,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.5,
   },
+  titleRule: { width: 32, height: 1, opacity: 0.7, marginVertical: 2 },
   subtitle: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",

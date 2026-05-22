@@ -84,6 +84,8 @@ export default function CelebrityPickerScreen() {
             <Text style={[styles.screenTitle, { color: colors.foreground }]}>
               Celebrity Inspired
             </Text>
+            {/* Gold hairline rule — unifies screen-title motif (batches 115-117). */}
+            <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
               Choose your style icon
             </Text>
@@ -254,6 +256,7 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: -0.2,
   },
+  titleRule: { width: 28, height: 1, opacity: 0.7, marginTop: 6, marginBottom: 2 },
   subtitle: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
