@@ -347,7 +347,7 @@ export default function HomeScreen() {
           {[
             { icon: "zap" as const, label: "AI Style\nCurator", route: "/(tabs)/style" as const },
             { icon: "star" as const, label: "Celebrity\nInspired", route: "/(tabs)/explore" as const },
-            { icon: "layers" as const, label: "Closet\nIntelligence", route: "/(tabs)/closet" as const },
+            { icon: "layers" as const, label: "Closet\nIntel", route: "/(tabs)/closet" as const },
             { icon: "shopping-bag" as const, label: "Shop\nLuxury", route: "/(tabs)/shop" as const },
           ].map((item) => (
             <Pressable
@@ -368,7 +368,12 @@ export default function HomeScreen() {
               <View style={[styles.featurePillIconRing, { borderColor: "rgba(198,167,94,0.4)" }]}>
                 <Feather name={item.icon} size={18} color={colors.gold} />
               </View>
-              <Text style={[styles.featurePillLabel, { color: colors.foreground }]}>
+              <Text
+                style={[styles.featurePillLabel, { color: colors.foreground }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 {item.label}
               </Text>
             </Pressable>
