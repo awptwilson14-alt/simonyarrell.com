@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import { LOOKS, TRENDS } from "@/constants/data";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
@@ -159,6 +160,15 @@ export default function TryOnScreen() {
               <Feather name="camera" size={40} color={colors.gold} />
             </View>
             <Text style={[s.permTitle, { color: colors.foreground }]}>Camera Access Needed</Text>
+            {/* Gold rule (batch 124) — extends the editorial motif into the
+                camera permission gate, the only remaining first-impression
+                hero moment without it. permBody has alignItems:'center' so
+                the View is centered horizontally by the parent. Tighter
+                negative marginTop pulls the rule up into the gap:20 rhythm
+                so it sits close to the Playfair title (matching the
+                title-flourish reading of partners/membership/privacy heroes
+                where rule and title visually pair). */}
+            <TitleRule width={32} style={{ marginTop: -12 }} />
             <Text style={[s.permSub, { color: colors.mutedForeground }]}>
               Maison Simon uses your camera to show outfits on your body in real time — nothing is recorded or stored.
             </Text>
