@@ -43,6 +43,7 @@ const OCCASIONS: Occasion[] = [
   { label: "Event", image: require("../../assets/images/occasion_event.png") },
   { label: "Streetwear", image: require("../../assets/images/occasion_street.png") },
   { label: "Formal", image: require("../../assets/images/occasion_event.png") },
+  { label: "Formal Remix", image: require("../../assets/images/occasions/formal_remix_unisex.png") },
 ];
 
 type Step = "occasion" | "refine" | "results";
@@ -506,7 +507,7 @@ export default function StyleScreen() {
                     Per product rule, only two acceptable empty reasons exist:
                     gender-specific brand, or cheapest outfit over budget. */}
                 {results.length === 0 && activeBrand && (() => {
-                  const avail = getBrandAvailability(activeBrand, selectedGender || userProfile.gender, selectedBudget);
+                  const avail = getBrandAvailability(activeBrand, selectedGender || userProfile.gender, selectedBudget, selectedOccasion);
                   // Three distinct empty-state reasons:
                   //   1. No items for this gender → gender-specific brand
                   //   2. Items exist but can't form an outfit (e.g. brand only

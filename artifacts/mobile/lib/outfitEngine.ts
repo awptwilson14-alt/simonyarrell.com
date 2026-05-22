@@ -719,6 +719,10 @@ function preferredShoeTypes(occasion: string): Array<NonNullable<CatalogItem["sh
     case "Event":
     case "Evening":
     case "Party":              return ["dress"];
+    // Formal Remix is the entire point of the occasion: tuxedos, suits, and
+    // gowns intentionally paired with statement sneakers. Force sneakers
+    // ONLY — anything else (oxfords, pumps) defeats the category's identity.
+    case "Formal Remix":       return ["sneakers"];
     case "Date Night":         return ["dress", "casual", "sneakers"];
     case "Streetwear":         return ["sneakers", "casual"];
     case "Vacation":           return ["casual", "sneakers"];
@@ -758,7 +762,14 @@ function inferPieceFormality(p: { name: string; category: string; shoeType?: Cat
 function coherentShoeTypes(
   picked: Array<{ name: string; category: string; shoeType?: CatalogItem["shoeType"] }>,
   occasionPrefs: Array<NonNullable<CatalogItem["shoeType"]>>,
+  occasion?: string,
 ): Array<NonNullable<CatalogItem["shoeType"]>> {
+  // Formal Remix bypass: this occasion EXISTS to deliberately violate the
+  // tux→oxford / gown→pump formality coherence rule. If we let the normal
+  // logic run, a tuxedo top would force shoeType="dress" and the user would
+  // never see the sneakers that define the remix. Honor the occasion prefs
+  // verbatim (which preferredShoeTypes locks to ["sneakers"]).
+  if (occasion === "Formal Remix") return occasionPrefs;
   const formalities = picked
     .filter((p) => p.category !== "shoes" && p.category !== "bag" && p.category !== "jewelry" && p.category !== "accessories")
     .map((p) => inferPieceFormality(p));
@@ -829,6 +840,7 @@ const LOOK_NAMES: Record<string, string[]> = {
   Evening: ["Midnight Garden", "Noir Elegance", "The Gown", "Evening Ritual", "Black Tie Reborn", "The Velvet Hour", "Soirée Supreme", "Starlit Glamour", "Opulent Evening", "The Grand Look"],
   Party: ["Main Character", "The Afterparty", "Disco Heaven", "Glitter & Gold", "Night Frequency", "Party Season", "Euphoric Edit", "Club Luxe", "Electric Night", "The Entrance"],
   Formal: ["The Black Tie", "White Tie & Tails", "Grande Ceremony", "The Tuxedo Edit", "Gala Royale", "The Floor-Length Moment", "Couture Formality", "The Dress Code", "Champagne & Silk", "The Invitation"],
+  "Formal Remix": ["Black Tie, Loud Sole", "Tuxedo Reimagined", "Gala Sneakers", "The Remix", "Formal Subverted", "Couture Kicks", "Red Carpet Rebel", "The Hybrid Edit", "Sneakers After Dark", "Gown Meets Sole"],
 };
 
 const LOOK_DESCRIPTIONS: Record<string, string[]> = {
@@ -887,6 +899,13 @@ const LOOK_DESCRIPTIONS: Record<string, string[]> = {
     "Precision-cut, floor-length, and impossible to ignore.",
     "Heritage tailoring meets modern grandeur.",
     "Dressed for history — yours and theirs.",
+  ],
+  "Formal Remix": [
+    "Black-tie tailoring, statement sneakers — the rules, rewritten.",
+    "Tuxedo on top, streetwear on the sole. A new kind of formal.",
+    "Where the gala meets the drop. Couture pieces, accent kicks.",
+    "Floor-length elegance grounded by a sneaker with something to say.",
+    "Old-world tailoring, new-world footwear. Formal — but on your terms.",
   ],
   Party: [
     "Arrive like an event. Leave like a memory.",
@@ -1453,6 +1472,13 @@ const OCCASION_MAP: Record<string, string[]> = {
   "Evening": ["Evening", "Event", "Party", "Date Night"],
   "Party": ["Party", "Evening", "Date Night"],
   "Formal": ["Formal", "Event", "Evening"],
+  // Formal Remix = formalwear (tux/suit/gown) styled with statement sneakers.
+  // Surfaces tuxedos, suits, gowns, and black-tie pieces from the catalog —
+  // shoe slot is force-overridden to sneakers downstream (preferredShoeTypes
+  // + coherentShoeTypes bypass), so the look reads "tailored top half,
+  // streetwear footwear" without needing a separate "Formal Remix" tag on
+  // every existing catalog item.
+  "Formal Remix": ["Formal", "Event", "Evening", "Party"],
   "Resort": ["Vacation", "Casual"],
   "Street": ["Streetwear", "Casual"],
   "Cultural": ["Event", "Casual"],
@@ -1470,6 +1496,10 @@ const OCCASION_STYLES: Record<string, string[]> = {
   "Evening": ["Evening", "Old Money", "Y2K Revival"],
   "Party": ["Y2K Revival", "Evening", "Luxury Streetwear"],
   "Formal": ["Evening", "Old Money", "Business"],
+  // Formal Remix blends evening tailoring with streetwear DNA — pulls from
+  // Evening (gowns/tuxedos), Business (suits), and Luxury Streetwear (the
+  // sneaker culture that defines the remix).
+  "Formal Remix": ["Evening", "Business", "Luxury Streetwear", "Old Money"],
 };
 
 // ─── Look name style tags ─────────────────────────────────────────────────────
@@ -1517,6 +1547,7 @@ export function getBrandAvailability(
   brand: string,
   gender: string,
   budget: string,
+  occasion?: string,
 ): {
   hasGenderItems: boolean;
   /** True only when the brand has enough categories in this gender to
@@ -1548,7 +1579,18 @@ export function getBrandAvailability(
   };
   const cTop = cheapest("top");
   const cBottom = cheapest("bottom");
-  const cShoe = cheapest("shoes");
+  // Formal Remix forces sneaker-only shoes — availability check must
+  // therefore consider ONLY sneakers in this brand's pool. Otherwise a
+  // brand with no sneakers (e.g. Brioni) would falsely report
+  // hasAssemblableOutfit=true under Formal Remix and we'd skip the
+  // "limited coverage" empty-state in favor of generating a look that
+  // pickShoe will then refuse to place — leaving the screen blank with
+  // no explanation.
+  const sneakerOnly = occasion === "Formal Remix";
+  const shoePool = sneakerOnly
+    ? pool.filter((i) => i.category === "shoes" && inferShoeType(i) === "sneakers")
+    : pool.filter((i) => i.category === "shoes");
+  const cShoe = shoePool.length === 0 ? Infinity : Math.min(...shoePool.map((i) => i.price));
   const cDress = cheapest("dress");
   const cOuter = cheapest("outerwear");
   const combos = [
@@ -1718,11 +1760,21 @@ export function generateLooks(params: GenerateParams): Look[] {
       // added (top+bottom or dress) so the shoe matches the outfit's
       // formality, not just the occasion's nominal preference. This is what
       // prevents jeans+tee → dress oxford, or tuxedo → graphic sneaker.
-      const coherentPrefs = coherentShoeTypes(pieces, shoeTypePrefs);
+      const coherentPrefs = coherentShoeTypes(pieces, shoeTypePrefs, occasion);
       const preferred = pool_.filter((s) => {
         const t = inferShoeType(s);
         return t ? coherentPrefs.includes(t) : false;
       });
+      // HARD LOCK for Formal Remix: the entire identity of this occasion is
+      // tux/gown + sneakers. If no sneaker survives the filter (catalog gap
+      // or brand-lock restriction), return null instead of falling back to
+      // the full shoe pool — that fallback was producing oxfords under a
+      // tuxedo, defeating the whole point. The outer generator drops the
+      // look and the tiered passes / brand-lock empty-state surface the
+      // gap honestly.
+      if (occasion === "Formal Remix") {
+        return preferred.length > 0 ? stylePick(preferred) : null;
+      }
       return stylePick(preferred.length > 0 ? preferred : pool_);
     };
 
@@ -1919,7 +1971,12 @@ export function generateLooks(params: GenerateParams): Look[] {
     );
     const bTop = brandPool.find((i) => i.category === "top");
     const bBottom = brandPool.find((i) => i.category === "bottom");
-    const bShoe = brandPool.find((i) => i.category === "shoes");
+    // Formal Remix safety-net: brand-lock fallback must respect the sneaker
+    // lock too. Without this, a Brioni-only "Formal Remix" look would surface
+    // an oxford because Brioni has more dress shoes than sneakers in catalog.
+    const bShoe = occasion === "Formal Remix"
+      ? brandPool.find((i) => i.category === "shoes" && inferShoeType(i) === "sneakers")
+      : brandPool.find((i) => i.category === "shoes");
     const bDress = brandPool.find((i) => i.category === "dress");
     const bOuter = brandPool.find((i) => i.category === "outerwear");
     const bFb: CatalogItem[] = [];

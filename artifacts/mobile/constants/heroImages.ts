@@ -128,6 +128,7 @@ export const OCCASION_HEROES: Record<string, OccasionEntry> = {
   Event:        { men: require("../assets/images/occasions/event_men.png"),    women: require("../assets/images/occasions/event_women.png"),    unisex: require("../assets/images/occasion_event.png") },
   Streetwear:   { men: require("../assets/images/occasions/street_men.png"),   women: require("../assets/images/occasions/street_women.png"),   unisex: require("../assets/images/occasion_street.png") },
   Formal:       { men: require("../assets/images/occasions/formal_men.png"),   women: require("../assets/images/occasions/formal_women.png"),   unisex: require("../assets/images/occasion_event.png") },
+  "Formal Remix": { men: require("../assets/images/occasions/formal_remix_unisex.png"), women: require("../assets/images/occasions/formal_remix_unisex.png"), unisex: require("../assets/images/occasions/formal_remix_unisex.png") },
 };
 
 export function pickOccasionHero(label: string, gender: string): ImageSourcePropType | null {
