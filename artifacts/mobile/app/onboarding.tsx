@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GoldButton } from "@/components/GoldButton";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { BUDGETS, GENDERS, STYLE_CATEGORIES } from "@/constants/data";
+import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -101,7 +102,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  // ── Steps 1–3 — Profile setup ──────────────────────────────────────
+  // ── Steps 1–4 — Profile setup (gender, styles, size, budget) ──────
   const setupSteps = [
     {
       title: "How do you\nlike to dress?",
@@ -195,8 +196,28 @@ export default function OnboardingScreen() {
 
   const current = setupSteps[step - 1];
 
+  // Gendered editorial backdrop for setup steps. Mirrors the SPLASH_HEROES
+  // map used on the welcome screen, but heavily dimmed so the chips, inputs,
+  // and progress bar stay perfectly legible. Updates live as the user
+  // toggles between Women/Men/Unisex in step 1, so the rest of onboarding
+  // (style universe / size / budget) is visually personalized from the
+  // moment they pick. "Unisex" picks the women variant by convention since
+  // the men hero is suit-locked and reads less neutral.
+  const heroKey: "men" | "women" = gender === "Men" ? "men" : "women";
+  const setupBackdrop = SPLASH_HEROES[heroKey];
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Image
+        source={setupBackdrop}
+        style={styles.backdrop}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={["rgba(11,11,12,0.55)", "rgba(11,11,12,0.85)", "#0B0B0C"]}
+        locations={[0, 0.4, 1]}
+        style={StyleSheet.absoluteFill}
+      />
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
@@ -262,6 +283,7 @@ const setup = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  backdrop: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.45 },
   scrollContent: { paddingHorizontal: 28, gap: 32 },
   progressRow: { flexDirection: "row", gap: 6, height: 3, borderRadius: 2, overflow: "hidden" },
   progressBar: { height: 3, borderRadius: 2 },
