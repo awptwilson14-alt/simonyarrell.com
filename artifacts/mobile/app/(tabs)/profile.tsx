@@ -28,6 +28,7 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
+import { GoldDot } from "@/components/GoldDot";
 
 type Section = "looks" | "products";
 
@@ -433,7 +434,9 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.memberBannerTitle, { color: colors.foreground }]}>Maison Simon Membership</Text>
-              <Text style={[styles.memberBannerSub, { color: colors.mutedForeground }]}>From $2.99/mo · Unlock everything</Text>
+              <Text style={[styles.memberBannerSub, { color: colors.mutedForeground }]}>
+                From $2.99/mo<GoldDot />Unlock everything
+              </Text>
             </View>
             <View style={[styles.memberCta, { backgroundColor: colors.gold }]}>
               <Text style={styles.memberCtaText}>JOIN</Text>
