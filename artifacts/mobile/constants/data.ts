@@ -202,7 +202,7 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/galerie_opening_women.png"),
     style: "Clean Minimal", tags: ["art", "gallery", "minimal"],
     pieces: [
-      { id: "p13", name: "Wide-Leg Wool Trouser", brand: "Jil Sander", price: 890, category: "Bottom", color: "Ivory", imageUrl: UNS("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.jilsander.com" },
+      { id: "p13", name: "Wide-Leg Wool Trouser", brand: "Jil Sander", price: 890, category: "Bottom", color: "Ivory", imageUrl: UNS("1583744946564-b52ac1c389c8"), purchaseUrl: "https://www.jilsander.com" },
       { id: "p14", name: "Oversized Blazer", brand: "The Row", price: 2100, category: "Outerwear", color: "Cream", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.therow.com" },
       { id: "p15", name: "Knit Tank", brand: "Toteme", price: 380, category: "Top", color: "White", imageUrl: UNS("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.toteme-studio.com" },
       { id: "p16", name: "Square Toe Boot", brand: "Bottega Veneta", price: 1200, category: "Shoes", color: "Black", imageUrl: UNS("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.bottegaveneta.com" },
@@ -230,8 +230,8 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/y2k_soiree_women.png"),
     style: "Y2K Revival", tags: ["party", "y2k", "metallic"],
     pieces: [
-      { id: "p23", name: "Crystal Mini Skirt", brand: "Versace", price: 1200, category: "Bottom", color: "Gold", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.versace.com" },
-      { id: "p24", name: "Corset Top", brand: "Dolce & Gabbana", price: 680, category: "Top", color: "Silver", imageUrl: UNS("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.dolcegabbana.com" },
+      { id: "p23", name: "Crystal Mini Skirt", brand: "Versace", price: 1200, category: "Bottom", color: "Gold", imageUrl: UNS("1483985988355-763728e1935b"), purchaseUrl: "https://www.versace.com" },
+      { id: "p24", name: "Corset Top", brand: "Dolce & Gabbana", price: 680, category: "Top", color: "Silver", imageUrl: UNS("1525507119028-ed4c629a60a3"), purchaseUrl: "https://www.dolcegabbana.com" },
       { id: "p25", name: "Platform Mule", brand: "Versace", price: 520, category: "Shoes", color: "Gold", imageUrl: UNS("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.versace.com" },
     ],
   },
@@ -243,9 +243,9 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/parisian_chic_women.png"),
     style: "Old Money", tags: ["french", "minimal", "chic"],
     pieces: [
-      { id: "p26", name: "Silk Slip Dress", brand: "Sandro", price: 380, category: "Dress", color: "Champagne", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.sandro-paris.com" },
-      { id: "p27", name: "Tailored Blazer", brand: "A.P.C.", price: 490, category: "Outerwear", color: "Beige", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.apc.fr" },
-      { id: "p28", name: "Slingback Kitten Heel", brand: "Miu Miu", price: 720, category: "Shoes", color: "Nude", imageUrl: UNS("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.miumiu.com" },
+      { id: "p26", name: "Silk Slip Dress", brand: "Sandro", price: 380, category: "Dress", color: "Champagne", imageUrl: UNS("1490481651871-ab68de25d43d"), purchaseUrl: "https://www.sandro-paris.com" },
+      { id: "p27", name: "Tailored Blazer", brand: "A.P.C.", price: 490, category: "Outerwear", color: "Beige", imageUrl: UNS("1593030761757-71fae45fa0e7"), purchaseUrl: "https://www.apc.fr" },
+      { id: "p28", name: "Slingback Kitten Heel", brand: "Miu Miu", price: 720, category: "Shoes", color: "Nude", imageUrl: UNS("1573100925118-870b8efc799d"), purchaseUrl: "https://www.miumiu.com" },
     ],
   },
   {
@@ -256,10 +256,10 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/power_dressing_women.png"),
     style: "Business", tags: ["work", "power", "tailored"],
     pieces: [
-      { id: "p29", name: "Double-Breasted Suit", brand: "Balmain", price: 2800, category: "Outerwear", color: "Black", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.balmain.com" },
-      { id: "p30", name: "Silk Blouse", brand: "Theory", price: 295, category: "Top", color: "White", imageUrl: UNS("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.theory.com" },
-      { id: "p31", name: "Patent Leather Pump", brand: "Jimmy Choo", price: 595, category: "Shoes", color: "Black", imageUrl: UNS("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.jimmychoo.com" },
-      { id: "p32", name: "Structured Tote", brand: "Celine", price: 1950, category: "Bag", color: "Black", imageUrl: UNS("1584917865442-de89df76afd3"), purchaseUrl: "https://www.celine.com" },
+      { id: "p29", name: "Double-Breasted Suit", brand: "Balmain", price: 2800, category: "Outerwear", color: "Black", imageUrl: UNS("1605812860427-4024433a70fd"), purchaseUrl: "https://www.balmain.com" },
+      { id: "p30", name: "Silk Blouse", brand: "Theory", price: 295, category: "Top", color: "White", imageUrl: UNS("1551803091-e20673f15770"), purchaseUrl: "https://www.theory.com" },
+      { id: "p31", name: "Patent Leather Pump", brand: "Jimmy Choo", price: 595, category: "Shoes", color: "Black", imageUrl: UNS("1551489186-cf8726f514f8"), purchaseUrl: "https://www.jimmychoo.com" },
+      { id: "p32", name: "Structured Tote", brand: "Celine", price: 1950, category: "Bag", color: "Black", imageUrl: UNS("1606122017369-d782bbb78f32"), purchaseUrl: "https://www.celine.com" },
     ],
   },
   {
@@ -270,9 +270,9 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/resort_billionaire_women.png"),
     style: "Vacation Luxe", tags: ["resort", "summer", "luxury"],
     pieces: [
-      { id: "p33", name: "Cashmere Kaftan", brand: "Loro Piana", price: 3200, category: "Dress", color: "Sand", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.loropiana.com" },
-      { id: "p34", name: "Handwoven Straw Hat", brand: "Jacquemus", price: 380, category: "Accessories", color: "Natural", imageUrl: UNS("1473496169904-658ba7574b0d"), purchaseUrl: "https://www.jacquemus.com" },
-      { id: "p35", name: "Woven Flat Sandal", brand: "Bottega Veneta", price: 680, category: "Shoes", color: "Tan", imageUrl: UNS("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.bottegaveneta.com" },
+      { id: "p33", name: "Cashmere Kaftan", brand: "Loro Piana", price: 3200, category: "Dress", color: "Sand", imageUrl: UNS("1556905055-8f358a7a47b2"), purchaseUrl: "https://www.loropiana.com" },
+      { id: "p34", name: "Handwoven Straw Hat", brand: "Jacquemus", price: 380, category: "Accessories", color: "Natural", imageUrl: UNS("1632149877166-f75d49000351"), purchaseUrl: "https://www.jacquemus.com" },
+      { id: "p35", name: "Woven Flat Sandal", brand: "Bottega Veneta", price: 680, category: "Shoes", color: "Tan", imageUrl: UNS("1546182990-dffeafbe841d"), purchaseUrl: "https://www.bottegaveneta.com" },
     ],
   },
   {
@@ -283,10 +283,10 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/dark_academia_men.png"),
     style: "Old Money", tags: ["academic", "autumn", "tweed"],
     pieces: [
-      { id: "p36", name: "Harris Tweed Blazer", brand: "Ralph Lauren", price: 1200, category: "Outerwear", color: "Brown Plaid", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.ralphlauren.com" },
-      { id: "p37", name: "Merino Roll-Neck", brand: "John Smedley", price: 225, category: "Top", color: "Camel", imageUrl: UNS("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.johnsmedley.com" },
-      { id: "p38", name: "Slim Wool Trouser", brand: "Incotex", price: 480, category: "Bottom", color: "Dark Brown", imageUrl: UNS("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.incotex.com" },
-      { id: "p39", name: "Oxford Brogue", brand: "Church's", price: 620, category: "Shoes", color: "Cognac", imageUrl: UNS("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.church-footwear.com" },
+      { id: "p36", name: "Harris Tweed Blazer", brand: "Ralph Lauren", price: 1200, category: "Outerwear", color: "Brown Plaid", imageUrl: UNS("1594633312681-425c7b97ccd1"), purchaseUrl: "https://www.ralphlauren.com" },
+      { id: "p37", name: "Merino Roll-Neck", brand: "John Smedley", price: 225, category: "Top", color: "Camel", imageUrl: UNS("1620799140408-edc6dcb6d633"), purchaseUrl: "https://www.johnsmedley.com" },
+      { id: "p38", name: "Slim Wool Trouser", brand: "Incotex", price: 480, category: "Bottom", color: "Dark Brown", imageUrl: UNS("1594938298603-c8148c4dae35"), purchaseUrl: "https://www.incotex.com" },
+      { id: "p39", name: "Oxford Brogue", brand: "Church's", price: 620, category: "Shoes", color: "Cognac", imageUrl: UNS("1531310197839-ccf54634509e"), purchaseUrl: "https://www.church-footwear.com" },
     ],
   },
   {
@@ -298,8 +298,8 @@ export const LOOKS: Look[] = [
     style: "Avant-garde", tags: ["gala", "evening", "glamour"],
     pieces: [
       { id: "p40", name: "Column Gown", brand: "Valentino Haute Couture", price: 4800, category: "Dress", color: "Crimson", imageUrl: UNS("1566174053879-31528523f8ae"), purchaseUrl: "https://www.valentino.com" },
-      { id: "p41", name: "Diamond Drop Earrings", brand: "Bulgari", price: 1800, category: "Jewelry", color: "Gold", imageUrl: UNS("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.bulgari.com" },
-      { id: "p42", name: "Satin Stiletto", brand: "Amina Muaddi", price: 680, category: "Shoes", color: "Crimson", imageUrl: UNS("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.aminamuaddi.com" },
+      { id: "p41", name: "Diamond Drop Earrings", brand: "Bulgari", price: 1800, category: "Jewelry", color: "Gold", imageUrl: UNS("1626497764746-6dc36546b388"), purchaseUrl: "https://www.bulgari.com" },
+      { id: "p42", name: "Satin Stiletto", brand: "Amina Muaddi", price: 680, category: "Shoes", color: "Crimson", imageUrl: UNS("1535043934128-cf0b28d52f95"), purchaseUrl: "https://www.aminamuaddi.com" },
     ],
   },
   {
@@ -310,10 +310,10 @@ export const LOOKS: Look[] = [
     image: require("../assets/images/looks/urban_minimalist_men.png"),
     style: "Clean Minimal", tags: ["urban", "minimal", "monochrome"],
     pieces: [
-      { id: "p43", name: "Oversized Wool Coat", brand: "COS", price: 380, category: "Outerwear", color: "Charcoal", imageUrl: UNS("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.cosstores.com" },
-      { id: "p44", name: "Relaxed Crewneck", brand: "Sunspel", price: 195, category: "Top", color: "Black", imageUrl: UNS("1556821840-3a63f15732ce"), purchaseUrl: "https://www.sunspel.com" },
-      { id: "p45", name: "Slim Tailored Trouser", brand: "Acne Studios", price: 480, category: "Bottom", color: "Black", imageUrl: UNS("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.acnestudios.com" },
-      { id: "p46", name: "Court Sneaker", brand: "Common Projects", price: 450, category: "Shoes", color: "White", imageUrl: UNS("1542291026-7eec264c27ff"), purchaseUrl: "https://www.commonprojects.com" },
+      { id: "p43", name: "Oversized Wool Coat", brand: "COS", price: 380, category: "Outerwear", color: "Charcoal", imageUrl: UNS("1544022613-e87ca75a784a"), purchaseUrl: "https://www.cosstores.com" },
+      { id: "p44", name: "Relaxed Crewneck", brand: "Sunspel", price: 195, category: "Top", color: "Black", imageUrl: UNS("1620012253295-c15cc3e65df4"), purchaseUrl: "https://www.sunspel.com" },
+      { id: "p45", name: "Slim Tailored Trouser", brand: "Acne Studios", price: 480, category: "Bottom", color: "Black", imageUrl: UNS("1597633425046-08f5110420b5"), purchaseUrl: "https://www.acnestudios.com" },
+      { id: "p46", name: "Court Sneaker", brand: "Common Projects", price: 450, category: "Shoes", color: "White", imageUrl: UNS("1600185365483-26d7a4cc7519"), purchaseUrl: "https://www.commonprojects.com" },
     ],
   },
 ];
@@ -348,59 +348,59 @@ for (const look of LOOKS) {
 export const PRODUCTS: Product[] = [
   // Ultra Luxury
   { id: "pr1", name: "Cassette Mini Bag", brand: "Bottega Veneta", price: 2890, category: "Bag", style: "Clean Minimal", description: "Iconic intrecciato weave in obsidian nappa leather", imageUrl: UNS("1548036328-c9fa89d128fa"), purchaseUrl: "https://www.bottegaveneta.com" },
-  { id: "pr2", name: "Classic Flap Bag", brand: "Chanel", price: 8800, category: "Bag", style: "Old Money", description: "The most iconic shoulder bag in fashion history", imageUrl: UNS("1584917865442-de89df76afd3"), purchaseUrl: "https://www.chanel.com" },
+  { id: "pr2", name: "Classic Flap Bag", brand: "Chanel", price: 8800, category: "Bag", style: "Old Money", description: "The most iconic shoulder bag in fashion history", imageUrl: UNS("1604176354204-9268737828e4"), purchaseUrl: "https://www.chanel.com" },
   { id: "pr3", name: "Saddle Bag", brand: "Christian Dior", price: 3900, category: "Bag", style: "Luxury", description: "The house's most recognisable saddle silhouette", imageUrl: UNS("1590874175748-39b18e7ab1e9"), purchaseUrl: "https://www.dior.com" },
-  { id: "pr4", name: "Neverfull MM", brand: "Louis Vuitton", price: 2070, category: "Bag", style: "Luxury Streetwear", description: "The world's most-wanted tote in Monogram canvas", imageUrl: UNS("1571513800374-841571dbf2e2"), purchaseUrl: "https://us.louisvuitton.com" },
-  { id: "pr5", name: "Puzzle Bag Small", brand: "Loewe", price: 2950, category: "Bag", style: "Clean Minimal", description: "Jonathan Anderson's geometric masterpiece", imageUrl: UNS("1548036328-c9fa89d128fa"), purchaseUrl: "https://www.loewe.com" },
+  { id: "pr4", name: "Neverfull MM", brand: "Louis Vuitton", price: 2070, category: "Bag", style: "Luxury Streetwear", description: "The world's most-wanted tote in Monogram canvas", imageUrl: UNS("1539109136881-3be0616acf4b"), purchaseUrl: "https://us.louisvuitton.com" },
+  { id: "pr5", name: "Puzzle Bag Small", brand: "Loewe", price: 2950, category: "Bag", style: "Clean Minimal", description: "Jonathan Anderson's geometric masterpiece", imageUrl: UNS("1571945153237-4929e783af4a"), purchaseUrl: "https://www.loewe.com" },
 
   // Shoes
-  { id: "pr6", name: "Triple S Sneaker", brand: "Balenciaga", price: 1095, category: "Shoes", style: "Luxury Streetwear", description: "The original oversized sneaker that started a movement", imageUrl: UNS("1542291026-7eec264c27ff"), purchaseUrl: "https://www.balenciaga.com" },
-  { id: "pr7", name: "Tabi Boot", brand: "Maison Margiela", price: 1340, category: "Shoes", style: "Avant-garde", description: "The split-toe boot that became a cultural icon", imageUrl: UNS("1608256246005-4e6b4e65f82c"), purchaseUrl: "https://www.maisonmargiela.com" },
-  { id: "pr8", name: "Horsebit Loafer", brand: "Gucci", price: 890, category: "Shoes", style: "Old Money", description: "The 1953 classic — every wardrobe's anchor", imageUrl: UNS("1614252235316-8c857d38b5f4"), purchaseUrl: "https://www.gucci.com" },
-  { id: "pr9", name: "Crystal Embellished Pump", brand: "Manolo Blahnik", price: 1150, category: "Shoes", style: "Evening", description: "Swarovski crystals on a 90mm stiletto", imageUrl: UNS("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.manoloblahnik.com" },
-  { id: "pr10", name: "GORE-TEX Sneaker", brand: "Rick Owens", price: 1050, category: "Shoes", style: "Techwear", description: "Sculpted rubber sole, brutal silhouette", imageUrl: UNS("1491553895911-0055eca6402d"), purchaseUrl: "https://www.rickowens.eu" },
+  { id: "pr6", name: "Triple S Sneaker", brand: "Balenciaga", price: 1095, category: "Shoes", style: "Luxury Streetwear", description: "The original oversized sneaker that started a movement", imageUrl: UNS("1564594985645-4427056e22e2"), purchaseUrl: "https://www.balenciaga.com" },
+  { id: "pr7", name: "Tabi Boot", brand: "Maison Margiela", price: 1340, category: "Shoes", style: "Avant-garde", description: "The split-toe boot that became a cultural icon", imageUrl: UNS("1612722432474-b971cdcea546"), purchaseUrl: "https://www.maisonmargiela.com" },
+  { id: "pr8", name: "Horsebit Loafer", brand: "Gucci", price: 890, category: "Shoes", style: "Old Money", description: "The 1953 classic — every wardrobe's anchor", imageUrl: UNS("1542838686-37da4a9fd1b3"), purchaseUrl: "https://www.gucci.com" },
+  { id: "pr9", name: "Crystal Embellished Pump", brand: "Manolo Blahnik", price: 1150, category: "Shoes", style: "Evening", description: "Swarovski crystals on a 90mm stiletto", imageUrl: UNS("1595950653106-6c9ebd614d3a"), purchaseUrl: "https://www.manoloblahnik.com" },
+  { id: "pr10", name: "GORE-TEX Sneaker", brand: "Rick Owens", price: 1050, category: "Shoes", style: "Techwear", description: "Sculpted rubber sole, brutal silhouette", imageUrl: UNS("1551232864-3f0890e580d9"), purchaseUrl: "https://www.rickowens.eu" },
 
   // Outerwear
-  { id: "pr11", name: "Cashmere Robe Coat", brand: "Max Mara", price: 3200, category: "Outerwear", style: "Old Money", description: "The definitive coat, in pure camel cashmere", imageUrl: UNS("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.maxmara.com" },
+  { id: "pr11", name: "Cashmere Robe Coat", brand: "Max Mara", price: 3200, category: "Outerwear", style: "Old Money", description: "The definitive coat, in pure camel cashmere", imageUrl: UNS("1517248135467-4c7edcad34c4"), purchaseUrl: "https://www.maxmara.com" },
   { id: "pr12", name: "Technical Shell Jacket", brand: "Arc'teryx", price: 895, category: "Outerwear", style: "Techwear", description: "GORE-TEX Pro, waterproof, volcanic black", imageUrl: UNS("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.arcteryx.com" },
   { id: "pr13", name: "Down Puffer Coat", brand: "Moncler", price: 1450, category: "Outerwear", style: "Luxury Streetwear", description: "The Alpine luxury puffer that defines après-ski", imageUrl: UNS("1608234807905-4466023792f5"), purchaseUrl: "https://www.moncler.com" },
-  { id: "pr14", name: "Structured Blazer", brand: "Balmain", price: 2400, category: "Outerwear", style: "Power Dressing", description: "Gold-button Parisian power dressing", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.balmain.com" },
-  { id: "pr15", name: "Heritage Trench", brand: "Burberry", price: 2290, category: "Outerwear", style: "Old Money", description: "The original gabardine trench, still perfect", imageUrl: UNS("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.burberry.com" },
+  { id: "pr14", name: "Structured Blazer", brand: "Balmain", price: 2400, category: "Outerwear", style: "Power Dressing", description: "Gold-button Parisian power dressing", imageUrl: UNS("1564859228273-274232fdb516"), purchaseUrl: "https://www.balmain.com" },
+  { id: "pr15", name: "Heritage Trench", brand: "Burberry", price: 2290, category: "Outerwear", style: "Old Money", description: "The original gabardine trench, still perfect", imageUrl: UNS("1572804013427-4d7ca7268217"), purchaseUrl: "https://www.burberry.com" },
 
   // RTW / Tops / Bottoms
-  { id: "pr16", name: "Oversized Blazer", brand: "The Row", price: 2100, category: "Outerwear", style: "Clean Minimal", description: "Fluid construction in cream wool-silk", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.therow.com" },
-  { id: "pr17", name: "Silk Bias Slip Dress", brand: "Reformation", price: 248, category: "Dress", style: "Vacation Luxe", description: "Sustainable silk in champagne — effortless resort", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.thereformation.com" },
-  { id: "pr18", name: "Low-Rise Barrel Denim", brand: "Agolde", price: 238, category: "Bottom", style: "Y2K Revival", description: "90s-inspired low rise in authentic indigo wash", imageUrl: UNS("1542272054537-4845f1353d17"), purchaseUrl: "https://www.agolde.com" },
-  { id: "pr19", name: "Logo Hoodie", brand: "Balenciaga", price: 890, category: "Top", style: "Luxury Streetwear", description: "Oversized French terry with rubber logo", imageUrl: UNS("1556821840-3a63f15732ce"), purchaseUrl: "https://www.balenciaga.com" },
-  { id: "pr20", name: "Baby Cashmere Turtleneck", brand: "Brunello Cucinelli", price: 1650, category: "Top", style: "Old Money", description: "The rarest cashmere, the most perfect knit", imageUrl: UNS("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.brunellocucinelli.com" },
-  { id: "pr21", name: "Oasi Cashmere Polo", brand: "Loro Piana", price: 1200, category: "Top", style: "Old Money", description: "Ultra-fine Oasi cashmere in natural camel", imageUrl: UNS("1521572163474-6864f9cf17ab"), purchaseUrl: "https://www.loropiana.com" },
+  { id: "pr16", name: "Oversized Blazer", brand: "The Row", price: 2100, category: "Outerwear", style: "Clean Minimal", description: "Fluid construction in cream wool-silk", imageUrl: UNS("1542838132-92c53300491e"), purchaseUrl: "https://www.therow.com" },
+  { id: "pr17", name: "Silk Bias Slip Dress", brand: "Reformation", price: 248, category: "Dress", style: "Vacation Luxe", description: "Sustainable silk in champagne — effortless resort", imageUrl: UNS("1611652022419-a9419f74343d"), purchaseUrl: "https://www.thereformation.com" },
+  { id: "pr18", name: "Low-Rise Barrel Denim", brand: "Agolde", price: 238, category: "Bottom", style: "Y2K Revival", description: "90s-inspired low rise in authentic indigo wash", imageUrl: UNS("1490578474895-699cd4e2cf59"), purchaseUrl: "https://www.agolde.com" },
+  { id: "pr19", name: "Logo Hoodie", brand: "Balenciaga", price: 890, category: "Top", style: "Luxury Streetwear", description: "Oversized French terry with rubber logo", imageUrl: UNS("1617137984095-74e4e5e3613f"), purchaseUrl: "https://www.balenciaga.com" },
+  { id: "pr20", name: "Baby Cashmere Turtleneck", brand: "Brunello Cucinelli", price: 1650, category: "Top", style: "Old Money", description: "The rarest cashmere, the most perfect knit", imageUrl: UNS("1614608682850-e0d6ed316d47"), purchaseUrl: "https://www.brunellocucinelli.com" },
+  { id: "pr21", name: "Oasi Cashmere Polo", brand: "Loro Piana", price: 1200, category: "Top", style: "Old Money", description: "Ultra-fine Oasi cashmere in natural camel", imageUrl: UNS("1551488831-00ddcb6c6bd3"), purchaseUrl: "https://www.loropiana.com" },
 
   // Accessories
   { id: "pr22", name: "Silk GG Scarf", brand: "Gucci", price: 490, category: "Accessories", style: "Luxury Streetwear", description: "GG print in satin silk, a perennial icon", imageUrl: UNS("1611558709798-e009c8fd7706"), purchaseUrl: "https://www.gucci.com" },
-  { id: "pr23", name: "Oversized Sun Hat", brand: "Jacquemus", price: 380, category: "Accessories", style: "Vacation Luxe", description: "The wicker hat that launched a thousand posts", imageUrl: UNS("1473496169904-658ba7574b0d"), purchaseUrl: "https://www.jacquemus.com" },
-  { id: "pr24", name: "Gold Bamboo Hoops", brand: "Tory Burch", price: 148, category: "Jewelry", style: "Old Money", description: "18k gold-dipped bamboo hoop earrings", imageUrl: UNS("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.toryburch.com" },
+  { id: "pr23", name: "Oversized Sun Hat", brand: "Jacquemus", price: 380, category: "Accessories", style: "Vacation Luxe", description: "The wicker hat that launched a thousand posts", imageUrl: UNS("1620916566398-39f1143ab7be"), purchaseUrl: "https://www.jacquemus.com" },
+  { id: "pr24", name: "Gold Bamboo Hoops", brand: "Tory Burch", price: 148, category: "Jewelry", style: "Old Money", description: "18k gold-dipped bamboo hoop earrings", imageUrl: UNS("1582738411706-bfc8e691d1c2"), purchaseUrl: "https://www.toryburch.com" },
   { id: "pr25", name: "Tonneau Watch", brand: "Tom Ford", price: 3200, category: "Accessories", style: "Luxury", description: "Brushed steel case, deep brown dial, eternal", imageUrl: UNS("1523275335684-37898b6baf30"), purchaseUrl: "https://www.tomford.com" },
 
   // Contemporary
-  { id: "pr26", name: "The Perfect Blazer", brand: "Zara", price: 149, category: "Outerwear", style: "Contemporary", description: "Runway-inspired tailoring at high street prices", imageUrl: UNS("1507003211169-0a1dd7228f2d"), purchaseUrl: "https://www.zara.com" },
-  { id: "pr27", name: "Linen Wide Trousers", brand: "COS", price: 110, category: "Bottom", style: "Clean Minimal", description: "Architectural linen, relaxed drape, enduring", imageUrl: UNS("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.cosstores.com" },
-  { id: "pr28", name: "Smocked Mini Dress", brand: "Ganni", price: 295, category: "Dress", style: "Contemporary", description: "The Copenhagen brand's most-loved silhouette", imageUrl: UNS("1566174053879-31528523f8ae"), purchaseUrl: "https://www.ganni.com" },
-  { id: "pr29", name: "Moto Leather Jacket", brand: "AllSaints", price: 499, category: "Outerwear", style: "Luxury Streetwear", description: "British rock-inspired leather biker", imageUrl: UNS("1539008835657-9e8e9680c956"), purchaseUrl: "https://www.allsaints.com" },
-  { id: "pr30", name: "Silk Cami Top", brand: "Equipment", price: 195, category: "Top", style: "Vacation Luxe", description: "The definitive French-wash silk camisole", imageUrl: UNS("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.equipmentfr.com" },
+  { id: "pr26", name: "The Perfect Blazer", brand: "Zara", price: 149, category: "Outerwear", style: "Contemporary", description: "Runway-inspired tailoring at high street prices", imageUrl: UNS("1505022610485-0249ba5b3675"), purchaseUrl: "https://www.zara.com" },
+  { id: "pr27", name: "Linen Wide Trousers", brand: "COS", price: 110, category: "Bottom", style: "Clean Minimal", description: "Architectural linen, relaxed drape, enduring", imageUrl: UNS("1552346154-21d32810aba3"), purchaseUrl: "https://www.cosstores.com" },
+  { id: "pr28", name: "Smocked Mini Dress", brand: "Ganni", price: 295, category: "Dress", style: "Contemporary", description: "The Copenhagen brand's most-loved silhouette", imageUrl: UNS("1601762603339-fd61e28b698a"), purchaseUrl: "https://www.ganni.com" },
+  { id: "pr29", name: "Moto Leather Jacket", brand: "AllSaints", price: 499, category: "Outerwear", style: "Luxury Streetwear", description: "British rock-inspired leather biker", imageUrl: UNS("1517466787929-bc90951d0974"), purchaseUrl: "https://www.allsaints.com" },
+  { id: "pr30", name: "Silk Cami Top", brand: "Equipment", price: 195, category: "Top", style: "Vacation Luxe", description: "The definitive French-wash silk camisole", imageUrl: UNS("1581338834647-b0fb40704e21"), purchaseUrl: "https://www.equipmentfr.com" },
 
   // Fast Fashion
   { id: "pr31", name: "Cut-Out Mini Dress", brand: "Fashion Nova", price: 39, category: "Dress", style: "Y2K Revival", description: "Body-con cutout style for the night out", imageUrl: UNS("1595777457583-95e059d581b8"), purchaseUrl: "https://www.fashionnova.com" },
-  { id: "pr32", name: "Corset Two-Piece Set", brand: "PrettyLittleThing", price: 52, category: "Top", style: "Y2K Revival", description: "Satin corset and wide-leg trouser set", imageUrl: UNS("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.prettylittlething.com" },
-  { id: "pr33", name: "Sequin Blazer Dress", brand: "SHEIN", price: 28, category: "Dress", style: "Y2K Revival", description: "All-over sequin party statement piece", imageUrl: UNS("1566174053879-31528523f8ae"), purchaseUrl: "https://www.shein.com" },
-  { id: "pr34", name: "Faux Leather Trench", brand: "Nasty Gal", price: 85, category: "Outerwear", style: "Luxury Streetwear", description: "Edgy vegan leather trench for less", imageUrl: UNS("1591047139829-d91aecb6caea"), purchaseUrl: "https://www.nastygal.com" },
-  { id: "pr35", name: "Cobain Pant", brand: "I.AM.GIA", price: 110, category: "Bottom", style: "Luxury Streetwear", description: "The cult wide-leg velvet pant from Sydney", imageUrl: UNS("1552902865-b72c031ac5ea"), purchaseUrl: "https://www.iamgia.com" },
-  { id: "pr36", name: "Crochet Mini Skirt", brand: "Cider", price: 25, category: "Bottom", style: "Vacation Luxe", description: "TikTok-trending crochet for the beach", imageUrl: UNS("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.shopcider.com" },
+  { id: "pr32", name: "Corset Two-Piece Set", brand: "PrettyLittleThing", price: 52, category: "Top", style: "Y2K Revival", description: "Satin corset and wide-leg trouser set", imageUrl: UNS("1599050751795-6cdaafbc2319"), purchaseUrl: "https://www.prettylittlething.com" },
+  { id: "pr33", name: "Sequin Blazer Dress", brand: "SHEIN", price: 28, category: "Dress", style: "Y2K Revival", description: "All-over sequin party statement piece", imageUrl: UNS("1583292650898-7d22cd27ca6f"), purchaseUrl: "https://www.shein.com" },
+  { id: "pr34", name: "Faux Leather Trench", brand: "Nasty Gal", price: 85, category: "Outerwear", style: "Luxury Streetwear", description: "Edgy vegan leather trench for less", imageUrl: UNS("1614632537190-23e4146777db"), purchaseUrl: "https://www.nastygal.com" },
+  { id: "pr35", name: "Cobain Pant", brand: "I.AM.GIA", price: 110, category: "Bottom", style: "Luxury Streetwear", description: "The cult wide-leg velvet pant from Sydney", imageUrl: UNS("1559563458-527698bf5295"), purchaseUrl: "https://www.iamgia.com" },
+  { id: "pr36", name: "Crochet Mini Skirt", brand: "Cider", price: 25, category: "Bottom", style: "Vacation Luxe", description: "TikTok-trending crochet for the beach", imageUrl: UNS("1612528443702-f6741f70a049"), purchaseUrl: "https://www.shopcider.com" },
 
   // Premium Mid-tier
-  { id: "pr37", name: "Tabby Shoulder Bag", brand: "Coach", price: 450, category: "Bag", style: "Contemporary", description: "American leather craft at its most accessible", imageUrl: UNS("1548036328-c9fa89d128fa"), purchaseUrl: "https://www.coach.com" },
-  { id: "pr38", name: "Miller Platform Sandal", brand: "Tory Burch", price: 228, category: "Shoes", style: "Old Money", description: "The logo sandal that defines the resort season", imageUrl: UNS("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.toryburch.com" },
-  { id: "pr39", name: "Falabella Chain Bag", brand: "Stella McCartney", price: 1150, category: "Bag", style: "Luxury", description: "Iconic chain-trim bag, fully vegan", imageUrl: UNS("1584917865442-de89df76afd3"), purchaseUrl: "https://www.stellamccartney.com" },
-  { id: "pr40", name: "Face Logo Hoodie", brand: "Acne Studios", price: 380, category: "Top", style: "Luxury Streetwear", description: "The face-patch graphic that made Acne iconic", imageUrl: UNS("1556821840-3a63f15732ce"), purchaseUrl: "https://www.acnestudios.com" },
+  { id: "pr37", name: "Tabby Shoulder Bag", brand: "Coach", price: 450, category: "Bag", style: "Contemporary", description: "American leather craft at its most accessible", imageUrl: UNS("1604644401890-0bd678c83788"), purchaseUrl: "https://www.coach.com" },
+  { id: "pr38", name: "Miller Platform Sandal", brand: "Tory Burch", price: 228, category: "Shoes", style: "Old Money", description: "The logo sandal that defines the resort season", imageUrl: UNS("1521223890158-f9f7c3d5d504"), purchaseUrl: "https://www.toryburch.com" },
+  { id: "pr39", name: "Falabella Chain Bag", brand: "Stella McCartney", price: 1150, category: "Bag", style: "Luxury", description: "Iconic chain-trim bag, fully vegan", imageUrl: UNS("1485518882345-15568b007407"), purchaseUrl: "https://www.stellamccartney.com" },
+  { id: "pr40", name: "Face Logo Hoodie", brand: "Acne Studios", price: 380, category: "Top", style: "Luxury Streetwear", description: "The face-patch graphic that made Acne iconic", imageUrl: UNS("1601924994987-69e26d50dc26"), purchaseUrl: "https://www.acnestudios.com" },
 ];
 
 // PRODUCTS autopatch — stamps localImage on every shop product whose id has
