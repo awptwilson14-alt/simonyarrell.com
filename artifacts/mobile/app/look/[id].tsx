@@ -187,6 +187,15 @@ export default function LookDetailScreen() {
               ) : null}
             </View>
             <Text style={styles.lookName}>{look.name}</Text>
+            {/* Gold rule (batch 126) — extends the editorial motif onto the
+                look-detail hero overlay, the visual centerpiece of the most
+                visited deep route. heroInfo has gap:8 between children;
+                marginTop:-3 tightens the rule into a ~5px pairing under the
+                28px Playfair lookName, leaving the natural 8px to heroMeta.
+                width:28 matches the title font-size (1:1). The strong dark
+                LinearGradient at the bottom of the hero (0.6→#0B0B0C) gives
+                the gold rule plenty of contrast over varied image backdrops. */}
+            <TitleRule width={28} style={{ marginTop: -3 }} />
             <View style={styles.heroMeta}>
               <Text style={styles.heroCrumb}>{look.occasion} · {look.season}</Text>
               <Text style={[styles.heroPrice, { color: colors.gold }]}>
