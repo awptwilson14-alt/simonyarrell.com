@@ -10,6 +10,7 @@ import type { Look, OutfitPiece } from "@/constants/data";
 import { TRENDS } from "@/constants/data";
 import { isBadUnsId } from "@/constants/badImageIds";
 import { CATALOG_EXTRAS } from "./catalogExtras";
+import { SHOPIFY_FEED } from "./catalogFeed";
 import { LOCAL_PRODUCT_ASSETS } from "../assets/images/catalog/_index";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -1541,6 +1542,10 @@ const CATALOG: CatalogItem[] = [
   { id: "j005", name: "Cuff Bracelet", brand: "Bottega Veneta", price: 980, category: "jewelry", styles: ["Clean Minimal", "Old Money", "Evening"], occasions: ["Event", "Date Night", "Work"], genders: ["women"], colors: ["Silver", "Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.bottegaveneta.com" },
   // ── Verified extras with real PDP images + direct purchase URLs ─────────────
   ...CATALOG_EXTRAS,
+  // ── Shopify-sourced real product feed (2,940 items across 21 brand stores) ─
+  // Every item has a real CDN image, real $/products/<handle>$ PDP, real price.
+  // Source pipeline + brand list documented in catalogFeed.ts header.
+  ...SHOPIFY_FEED,
 ];
 
 // ─── Local product asset autopatch ──────────────────────────────────────────

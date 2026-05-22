@@ -23,15 +23,23 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/mobile/lib/outfitEngine.ts` — outfit generation, `CatalogItem` interface, in-line `CATALOG`
+- `artifacts/mobile/lib/catalogExtras.ts` — hand-curated luxury PDPs with verified images/links
+- `artifacts/mobile/lib/catalogFeed.ts` — **auto-generated** Shopify product feed (2,940 real PDPs across 21 brand-direct stores); do not hand-edit, regenerate via the in-chat fetcher
+- `artifacts/mobile/lib/affiliate.ts` — click-time URL wrapper (Skimlinks / Rakuten / Impact / Awin / generic)
+- `artifacts/api-server/src/routes/stylist.ts` — OpenAI stylist plan endpoint
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Catalog is code, not DB.** Three sources merge into a single `CATALOG` const at module load: in-line legacy items, `CATALOG_EXTRAS` (curated luxury PDPs), and `SHOPIFY_FEED` (auto-generated). Cheap to query, ships in the JS bundle, no network on cold start.
+- **Catalog feed is sourced from public Shopify `/products.json` endpoints**, paginated per brand, normalized to `CatalogItem` with brand-fixed style tags and inferred categories. Every URL is the deterministic `domain/products/<handle>` pattern → no URL-validation pipeline needed.
+- **Affiliate wrapping is click-time only.** The catalog stores raw brand URLs; `applyAffiliate()` rewrites them on tap based on `EXPO_PUBLIC_AFFILIATE_NETWORK` + `EXPO_PUBLIC_AFFILIATE_ID`. No-op when env vars are unset.
+- **AI stylist resolves to catalog items only.** The OpenAI plan returns abstract slot specs; a local resolver picks real `CATALOG` items that match. Stylist never invents fake products.
+- **`SHOPIFY_FEED` uses `as unknown as CatalogItem[]`** because TS2590 (union-too-complex) fires when annotating 2,940 inline rows. Shape is generator-guaranteed.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+**Maison Simon / Simon Yarrell** — a luxury fashion styling app (dark `#0B0B0C` + gold `#C6A75E`). Users pick occasion, gender, budget, and style; an AI stylist composes 6+ outfits per request. Every piece is a real product from a real brand with a real PDP and real image — no AI-generated apparel, no fake links. Other capabilities: AI inspiration chips, color-story palette swatches, celebrity-look generation, designer brand-lock mode, and affiliate-ready BUY links.
 
 ## User preferences
 
@@ -39,7 +47,10 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- `catalogFeed.ts` is generated. To refresh, re-run the in-chat fetcher (Shopify `/products.json` per brand → normalize → write file). Don't hand-edit individual rows.
+- Don't add a type annotation to `SHOPIFY_FEED` — TS2590 will fire. Trust the trailing `as unknown as CatalogItem[]`.
+- Don't break the deterministic Shopify URL pattern (`domain/products/<handle>`). If a brand moves off Shopify, drop it from the fetcher rather than hard-coding URLs.
+- All click-out URLs must go through `applyAffiliate()` before `Linking.openURL` — adding a new BUY site means adding the call site, not bypassing it.
 
 ## Pointers
 
