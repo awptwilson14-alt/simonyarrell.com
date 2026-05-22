@@ -2139,7 +2139,44 @@ export function generateLooks(params: GenerateParams): Look[] {
       //    outer loop already handles missing optional slots gracefully.
       const isEssential =
         category === "top" || category === "bottom" || category === "dress" || category === "shoes";
-      if (editorial || isEssential) return pick(pool_);
+      if (editorial) return pick(pool_);
+      if (isEssential) {
+        // Essential fallback — we can't return null here (would produce a
+        // broken card). But "anything in pool" is exactly what produces
+        // unrelated items in a look. So instead of random-picking, rank
+        // every remaining candidate by how MUCH it relates to what's
+        // already on the body, and pick from the top-scored bucket.
+        // This is the rule's enforcement at the floor: even when forced
+        // to compromise, we pick the LEAST-unrelated item available.
+        const placedStyles = new Set(pieces.flatMap((p) => {
+          const src = CATALOG.find((c) => c.id === p.id);
+          return src ? src.styles : [];
+        }));
+        const placedColors = pieces.map((p) => p.color.toLowerCase());
+        const scoreRelatedness = (i: CatalogItem): number => {
+          let s = 0;
+          // Family alignment with the dominant style — biggest signal that
+          // the piece belongs to the same visual conversation.
+          if (itemSharesFamily(i, dominantStyle)) s += 4;
+          // Shared style tag with already-placed pieces — direct continuity.
+          s += i.styles.filter((st) => placedStyles.has(st)).length * 3;
+          // Palette overlap with the look's selected palette.
+          if (paletteMatch(i.colors, selectedPalette.colors)) s += 2;
+          // Color continuity with what's literally on the body already.
+          if (
+            i.colors.some((c) =>
+              placedColors.some((pc) => c.toLowerCase().includes(pc) || pc.includes(c.toLowerCase())),
+            )
+          ) s += 2;
+          // Signature brand bonus when curated houses exist for this style.
+          if (sigBrands.has(i.brand)) s += 1;
+          return s;
+        };
+        const scored = pool_.map((i) => ({ i, s: scoreRelatedness(i) }));
+        const max = Math.max(...scored.map((x) => x.s));
+        const top = scored.filter((x) => x.s === max).map((x) => x.i);
+        return pick(top);
+      }
       return null;
     };
 
