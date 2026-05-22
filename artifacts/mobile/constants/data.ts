@@ -369,4 +369,4 @@ export const OCCASIONS = ["Casual", "Work", "Evening", "Street", "Resort", "Part
 export const SEASONS = ["Spring", "Summer", "Autumn", "Winter", "All Season"];
 export const BUDGETS = ["Under $500", "$500–$1500", "$1500–$3000", "$3000–$6000", "$6000+"];
 export const GENDERS = ["Women", "Men", "Unisex"];
-export const STYLE_CATEGORIES = ["Old Money", "Luxury Streetwear", "Clean Minimal", "Techwear", "Y2K Revival", "Vacation Luxe", "Avant-garde", "Business"];
+export const STYLE_CATEGORIES = ["Old Money", "Luxury Streetwear", "Clean Minimal", "Techwear", "Y2K Revival", "Vacation Luxe", "Avant-garde", "Business", "Formal Remix"];
