@@ -197,7 +197,21 @@ export default function LookDetailScreen() {
                 the gold rule plenty of contrast over varied image backdrops. */}
             <TitleRule width={28} style={{ marginTop: -3 }} />
             <View style={styles.heroMeta}>
-              <Text style={styles.heroCrumb}>{look.occasion} · {look.season}</Text>
+              {/* Gold middle-dot separator (batch 129) — small editorial
+                  polish on the heroCrumb beneath the lookName + TitleRule
+                  (batch 126). Previously the dot was the same dim
+                  off-white (0.7 opacity) as the surrounding occasion/season
+                  text, so the row read flat. Promoting the · to gold (via
+                  nested Text span) animates the row into a triadic
+                  composition with the gold TitleRule above and gold
+                  heroPrice to the right — three gold accents bracketing
+                  the off-white crumb text. Nested Text inherits parent
+                  size/family/letterSpacing, so only color is overridden. */}
+              <Text style={styles.heroCrumb}>
+                {look.occasion}
+                <Text style={{ color: colors.gold }}> · </Text>
+                {look.season}
+              </Text>
               <Text style={[styles.heroPrice, { color: colors.gold }]}>
                 ${look.estimatedPrice.toLocaleString()}
               </Text>
