@@ -88,3 +88,36 @@ export async function generateAILook(
   }
   return look;
 }
+
+/**
+ * Generate N distinct AI-stylist looks from a single plan. Strategy: ONE
+ * OpenAI call returns a plan; the local resolver is then invoked count×
+ * with its built-in top-3 random pick per slot, producing different real-
+ * catalog combinations of the same editorial concept. Dedup by piece-id
+ * fingerprint; retries up to count×4 times before returning what we have.
+ * Falls back to a single look if the plan only resolves one way.
+ */
+export async function generateAILooks(
+  req: AIStylistRequest,
+  resolveParams: ResolveAIPlanParams,
+  count = 3,
+): Promise<Look[]> {
+  const plan = await fetchAIPlan(req);
+  const out: Look[] = [];
+  const seenFingerprints = new Set<string>();
+  const maxAttempts = count * 4;
+  for (let i = 0; i < maxAttempts && out.length < count; i++) {
+    const look = generateLookFromAIPlan(plan, resolveParams);
+    if (!look) continue;
+    const fp = look.pieces.map((p) => p.id).sort().join("|");
+    if (seenFingerprints.has(fp)) continue;
+    seenFingerprints.add(fp);
+    out.push(look);
+  }
+  if (out.length === 0) {
+    throw new AIStylistError(
+      "The AI plan didn't match enough catalog items. Try a different brief.",
+    );
+  }
+  return out;
+}

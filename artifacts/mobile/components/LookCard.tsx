@@ -141,7 +141,15 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
             <Text style={styles.styleTagText}>{look.style}</Text>
           </View>
         )}
-        {look.inspiredBy ? (() => {
+        {look.occasion === "AI Stylist" ? (
+          <View style={styles.aiTag}>
+            <Text style={styles.aiTagText}>✦ AI STYLIST</Text>
+          </View>
+        ) : null}
+        {/* AI badge and INSPIRED BY share the top-left anchor — suppress
+            INSPIRED BY when both apply so the two don't stack visually.
+            AI attribution wins because it's the rarer, stronger signal. */}
+        {look.inspiredBy && look.occasion !== "AI Stylist" ? (() => {
           // Resolve celeb record to tint the INSPIRED BY tag in the icon's
           // accentColor — visual continuity with batches 22/26/28/32/33/34.
           // Falls back to gold when the inspiredBy name isn't a CELEBS entry
@@ -271,6 +279,23 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_700Bold",
     letterSpacing: 1.2,
+  },
+  aiTag: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(198,167,94,0.95)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 1,
+  },
+  aiTagText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#080808",
+    letterSpacing: 1.4,
   },
   info: {
     padding: 12,

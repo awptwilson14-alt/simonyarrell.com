@@ -25,7 +25,7 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero, SPLASH_HEROES } from "@/constants/heroImages";
 import { LinearGradient } from "expo-linear-gradient";
 import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
-import { generateAILook, AIStylistError } from "@/lib/aiStylist";
+import { generateAILooks, AIStylistError } from "@/lib/aiStylist";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebById } from "@/lib/celebLookup";
 
@@ -212,7 +212,7 @@ export default function StyleScreen() {
         ["Spring", "Summer", "Autumn", "Winter", "All Season"].includes(userProfile.season))
         ? (userProfile.season as "Spring" | "Summer" | "Autumn" | "Winter" | "All Season")
         : undefined;
-      const look = await generateAILook(
+      const looks = await generateAILooks(
         {
           gender: genderForReq,
           occasion: selectedOccasion || "Casual",
@@ -226,9 +226,10 @@ export default function StyleScreen() {
           budget: selectedBudget,
           season: userProfile.season,
         },
+        3,
       );
-      registerGeneratedLooks([look]);
-      setResults((prev) => [look, ...prev]);
+      registerGeneratedLooks(looks);
+      setResults((prev) => [...looks, ...prev]);
       setGenerateCount((c) => c + 1);
     } catch (err) {
       const msg = err instanceof AIStylistError
