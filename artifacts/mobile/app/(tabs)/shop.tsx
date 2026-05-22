@@ -157,7 +157,12 @@ export default function ShopScreen() {
       <View style={[styles.header, { paddingTop: topPad }]}>
         <BrandWordmark style={{ marginBottom: 6 }} />
         <View style={styles.headerRow}>
-          <Text style={[styles.screenTitle, { color: colors.foreground }]}>Shop</Text>
+          <View style={styles.titleBlock}>
+            <Text style={[styles.screenTitle, { color: colors.foreground }]}>Shop</Text>
+            {/* Gold hairline rule unifying the screen-title flourish across
+                home (batch 116), explore (117), and closet (117). */}
+            <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
+          </View>
           <Text style={[styles.brandCount, { color: colors.mutedForeground }]}>
             {BRANDS.length} BRANDS
           </Text>
@@ -497,6 +502,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "baseline",
     gap: 12,
     paddingTop: 16,
@@ -506,6 +512,8 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: -0.3,
   },
+  titleBlock: { gap: 6 },
+  titleRule: { width: 32, height: 1, opacity: 0.7 },
   brandCount: {
     fontSize: 10,
     fontFamily: "Inter_500Medium",

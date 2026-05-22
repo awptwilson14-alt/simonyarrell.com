@@ -164,7 +164,13 @@ export default function ClosetScreen() {
       <View style={[styles.header, { paddingTop: topPad }]}>
         <BrandWordmark style={{ marginBottom: 6 }} />
         <View style={styles.headerContent}>
-          <Text style={[styles.screenTitle, { color: colors.foreground }]}>My Closet</Text>
+          <View style={styles.titleBlock}>
+            <Text style={[styles.screenTitle, { color: colors.foreground }]}>My Closet</Text>
+            {/* Gold hairline rule under the screen title — same flourish
+                as SectionHeader (batch 115), explore tab (batch 117), and
+                home feature pills (batch 116). */}
+            <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
+          </View>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -428,7 +434,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingBottom: 12 },
   headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 16 },
+  titleBlock: { gap: 6 },
   screenTitle: { fontSize: 28, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
+  titleRule: { width: 32, height: 1, opacity: 0.7 },
   addBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 0.5, alignItems: "center", justifyContent: "center" },
   count: { fontSize: 11, fontFamily: "Inter_500Medium", letterSpacing: 2, marginTop: 4 },
   content: { paddingHorizontal: 20, gap: 20 },

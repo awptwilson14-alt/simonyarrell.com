@@ -90,29 +90,44 @@ export default function ExploreScreen() {
         <View style={styles.headerContent}>
           <BrandWordmark style={{ marginBottom: 6 }} />
           <Text style={[styles.screenTitle, { color: colors.foreground }]}>Explore</Text>
+          {/* Editorial gold hairline rule under the screen title — same
+              flourish as SectionHeader (batch 115) and the home feature-pill
+              top rule (batch 116). Unifies the gold-rule motif across every
+              top-level surface. 32px wide, hairline thin, sits just above the
+              tab bar so the title reads as a deliberate masthead. */}
+          <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
           <View style={[styles.tabBar, { borderColor: colors.border }]}>
-            {(["trends", "celebrities"] as Tab[]).map((tab) => (
-              <Pressable
-                key={tab}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setActiveTab(tab);
-                }}
-                style={[
-                  styles.tabItem,
-                  { backgroundColor: activeTab === tab ? colors.gold : "transparent" },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    { color: activeTab === tab ? "#080808" : colors.mutedForeground },
+            {(["trends", "celebrities"] as Tab[]).map((tab) => {
+              const active = activeTab === tab;
+              return (
+                <Pressable
+                  key={tab}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setActiveTab(tab);
+                  }}
+                  style={({ pressed }) => [
+                    styles.tabItem,
+                    {
+                      backgroundColor: active ? colors.gold : "transparent",
+                      opacity: pressed ? 0.75 : 1,
+                    },
                   ]}
                 >
-                  {tab === "trends" ? "TRENDS" : "CELEBRITIES"}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[
+                      styles.tabText,
+                      {
+                        color: active ? "#080808" : colors.mutedForeground,
+                        fontFamily: active ? "Inter_700Bold" : "Inter_600SemiBold",
+                      },
+                    ]}
+                  >
+                    {tab === "trends" ? "TRENDS" : "CELEBRITIES"}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       </View>
@@ -369,6 +384,12 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: -0.3,
     paddingTop: 16,
+  },
+  titleRule: {
+    width: 32,
+    height: 1,
+    opacity: 0.7,
+    marginTop: -8,
   },
   tabBar: {
     flexDirection: "row",
