@@ -25,7 +25,14 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero, SPLASH_HEROES } from "@/constants/heroImages";
 import { LinearGradient } from "expo-linear-gradient";
 import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
-import { generateAILooks, AIStylistError } from "@/lib/aiStylist";
+import {
+  AIStylistError,
+  LookCapExceededError,
+  attemptLookGeneration,
+  generateAILooks,
+} from "@/lib/aiStylist";
+import { useEntitlements } from "@/context/EntitlementsContext";
+import { useSubscription } from "@/lib/revenuecat";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebById } from "@/lib/celebLookup";
 
@@ -73,6 +80,8 @@ export default function StyleScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userProfile, registerGeneratedLooks } = useApp();
+  const { tier, showUpgradePrompt, refreshUsage, bumpLooksToday } = useEntitlements();
+  const { appUserId } = useSubscription();
   // Optional celeb context — set when the user came from
   // "GENERATE MY <CELEB> LOOK" on /celebrity/[id]. Drives the editorial
   // brand bias inside generateLooks via celebSignatureBrands.
@@ -221,6 +230,17 @@ export default function StyleScreen() {
     setAiLoading(true);
     setStep("results");
     try {
+      // Server-side daily-cap check before we hit the AI. Free tier (basic)
+      // is metered to 3/day; paid tiers pass through. Falls open on
+      // transient network errors so a brief API blip never blocks paying
+      // members — see attemptLookGeneration() for the rationale.
+      if (appUserId) {
+        await attemptLookGeneration(appUserId, tier);
+        // Optimistically bump the cap meter so the UI reflects the new
+        // count instantly. refreshUsage() below reconciles with the
+        // server count for the source of truth.
+        bumpLooksToday();
+      }
       const genderForReq = (selectedGender === "Women" || selectedGender === "Men")
         ? selectedGender
         : "Unisex";
@@ -251,11 +271,22 @@ export default function StyleScreen() {
       registerGeneratedLooks(looks);
       setResults((prev) => [...looks, ...prev]);
       setGenerateCount((c) => c + 1);
+      refreshUsage();
     } catch (err) {
-      const msg = err instanceof AIStylistError
-        ? err.message
-        : "The AI stylist is unavailable right now. Try again in a moment.";
-      setAiError(msg);
+      if (err instanceof LookCapExceededError) {
+        showUpgradePrompt(
+          "premium",
+          "You've used your 3 free AI looks today. Upgrade for unlimited daily generations.",
+        );
+        // Step back to occasion picker so a stranded "results" empty state
+        // doesn't linger behind the paywall sheet.
+        setStep("occasion");
+      } else {
+        const msg = err instanceof AIStylistError
+          ? err.message
+          : "The AI stylist is unavailable right now. Try again in a moment.";
+        setAiError(msg);
+      }
     } finally {
       setAiLoading(false);
     }

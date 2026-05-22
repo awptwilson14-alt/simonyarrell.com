@@ -8,6 +8,13 @@ const REVENUECAT_TEST_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
 const REVENUECAT_IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
 const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
 
+/**
+ * Legacy single-entitlement identifier. Preserved so existing code paths
+ * (e.g. the `isSubscribed` boolean below, which still treats `premium` as
+ * the catch-all "is paying" flag) keep working. New 5-tier gating reads
+ * the per-tier entitlement IDs from `lib/tiers.ts` via
+ * `deriveTierFromCustomerInfo` instead.
+ */
 export const REVENUECAT_ENTITLEMENT_IDENTIFIER = "premium";
 
 function getRevenueCatApiKey() {
@@ -34,6 +41,16 @@ export function initializeRevenueCat() {
 }
 
 function useSubscriptionContext() {
+  // Anonymous RevenueCat app-user ID. Stable per device. Used as the
+  // canonical user key for server-side usage metering + subscription sync
+  // (no auth in this app yet). Wrapped in a query so we don't block render
+  // on the SDK call.
+  const appUserIdQuery = useQuery({
+    queryKey: ["revenuecat", "app-user-id"],
+    queryFn: async () => Purchases.getAppUserID(),
+    staleTime: Infinity,
+  });
+
   const customerInfoQuery = useQuery({
     queryKey: ["revenuecat", "customer-info"],
     queryFn: async () => Purchases.getCustomerInfo(),
@@ -63,12 +80,14 @@ function useSubscriptionContext() {
     customerInfoQuery.data?.entitlements.active?.[REVENUECAT_ENTITLEMENT_IDENTIFIER] !== undefined;
 
   return {
+    appUserId: appUserIdQuery.data ?? null,
     customerInfo: customerInfoQuery.data,
     offerings: offeringsQuery.data,
     isSubscribed,
     isLoading: customerInfoQuery.isLoading || offeringsQuery.isLoading,
     purchase: purchaseMutation.mutateAsync,
     restore: restoreMutation.mutateAsync,
+    refetchCustomerInfo: customerInfoQuery.refetch,
     isPurchasing: purchaseMutation.isPending,
     isRestoring: restoreMutation.isPending,
     purchaseError: purchaseMutation.error,

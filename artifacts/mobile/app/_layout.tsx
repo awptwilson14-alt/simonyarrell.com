@@ -24,6 +24,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider } from "@/context/AppContext";
+import { EntitlementsProvider } from "@/context/EntitlementsContext";
 import { initPWA } from "@/lib/pwa";
 import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
 
@@ -123,11 +124,13 @@ export default function RootLayout() {
         <AppProvider>
           <QueryClientProvider client={queryClient}>
             <SubscriptionProvider>
-              <GestureHandlerRootView>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
+              <EntitlementsProvider>
+                <GestureHandlerRootView>
+                  <KeyboardProvider>
+                    <RootLayoutNav />
+                  </KeyboardProvider>
+                </GestureHandlerRootView>
+              </EntitlementsProvider>
             </SubscriptionProvider>
           </QueryClientProvider>
         </AppProvider>

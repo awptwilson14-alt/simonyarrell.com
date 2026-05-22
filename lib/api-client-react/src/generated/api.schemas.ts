@@ -104,3 +104,79 @@ export interface StylistPlanResponse {
   slots: StylistPlanSlot[];
 }
 
+export type TierId = typeof TierId[keyof typeof TierId];
+
+
+export const TierId = {
+  basic: 'basic',
+  premium: 'premium',
+  pro: 'pro',
+  vip: 'vip',
+  diamond: 'diamond',
+} as const;
+
+export interface UsageTodayResponse {
+  /** ISO date (YYYY-MM-DD) in server local time */
+  date: string;
+  /** @minimum 0 */
+  looksGenerated: number;
+  /**
+     * 0 means uncapped (paid tiers report 0 here)
+     * @minimum 0
+     */
+  capLimit: number;
+  /** True when looksGenerated >= capLimit and capLimit > 0 */
+  capped: boolean;
+}
+
+export interface LookAttemptRequest {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  userId: string;
+  tier: TierId;
+}
+
+export interface LookAttemptResponse {
+  allowed: boolean;
+  /** @minimum 0 */
+  looksGenerated: number;
+  /** @minimum 0 */
+  capLimit: number;
+  /** Optional human-readable reason when allowed=false */
+  reason?: string;
+}
+
+export type SubscriptionSyncRequestStatus = typeof SubscriptionSyncRequestStatus[keyof typeof SubscriptionSyncRequestStatus];
+
+
+export const SubscriptionSyncRequestStatus = {
+  active: 'active',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
+export interface SubscriptionSyncRequest {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  userId: string;
+  tier: TierId;
+  status: SubscriptionSyncRequestStatus;
+}
+
+export interface SubscriptionSyncResponse {
+  ok: boolean;
+  tier: TierId;
+}
+
+export type GetUsageTodayParams = {
+/**
+ * @minLength 1
+ * @maxLength 128
+ */
+userId: string;
+};
+

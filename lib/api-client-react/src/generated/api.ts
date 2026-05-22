@@ -20,9 +20,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetUsageTodayParams,
   HealthStatus,
+  LookAttemptRequest,
+  LookAttemptResponse,
   StylistPlanRequest,
-  StylistPlanResponse
+  StylistPlanResponse,
+  SubscriptionSyncRequest,
+  SubscriptionSyncResponse,
+  UsageTodayResponse
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -190,5 +196,241 @@ export const useStylistPlan = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getStylistPlanMutationOptions(options));
+    }
+
+export const getGetUsageTodayUrl = (params: GetUsageTodayParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/usage/today?${stringifiedParams}` : `/api/usage/today`
+}
+
+/**
+ * @summary Get today's look-generation usage for a user
+ */
+export const getUsageToday = async (params: GetUsageTodayParams, options?: RequestInit): Promise<UsageTodayResponse> => {
+
+  return customFetch<UsageTodayResponse>(getGetUsageTodayUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUsageTodayQueryKey = (params?: GetUsageTodayParams,) => {
+    return [
+    `/api/usage/today`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetUsageTodayQueryOptions = <TData = Awaited<ReturnType<typeof getUsageToday>>, TError = ErrorType<void>>(params: GetUsageTodayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUsageToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUsageTodayQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUsageToday>>> = ({ signal }) => getUsageToday(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUsageToday>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUsageTodayQueryResult = NonNullable<Awaited<ReturnType<typeof getUsageToday>>>
+export type GetUsageTodayQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get today's look-generation usage for a user
+ */
+
+export function useGetUsageToday<TData = Awaited<ReturnType<typeof getUsageToday>>, TError = ErrorType<void>>(
+ params: GetUsageTodayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUsageToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUsageTodayQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getLookAttemptUrl = () => {
+
+
+
+
+  return `/api/usage/look-attempt`
+}
+
+/**
+ * Atomically increments the per-user daily look counter ONLY when the
+attempt is allowed under the supplied tier. Free (basic) is capped at
+3/day. All paid tiers are uncapped. Returns whether the attempt was
+allowed plus the new counter state.
+
+ * @summary Record an attempted AI look generation, enforcing the free-tier daily cap
+ */
+export const lookAttempt = async (lookAttemptRequest: LookAttemptRequest, options?: RequestInit): Promise<LookAttemptResponse> => {
+
+  return customFetch<LookAttemptResponse>(getLookAttemptUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      lookAttemptRequest,)
+  }
+);}
+
+
+
+
+export const getLookAttemptMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookAttempt>>, TError,{data: BodyType<LookAttemptRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof lookAttempt>>, TError,{data: BodyType<LookAttemptRequest>}, TContext> => {
+
+const mutationKey = ['lookAttempt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookAttempt>>, {data: BodyType<LookAttemptRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  lookAttempt(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LookAttemptMutationResult = NonNullable<Awaited<ReturnType<typeof lookAttempt>>>
+    export type LookAttemptMutationBody = BodyType<LookAttemptRequest>
+    export type LookAttemptMutationError = ErrorType<void>
+
+    /**
+ * @summary Record an attempted AI look generation, enforcing the free-tier daily cap
+ */
+export const useLookAttempt = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookAttempt>>, TError,{data: BodyType<LookAttemptRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof lookAttempt>>,
+        TError,
+        {data: BodyType<LookAttemptRequest>},
+        TContext
+      > => {
+      return useMutation(getLookAttemptMutationOptions(options));
+    }
+
+export const getSyncSubscriptionUrl = () => {
+
+
+
+
+  return `/api/subscriptions/sync`
+}
+
+/**
+ * Upserts the user's subscription tier so server-side gating (e.g. the
+free-tier look cap) can trust a single source of truth. Called by the
+client after every successful RevenueCat purchase, restore, or
+customerInfo refresh.
+
+ * @summary Mirror the user's current subscription tier server-side
+ */
+export const syncSubscription = async (subscriptionSyncRequest: SubscriptionSyncRequest, options?: RequestInit): Promise<SubscriptionSyncResponse> => {
+
+  return customFetch<SubscriptionSyncResponse>(getSyncSubscriptionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionSyncRequest,)
+  }
+);}
+
+
+
+
+export const getSyncSubscriptionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncSubscription>>, TError,{data: BodyType<SubscriptionSyncRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncSubscription>>, TError,{data: BodyType<SubscriptionSyncRequest>}, TContext> => {
+
+const mutationKey = ['syncSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncSubscription>>, {data: BodyType<SubscriptionSyncRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  syncSubscription(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof syncSubscription>>>
+    export type SyncSubscriptionMutationBody = BodyType<SubscriptionSyncRequest>
+    export type SyncSubscriptionMutationError = ErrorType<void>
+
+    /**
+ * @summary Mirror the user's current subscription tier server-side
+ */
+export const useSyncSubscription = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncSubscription>>, TError,{data: BodyType<SubscriptionSyncRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncSubscription>>,
+        TError,
+        {data: BodyType<SubscriptionSyncRequest>},
+        TContext
+      > => {
+      return useMutation(getSyncSubscriptionMutationOptions(options));
     }
 

@@ -12,6 +12,10 @@ tags:
     description: Health operations
   - name: stylist
     description: AI stylist — generates structured outfit plans
+  - name: usage
+    description: Per-user daily usage metering (look generation caps for free tier)
+  - name: subscriptions
+    description: User subscription tier sync (mirrors RevenueCat entitlements server-side)
 paths:
   /healthz:
     get:
@@ -54,6 +58,78 @@ paths:
           description: Invalid request body
         "502":
           description: Upstream AI provider error
+  /usage/today:
+    get:
+      operationId: getUsageToday
+      tags: [usage]
+      summary: Get today's look-generation usage for a user
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        "200":
+          description: Today's usage snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageTodayResponse"
+        "400":
+          description: Missing or invalid userId
+  /usage/look-attempt:
+    post:
+      operationId: lookAttempt
+      tags: [usage]
+      summary: Record an attempted AI look generation, enforcing the free-tier daily cap
+      description: |
+        Atomically increments the per-user daily look counter ONLY when the
+        attempt is allowed under the supplied tier. Free (basic) is capped at
+        3/day. All paid tiers are uncapped. Returns whether the attempt was
+        allowed plus the new counter state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LookAttemptRequest"
+      responses:
+        "200":
+          description: Attempt resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookAttemptResponse"
+        "400":
+          description: Invalid request body
+  /subscriptions/sync:
+    post:
+      operationId: syncSubscription
+      tags: [subscriptions]
+      summary: Mirror the user's current subscription tier server-side
+      description: |
+        Upserts the user's subscription tier so server-side gating (e.g. the
+        free-tier look cap) can trust a single source of truth. Called by the
+        client after every successful RevenueCat purchase, restore, or
+        customerInfo refresh.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionSyncRequest"
+      responses:
+        "200":
+          description: Synced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionSyncResponse"
+        "400":
+          description: Invalid request body
 components:
   schemas:
     HealthStatus:
@@ -149,3 +225,83 @@ components:
         - name
         - description
         - slots
+    TierId:
+      type: string
+      enum: [basic, premium, pro, vip, diamond]
+    UsageTodayResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          description: ISO date (YYYY-MM-DD) in server local time
+        looksGenerated:
+          type: integer
+          minimum: 0
+        capLimit:
+          type: integer
+          minimum: 0
+          description: 0 means uncapped (paid tiers report 0 here)
+        capped:
+          type: boolean
+          description: True when looksGenerated >= capLimit and capLimit > 0
+      required:
+        - date
+        - looksGenerated
+        - capLimit
+        - capped
+    LookAttemptRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        tier:
+          $ref: "#/components/schemas/TierId"
+      required:
+        - userId
+        - tier
+    LookAttemptResponse:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        looksGenerated:
+          type: integer
+          minimum: 0
+        capLimit:
+          type: integer
+          minimum: 0
+        reason:
+          type: string
+          description: Optional human-readable reason when allowed=false
+      required:
+        - allowed
+        - looksGenerated
+        - capLimit
+    SubscriptionSyncRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        tier:
+          $ref: "#/components/schemas/TierId"
+        status:
+          type: string
+          enum: [active, expired, cancelled]
+      required:
+        - userId
+        - tier
+        - status
+    SubscriptionSyncResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        tier:
+          $ref: "#/components/schemas/TierId"
+      required:
+        - ok
+        - tier

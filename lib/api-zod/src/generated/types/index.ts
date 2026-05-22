@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './getUsageTodayParams';
 export * from './healthStatus';
+export * from './lookAttemptRequest';
+export * from './lookAttemptResponse';
 export * from './stylistPlanRequest';
 export * from './stylistPlanRequestGender';
 export * from './stylistPlanRequestSeason';
@@ -15,3 +18,8 @@ export * from './stylistPlanResponseSeason';
 export * from './stylistPlanSlot';
 export * from './stylistPlanSlotCategory';
 export * from './stylistPlanSlotFormality';
+export * from './subscriptionSyncRequest';
+export * from './subscriptionSyncRequestStatus';
+export * from './subscriptionSyncResponse';
+export * from './tierId';
+export * from './usageTodayResponse';

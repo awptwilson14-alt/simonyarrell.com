@@ -27,8 +27,10 @@ import { findCelebByName } from "@/lib/celebLookup";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
 import { assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
+import { useEntitlements } from "@/context/EntitlementsContext";
 import { useColors } from "@/hooks/useColors";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
+import type { Feature } from "@/lib/tiers";
 import * as Haptics from "expo-haptics";
 
 const { width } = Dimensions.get("window");
@@ -46,6 +48,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userProfile, savedLooks } = useApp();
+  const { can, requireFeature } = useEntitlements();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const heroFor = (key: string, seed?: string) => pickStyleHero(key, userProfile.gender, seed);
   const lookHero = (name: string, seed?: string) => pickLookHero(name, userProfile.gender, seed);
@@ -172,7 +175,9 @@ export default function HomeScreen() {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push("/runway");
+            // Runway is a Premium+ feature. requireFeature opens the
+            // upgrade prompt for free users and navigates for paid tiers.
+            if (requireFeature("RUNWAY")) router.push("/runway");
           }}
           style={styles.runwayCard}
         >
@@ -344,40 +349,64 @@ export default function HomeScreen() {
             signature card (batch 106) and saved-heart treatment from
             batches 113/114. */}
         <View style={styles.featurePills}>
-          {[
-            { icon: "zap" as const, label: "AI Style\nCurator", route: "/(tabs)/style" as const },
-            { icon: "star" as const, label: "Celebrity\nInspired", route: "/(tabs)/explore" as const },
-            { icon: "layers" as const, label: "Closet\nIntel", route: "/(tabs)/closet" as const },
-            { icon: "shopping-bag" as const, label: "Shop\nLuxury", route: "/(tabs)/shop" as const },
-          ].map((item) => (
-            <Pressable
-              key={item.label}
-              onPress={() => router.push(item.route)}
-              style={({ pressed }) => [
-                styles.featurePill,
-                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
-              ]}
-            >
-              <LinearGradient
-                colors={["rgba(198,167,94,0.08)", "transparent"]}
-                locations={[0, 0.7]}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-              <View style={[styles.featurePillRule, { backgroundColor: colors.gold }]} />
-              <View style={[styles.featurePillIconRing, { borderColor: "rgba(198,167,94,0.4)" }]}>
-                <Feather name={item.icon} size={18} color={colors.gold} />
-              </View>
-              <Text
-                style={[styles.featurePillLabel, { color: colors.foreground }]}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.85}
+          {(
+            [
+              { icon: "zap", label: "AI Style\nCurator", route: "/(tabs)/style", feature: "AI_STYLE" },
+              { icon: "star", label: "Celebrity\nInspired", route: "/(tabs)/explore", feature: "CELEBRITY" },
+              { icon: "layers", label: "Closet\nIntel", route: "/(tabs)/closet", feature: "CLOSET_INTEL" },
+              { icon: "shopping-bag", label: "Shop\nLuxury", route: "/(tabs)/shop", feature: "SHOP_LUXURY" },
+            ] as Array<{
+              icon: React.ComponentProps<typeof Feather>["name"];
+              label: string;
+              route:
+                | "/(tabs)/style"
+                | "/(tabs)/explore"
+                | "/(tabs)/closet"
+                | "/(tabs)/shop";
+              feature: Feature;
+            }>
+          ).map((item) => {
+            const unlocked = can(item.feature);
+            return (
+              <Pressable
+                key={item.label}
+                onPress={() => {
+                  // requireFeature returns true for unlocked features and
+                  // shows the editorial upgrade prompt otherwise — no
+                  // separate navigation needed here.
+                  if (requireFeature(item.feature)) router.push(item.route);
+                }}
+                style={({ pressed }) => [
+                  styles.featurePill,
+                  { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                ]}
               >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
+                <LinearGradient
+                  colors={["rgba(198,167,94,0.08)", "transparent"]}
+                  locations={[0, 0.7]}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <View style={[styles.featurePillRule, { backgroundColor: colors.gold }]} />
+                <View style={[styles.featurePillIconRing, { borderColor: "rgba(198,167,94,0.4)" }]}>
+                  <Feather name={item.icon} size={18} color={colors.gold} />
+                </View>
+                <Text
+                  style={[styles.featurePillLabel, { color: colors.foreground }]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {item.label}
+                </Text>
+                {!unlocked && (
+                  <View style={styles.featurePillLock}>
+                    <Feather name="lock" size={10} color="#0B0B0C" />
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* ── Trending Styles ──
@@ -695,6 +724,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: "center",
     lineHeight: 14,
+  },
+  featurePillLock: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#C6A75E",
+    alignItems: "center",
+    justifyContent: "center",
   },
   brandStripEyebrowBlock: {
     alignItems: "center",

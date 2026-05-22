@@ -1,7 +1,29 @@
+/**
+ * 5-tier subscription paywall — editorial vertical picker. Renders all
+ * five tiers (Basic free + Premium/Pro/VIP/Diamond) as selectable cards.
+ * Pre-selects the tier from `?required=<tier>` query param when the user
+ * arrives via a lock prompt (TierLockPrompt routes here on Upgrade).
+ *
+ * Purchase resolution: looks up the RevenueCat package whose identifier
+ * matches `TIER_DEFINITIONS[tier].rcPackageId`. If no exact match, falls
+ * back to the first available package in the current offering so the
+ * paywall remains usable while the RC dashboard is being configured.
+ *
+ * After a successful purchase, calls `/api/subscriptions/sync` so the
+ * server-side daily-cap check trusts the new tier on the very next AI
+ * generation. Sync failures are logged but not surfaced — the client-side
+ * RC customerInfo refresh already updates `useEntitlements().tier` for
+ * immediate UI gating.
+ *
+ * Preserves the existing brand vocab (dark + gold, Playfair headline,
+ * gold rule, gendered hero backdrop, restore + legal copy, confirm modal,
+ * status messages, "You're a Member" state for paid tiers).
+ */
+
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -20,58 +42,95 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
+import { useEntitlements } from "@/context/EntitlementsContext";
 import { useColors } from "@/hooks/useColors";
 import { useSubscription } from "@/lib/revenuecat";
-
-const PERKS = [
-  { icon: "zap", label: "AI Style Engine", desc: "Unlimited personalised outfit recommendations" },
-  { icon: "camera", label: "Live Try-On", desc: "Overlay any look on your live camera feed" },
-  { icon: "star", label: "Exclusive Looks", desc: "Access the full celebrity & editorial look library" },
-  { icon: "shopping-bag", label: "Shop the Look", desc: "One-tap purchase links for every piece" },
-  { icon: "layers", label: "Unlimited Closet", desc: "Save and organise as many items as you like" },
-  { icon: "bell", label: "Drop Alerts", desc: "First access to new collections and collabs" },
-];
-
-type PlanKey = "monthly" | "annual";
+import {
+  PAID_TIER_IDS,
+  TIER_DEFINITIONS,
+  TIER_IDS,
+  type TierId,
+} from "@/lib/tiers";
 
 export default function MembershipScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const topPad = Platform.OS === "web" ? 56 : insets.top;
+  const params = useLocalSearchParams<{ required?: string }>();
 
-  const { offerings, isSubscribed, isLoading, purchase, restore, isPurchasing, isRestoring } =
+  const { offerings, isLoading, purchase, restore, isPurchasing, isRestoring, appUserId, refetchCustomerInfo } =
     useSubscription();
-
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey>("annual");
+  const { tier: currentTier } = useEntitlements();
   const { userProfile } = useApp();
-  // Gendered backdrop for the upgrade hero — mirrors the SPLASH_HEROES
-  // pattern adopted across onboarding (104), empty states (106/107), and
-  // profile header (108). Membership is a conversion surface, so the
-  // hero is the prime real estate to dress up. Defaults/Unisex → women.
+
+  // Default selection: the required tier from the deep-link param if valid,
+  // else Premium (the first paid tier — the conversion-friendly default).
+  const requiredParam = (params.required as TierId | undefined) ?? undefined;
+  const initialTier: TierId = requiredParam && TIER_IDS.includes(requiredParam) ? requiredParam : "premium";
+  const [selectedTier, setSelectedTier] = useState<TierId>(initialTier);
+
+  // Sync selection when navigating in with a fresh ?required= param mid-
+  // session (e.g. user dismissed paywall then tapped a different locked
+  // feature). expo-router rehydrates params on re-focus.
+  useEffect(() => {
+    if (requiredParam && TIER_IDS.includes(requiredParam) && requiredParam !== "basic") {
+      setSelectedTier(requiredParam);
+    }
+  }, [requiredParam]);
+
   const heroKey: "men" | "women" = userProfile.gender === "Men" ? "men" : "women";
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [syncingTier, setSyncingTier] = useState(false);
 
   const currentOffering = offerings?.current;
-  const monthlyPkg = currentOffering?.availablePackages.find(
-    (p) => p.packageType === "MONTHLY" || p.identifier === "$rc_monthly"
-  );
-  const annualPkg = currentOffering?.availablePackages.find(
-    (p) => p.packageType === "ANNUAL" || p.identifier === "$rc_annual"
-  );
 
-  const selectedPkg = selectedPlan === "monthly" ? monthlyPkg : annualPkg;
+  function findPackageForTier(tierId: TierId) {
+    if (tierId === "basic" || !currentOffering) return null;
+    const want = TIER_DEFINITIONS[tierId].rcPackageId;
+    const exact = currentOffering.availablePackages.find((p) => p.identifier === want);
+    if (exact) return exact;
+    // Soft fallback: when RC dashboard hasn't yet been configured with
+    // per-tier packages, return the first package so the purchase flow
+    // still has SOMETHING to call. The price label below shows the
+    // tier's intrinsic priceLabel either way, so users see the right
+    // copy. Once the dashboard is configured, exact match takes over.
+    return currentOffering.availablePackages[0] ?? null;
+  }
 
-  const monthlyPrice = monthlyPkg?.product.priceString ?? "$2.99";
-  const annualPrice = annualPkg?.product.priceString ?? "$25.00";
-  const annualMonthly = annualPkg
-    ? `$${(annualPkg.product.price / 12).toFixed(2)}/mo`
-    : "$2.08/mo";
+  const selectedPkg = findPackageForTier(selectedTier);
+  const selectedDef = TIER_DEFINITIONS[selectedTier];
+
+  // Prefer the live RC product price when an exact-id package is found,
+  // else fall back to the tier's canonical price label. This way the cents-
+  // exact App Store price wins when available without breaking the layout
+  // before the dashboard is configured.
+  const livePriceMatches =
+    selectedPkg?.identifier === selectedDef.rcPackageId;
+  const displayPrice = livePriceMatches
+    ? (selectedPkg?.product.priceString ?? selectedDef.priceLabel)
+    : selectedDef.priceLabel;
 
   const handleSubscribe = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setConfirmVisible(true);
+  };
+
+  const syncTierToServer = async (tierId: TierId) => {
+    if (!appUserId) return;
+    try {
+      setSyncingTier(true);
+      await fetch("/api/subscriptions/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: appUserId, tier: tierId, status: "active" }),
+      });
+    } catch {
+      // Non-fatal — RC customerInfo is still the ultimate source of truth.
+    } finally {
+      setSyncingTier(false);
+    }
   };
 
   const confirmPurchase = async (confirmed: boolean) => {
@@ -79,7 +138,9 @@ export default function MembershipScreen() {
     if (!confirmed || !selectedPkg) return;
     try {
       await purchase(selectedPkg);
-      setStatusMsg("Welcome to Simon Yarrell membership!");
+      await refetchCustomerInfo();
+      await syncTierToServer(selectedTier);
+      setStatusMsg(`Welcome to ${selectedDef.name}!`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => router.back(), 1800);
     } catch (e: any) {
@@ -93,13 +154,16 @@ export default function MembershipScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await restore();
+      await refetchCustomerInfo();
       setStatusMsg("Purchases restored successfully.");
     } catch {
       setStatusMsg("No purchases found to restore.");
     }
   };
 
-  if (isSubscribed) {
+  // Active-member splash for any paid tier.
+  if (currentTier !== "basic") {
+    const def = TIER_DEFINITIONS[currentTier];
     return (
       <View style={[s.screen, { backgroundColor: colors.background }]}>
         <LinearGradient
@@ -117,12 +181,19 @@ export default function MembershipScreen() {
           <View style={[s.activeIcon, { backgroundColor: `${colors.gold}18`, borderColor: `${colors.gold}50` }]}>
             <Feather name="check-circle" size={40} color={colors.gold} />
           </View>
-          <Text style={[s.activeTitle, { color: colors.foreground }]}>You're a Member</Text>
+          <Text style={[s.activeTitle, { color: colors.foreground }]}>{def.name} Member</Text>
           <Text style={[s.activeSub, { color: colors.mutedForeground }]}>
-            Your Simon Yarrell membership is active. Enjoy unlimited access to every feature.
+            Your Simon Yarrell {def.name} membership is active. Enjoy {def.tagline.toLowerCase()}
           </Text>
           <Pressable onPress={() => router.back()} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
             <Text style={s.goldBtnText}>CONTINUE</Text>
+          </Pressable>
+          <Pressable onPress={handleRestore} disabled={isRestoring} style={s.restoreBtn}>
+            {isRestoring ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <Text style={[s.restoreText, { color: colors.mutedForeground }]}>Restore Purchases</Text>
+            )}
           </Pressable>
         </View>
       </View>
@@ -138,7 +209,6 @@ export default function MembershipScreen() {
         pointerEvents="none"
       />
 
-      {/* Top bar */}
       <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
         <BrandWordmark />
         <Pressable onPress={() => router.back()} hitSlop={12} style={[s.closeBtn, { borderColor: colors.border }]}>
@@ -150,146 +220,152 @@ export default function MembershipScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
       >
-        {/* Hero — editorial gendered backdrop. 0.40 opacity (between the
-            always-on profile header at 0.30 and the empty-state moments at
-            0.55) since this is a high-conversion surface where the photo
-            should *feel* present without distracting from the headline.
-            3-stop gradient keeps the gold eyebrow + ivory headline crisp. */}
+        {/* Hero — gendered editorial backdrop, brand-locked. */}
         <View style={s.heroWrap}>
-          <Image
-            source={SPLASH_HEROES[heroKey]}
-            style={s.heroBackdrop}
-            resizeMode="cover"
-          />
+          <Image source={SPLASH_HEROES[heroKey]} style={s.heroBackdrop} resizeMode="cover" />
           <LinearGradient
             colors={["rgba(11,11,12,0.55)", "rgba(11,11,12,0.82)", "rgba(11,11,12,0.95)"]}
             locations={[0, 0.55, 1]}
             style={StyleSheet.absoluteFill}
           />
           <View style={s.hero}>
-            <Text style={[s.eyebrow, { color: colors.gold }]}>SIMON YARRELL</Text>
+            <Text style={[s.eyebrow, { color: colors.gold }]}>SIMON YARRELL MEMBERSHIP</Text>
             <Text style={[s.headline, { color: colors.foreground }]}>
-              Dress Like{"\n"}You Mean It
+              Choose Your{"\n"}House Standing
             </Text>
-            {/* Shared TitleRule atom (batch 120) — extends the gold-rule
-                motif from tab/activity/celebrity/partners screens into the
-                membership upgrade hero. 40px wide matches the 42px Playfair
-                headline (same proportion as partners hero). */}
             <TitleRule width={40} style={{ marginTop: 2 }} />
             <Text style={[s.sub, { color: colors.mutedForeground }]}>
-              Unlock the full Simon Yarrell experience — AI styling, live try-on, and the world's most curated looks.
+              Five tiers. Real designer pieces. From your first 3-look-a-day taste to white-glove Diamond concierge.
             </Text>
           </View>
         </View>
 
-        {/* Perks */}
-        <View style={[s.perksCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {PERKS.map((perk, i) => (
-            <View
-              key={perk.icon}
-              style={[
-                s.perkRow,
-                i < PERKS.length - 1 && { borderBottomWidth: 0.5, borderBottomColor: colors.border },
-              ]}
-            >
-              <View style={[s.perkIcon, { backgroundColor: `${colors.gold}15` }]}>
-                <Feather name={perk.icon as any} size={14} color={colors.gold} />
-              </View>
-              <View style={s.perkText}>
-                <Text style={[s.perkLabel, { color: colors.foreground }]}>{perk.label}</Text>
-                <Text style={[s.perkDesc, { color: colors.mutedForeground }]}>{perk.desc}</Text>
-              </View>
-              <Feather name="check" size={14} color={colors.gold} />
+        {/* Current Basic (Free) card — informational, never selectable. */}
+        <View
+          style={[
+            s.basicCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <View style={s.basicTop}>
+            <View style={s.basicHeading}>
+              <Text style={[s.tierName, { color: colors.foreground }]}>Basic</Text>
+              <Text style={[s.basicCurrent, { color: colors.gold }]}>CURRENT PLAN — FREE</Text>
             </View>
-          ))}
-        </View>
-
-        {/* Plan selector */}
-        <View style={s.plans}>
-          {/* Annual plan */}
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setSelectedPlan("annual"); }}
-            style={[
-              s.planCard,
-              { borderColor: selectedPlan === "annual" ? colors.gold : colors.border, backgroundColor: colors.card },
-              selectedPlan === "annual" && { borderWidth: 1.5 },
-            ]}
-          >
-            {/* Best value badge */}
-            <View style={[s.bestBadge, { backgroundColor: colors.gold }]}>
-              <Text style={s.bestBadgeText}>BEST VALUE</Text>
-            </View>
-            <View style={s.planTop}>
-              <View style={[s.planRadio, { borderColor: selectedPlan === "annual" ? colors.gold : colors.border }]}>
-                {selectedPlan === "annual" && (
-                  <View style={[s.planRadioFill, { backgroundColor: colors.gold }]} />
-                )}
-              </View>
-              <View style={s.planInfo}>
-                <Text style={[s.planName, { color: colors.foreground }]}>Annual</Text>
-                <Text style={[s.planSavings, { color: colors.gold }]}>Save 30% vs monthly</Text>
-              </View>
-              <View style={s.planPricing}>
-                <Text style={[s.planPrice, { color: colors.foreground }]}>{annualPrice}</Text>
-                <Text style={[s.planPer, { color: colors.mutedForeground }]}>per year</Text>
-              </View>
-            </View>
-            <Text style={[s.planBreakdown, { color: colors.mutedForeground }]}>
-              Just {annualMonthly} — billed once annually
+            <Text style={[s.tierTagline, { color: colors.mutedForeground }]}>
+              {TIER_DEFINITIONS.basic.tagline}
             </Text>
-          </Pressable>
-
-          {/* Monthly plan */}
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setSelectedPlan("monthly"); }}
-            style={[
-              s.planCard,
-              { borderColor: selectedPlan === "monthly" ? colors.gold : colors.border, backgroundColor: colors.card },
-              selectedPlan === "monthly" && { borderWidth: 1.5 },
-            ]}
-          >
-            <View style={s.planTop}>
-              <View style={[s.planRadio, { borderColor: selectedPlan === "monthly" ? colors.gold : colors.border }]}>
-                {selectedPlan === "monthly" && (
-                  <View style={[s.planRadioFill, { backgroundColor: colors.gold }]} />
-                )}
-              </View>
-              <View style={s.planInfo}>
-                <Text style={[s.planName, { color: colors.foreground }]}>Monthly</Text>
-                <Text style={[s.planSavings, { color: colors.mutedForeground }]}>Flexible, cancel anytime</Text>
-              </View>
-              <View style={s.planPricing}>
-                <Text style={[s.planPrice, { color: colors.foreground }]}>{monthlyPrice}</Text>
-                <Text style={[s.planPer, { color: colors.mutedForeground }]}>per month</Text>
-              </View>
-            </View>
-          </Pressable>
+          </View>
+          <View style={s.basicFeatures}>
+            {TIER_DEFINITIONS.basic.features.map((f) => (
+              <Text key={f} style={[s.basicFeatureItem, { color: colors.mutedForeground }]}>
+                · {f}
+              </Text>
+            ))}
+          </View>
         </View>
 
-        {/* Status message */}
+        {/* 4 paid tier cards. */}
+        <View style={s.tierStack}>
+          {PAID_TIER_IDS.map((tierId) => {
+            const def = TIER_DEFINITIONS[tierId];
+            const isSelected = selectedTier === tierId;
+            const isFlagshipDiamond = tierId === "diamond";
+            return (
+              <Pressable
+                key={tierId}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setSelectedTier(tierId);
+                }}
+                style={[
+                  s.tierCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: isSelected ? colors.gold : colors.border,
+                  },
+                  isSelected && { borderWidth: 1.5 },
+                ]}
+              >
+                {isFlagshipDiamond && (
+                  <View style={[s.flagshipBadge, { backgroundColor: colors.gold }]}>
+                    <Text style={s.flagshipBadgeText}>FLAGSHIP</Text>
+                  </View>
+                )}
+                <View style={s.tierTop}>
+                  <View
+                    style={[
+                      s.tierRadio,
+                      { borderColor: isSelected ? colors.gold : colors.border },
+                    ]}
+                  >
+                    {isSelected && (
+                      <View style={[s.tierRadioFill, { backgroundColor: colors.gold }]} />
+                    )}
+                  </View>
+                  <View style={s.tierInfo}>
+                    <Text style={[s.tierName, { color: colors.foreground }]}>{def.name}</Text>
+                    <Text style={[s.tierTagline, { color: colors.mutedForeground }]}>
+                      {def.tagline}
+                    </Text>
+                  </View>
+                  <View style={s.tierPricing}>
+                    <Text style={[s.tierPrice, { color: colors.foreground }]}>
+                      {def.priceLabel}
+                    </Text>
+                    <Text style={[s.tierPer, { color: colors.mutedForeground }]}>per month</Text>
+                  </View>
+                </View>
+
+                {isSelected && (
+                  <View style={s.tierFeatures}>
+                    {def.features.map((f) => (
+                      <View key={f} style={s.tierFeatureRow}>
+                        <Feather name="check" size={12} color={colors.gold} />
+                        <Text style={[s.tierFeatureText, { color: colors.foreground }]}>{f}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+
         {statusMsg && (
-          <View style={[s.statusMsg, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}40` }]}>
+          <View
+            style={[
+              s.statusMsg,
+              { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}40` },
+            ]}
+          >
             <Feather name="info" size={13} color={colors.gold} />
             <Text style={[s.statusMsgText, { color: colors.gold }]}>{statusMsg}</Text>
           </View>
         )}
 
-        {/* CTA */}
         <Pressable
           onPress={handleSubscribe}
-          disabled={isPurchasing || isLoading}
-          style={[s.goldBtn, { backgroundColor: colors.gold, opacity: isPurchasing ? 0.7 : 1 }]}
+          disabled={isPurchasing || isLoading || syncingTier || !selectedPkg}
+          style={[
+            s.goldBtn,
+            {
+              backgroundColor: colors.gold,
+              opacity: isPurchasing || syncingTier || !selectedPkg ? 0.7 : 1,
+            },
+          ]}
         >
-          {isPurchasing || isLoading ? (
+          {isPurchasing || isLoading || syncingTier ? (
             <ActivityIndicator size="small" color="#0B0B0C" />
           ) : (
             <Text style={s.goldBtnText}>
-              {selectedPlan === "annual" ? `START FOR ${annualPrice}/YEAR` : `START FOR ${monthlyPrice}/MONTH`}
+              {selectedPkg
+                ? `START ${selectedDef.name.toUpperCase()} — ${displayPrice}/MO`
+                : "MEMBERSHIP UNAVAILABLE"}
             </Text>
           )}
         </Pressable>
 
-        {/* Restore + legal */}
         <Pressable onPress={handleRestore} disabled={isRestoring} style={s.restoreBtn}>
           {isRestoring ? (
             <ActivityIndicator size="small" color={colors.mutedForeground} />
@@ -307,15 +383,12 @@ export default function MembershipScreen() {
         </Text>
       </ScrollView>
 
-      {/* Confirm modal */}
       <Modal visible={confirmVisible} transparent animationType="fade">
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[s.modalTitle, { color: colors.foreground }]}>Confirm Purchase</Text>
             <Text style={[s.modalSub, { color: colors.mutedForeground }]}>
-              {selectedPlan === "annual"
-                ? `Subscribe for ${annualPrice}/year (${annualMonthly})?`
-                : `Subscribe for ${monthlyPrice}/month?`}
+              Subscribe to {selectedDef.name} for {displayPrice}/month?
             </Text>
             <View style={s.modalActions}>
               <Pressable
@@ -355,8 +428,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  content: { paddingHorizontal: 24, gap: 20, paddingTop: 8 },
+  content: { paddingHorizontal: 24, gap: 16, paddingTop: 8 },
 
   heroWrap: {
     borderRadius: 2,
@@ -373,51 +445,43 @@ const s = StyleSheet.create({
   hero: { gap: 12, padding: 20 },
   eyebrow: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 3 },
   headline: {
-    fontSize: 42,
+    fontSize: 36,
     fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: -0.5,
-    lineHeight: 48,
+    lineHeight: 42,
   },
   sub: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
-    lineHeight: 22,
+    lineHeight: 20,
     letterSpacing: 0.2,
   },
 
-  perksCard: {
-    borderWidth: 0.5,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  perkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  perkIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  perkText: { flex: 1, gap: 2 },
-  perkLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  perkDesc: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16 },
-
-  plans: { gap: 12 },
-  planCard: {
+  basicCard: {
     borderWidth: 0.5,
     borderRadius: 2,
     padding: 16,
-    gap: 8,
+    gap: 10,
+  },
+  basicTop: { gap: 4 },
+  basicHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  basicCurrent: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.5,
+  },
+  basicFeatures: { gap: 3 },
+  basicFeatureItem: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16 },
+
+  tierStack: { gap: 10 },
+  tierCard: {
+    borderWidth: 0.5,
+    borderRadius: 2,
+    padding: 16,
+    gap: 12,
     position: "relative",
   },
-  bestBadge: {
+  flagshipBadge: {
     position: "absolute",
     top: -1,
     right: 16,
@@ -426,14 +490,14 @@ const s = StyleSheet.create({
     borderBottomLeftRadius: 4,
     borderBottomRightRadius: 4,
   },
-  bestBadgeText: {
+  flagshipBadgeText: {
     fontSize: 8,
     fontFamily: "Inter_700Bold",
     letterSpacing: 1.5,
     color: "#0B0B0C",
   },
-  planTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  planRadio: {
+  tierTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  tierRadio: {
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -442,14 +506,16 @@ const s = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  planRadioFill: { width: 10, height: 10, borderRadius: 5 },
-  planInfo: { flex: 1, gap: 2 },
-  planName: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  planSavings: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  planPricing: { alignItems: "flex-end", gap: 1 },
-  planPrice: { fontSize: 20, fontFamily: "PlayfairDisplay_700Bold" },
-  planPer: { fontSize: 10, fontFamily: "Inter_400Regular" },
-  planBreakdown: { fontSize: 11, fontFamily: "Inter_400Regular", paddingLeft: 32 },
+  tierRadioFill: { width: 10, height: 10, borderRadius: 5 },
+  tierInfo: { flex: 1, gap: 2 },
+  tierName: { fontSize: 16, fontFamily: "PlayfairDisplay_700Bold", letterSpacing: -0.2 },
+  tierTagline: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 15 },
+  tierPricing: { alignItems: "flex-end", gap: 1 },
+  tierPrice: { fontSize: 18, fontFamily: "PlayfairDisplay_700Bold" },
+  tierPer: { fontSize: 9, fontFamily: "Inter_400Regular" },
+  tierFeatures: { gap: 6, paddingLeft: 32, paddingTop: 4 },
+  tierFeatureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  tierFeatureText: { fontSize: 12, fontFamily: "Inter_500Medium" },
 
   statusMsg: {
     flexDirection: "row",
@@ -472,7 +538,7 @@ const s = StyleSheet.create({
   goldBtnText: {
     fontSize: 12,
     fontFamily: "Inter_700Bold",
-    letterSpacing: 2,
+    letterSpacing: 1.6,
     color: "#0B0B0C",
   },
 
@@ -488,7 +554,6 @@ const s = StyleSheet.create({
     paddingBottom: 8,
   },
 
-  // Active member screen
   activeBody: {
     flex: 1,
     paddingHorizontal: 32,
@@ -517,7 +582,6 @@ const s = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Confirm modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(5,5,6,0.7)",

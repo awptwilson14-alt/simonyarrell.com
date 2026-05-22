@@ -32,7 +32,14 @@ import { LookCard } from "@/components/LookCard";
 import { OrnamentRule } from "@/components/OrnamentRule";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
-import { AIStylistError, generateAILooks } from "@/lib/aiStylist";
+import { useEntitlements } from "@/context/EntitlementsContext";
+import { useSubscription } from "@/lib/revenuecat";
+import {
+  AIStylistError,
+  LookCapExceededError,
+  attemptLookGeneration,
+  generateAILooks,
+} from "@/lib/aiStylist";
 import {
   FASHION_WEEK_MODES,
   RUNWAY_MODES,
@@ -48,6 +55,8 @@ export default function RunwayScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { userProfile, registerGeneratedLooks } = useApp();
+  const { tier, requireFeature, showUpgradePrompt, refreshUsage, bumpLooksToday } = useEntitlements();
+  const { appUserId } = useSubscription();
 
   const [runwayMode, setRunwayMode] = useState<RunwayMode | null>("Quiet Luxury");
   const [fashionWeek, setFashionWeek] = useState<FashionWeekMode | null>(null);
@@ -60,10 +69,20 @@ export default function RunwayScreen() {
 
   const onGenerate = async () => {
     if (loading) return;
+    // Runway entry itself is gated to Premium+ on the home CTA, but defend
+    // in depth: anyone who navigates here directly still gets the same
+    // gate enforced before we burn an AI call.
+    if (!requireFeature("RUNWAY")) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setError(null);
     setLoading(true);
     try {
+      // Server-side daily-cap check. Free tier (basic) is blocked at 3/day;
+      // paid tiers always pass. Failures fall open inside the helper.
+      if (appUserId) {
+        await attemptLookGeneration(appUserId, tier);
+        bumpLooksToday();
+      }
       const genderForReq =
         userProfile.gender === "Women" || userProfile.gender === "Men"
           ? userProfile.gender
@@ -98,12 +117,17 @@ export default function RunwayScreen() {
       );
       registerGeneratedLooks(generated);
       setLooks(generated);
+      refreshUsage();
     } catch (err) {
-      setError(
-        err instanceof AIStylistError
-          ? err.message
-          : "The runway stylist is unavailable right now. Try again in a moment.",
-      );
+      if (err instanceof LookCapExceededError) {
+        showUpgradePrompt("premium", "You've used your 3 free runway looks today. Upgrade for unlimited generations.");
+      } else {
+        setError(
+          err instanceof AIStylistError
+            ? err.message
+            : "The runway stylist is unavailable right now. Try again in a moment.",
+        );
+      }
     } finally {
       setLoading(false);
     }

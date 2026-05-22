@@ -45,6 +45,60 @@ export class AIStylistError extends Error {
   }
 }
 
+/**
+ * Thrown by `attemptLookGeneration` when the server's daily-cap check
+ * denies the attempt (free tier exceeded). Call sites should catch this
+ * specifically and route the user to the paywall — never to the
+ * generic AIStylistError surface (different copy, different action).
+ */
+export class LookCapExceededError extends Error {
+  readonly name = "LookCapExceededError";
+  constructor(
+    readonly looksGenerated: number,
+    readonly capLimit: number,
+  ) {
+    super("Daily look limit reached for the free tier.");
+  }
+}
+
+/**
+ * Server-side metered look-attempt check. Increments the user's daily
+ * counter when allowed; rejects with `LookCapExceededError` when the free
+ * tier's cap is hit. Paid tiers are always allowed (server returns
+ * capLimit=0). Failures other than 200 OK fall OPEN so a brief API outage
+ * doesn't block paying customers from generating — server is the
+ * authority, not us, and we'd rather be permissive on transient errors.
+ */
+export async function attemptLookGeneration(
+  userId: string,
+  tier: "basic" | "premium" | "pro" | "vip" | "diamond",
+): Promise<{ looksGenerated: number; capLimit: number }> {
+  const url = `${API_BASE}/api/usage/look-attempt`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, tier }),
+    });
+  } catch {
+    // Fail open on network errors — see rationale above.
+    return { looksGenerated: 0, capLimit: tier === "basic" ? 3 : 0 };
+  }
+  if (!res.ok) {
+    return { looksGenerated: 0, capLimit: tier === "basic" ? 3 : 0 };
+  }
+  const body = (await res.json()) as {
+    allowed: boolean;
+    looksGenerated: number;
+    capLimit: number;
+  };
+  if (!body.allowed) {
+    throw new LookCapExceededError(body.looksGenerated, body.capLimit);
+  }
+  return { looksGenerated: body.looksGenerated, capLimit: body.capLimit };
+}
+
 export async function fetchAIPlan(req: AIStylistRequest): Promise<AIStylistPlan> {
   const url = `${API_BASE}/api/stylist/plan`;
   let res: Response;

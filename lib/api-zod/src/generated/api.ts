@@ -63,3 +63,83 @@ export const StylistPlanResponse = zod.object({
 })
 
 
+/**
+ * @summary Get today's look-generation usage for a user
+ */
+export const getUsageTodayQueryUserIdMax = 128;
+
+
+
+export const GetUsageTodayQueryParams = zod.object({
+  "userId": zod.coerce.string().min(1).max(getUsageTodayQueryUserIdMax)
+})
+
+export const getUsageTodayResponseLooksGeneratedMin = 0;
+
+export const getUsageTodayResponseCapLimitMin = 0;
+
+
+
+export const GetUsageTodayResponse = zod.object({
+  "date": zod.string().describe('ISO date (YYYY-MM-DD) in server local time'),
+  "looksGenerated": zod.number().min(getUsageTodayResponseLooksGeneratedMin),
+  "capLimit": zod.number().min(getUsageTodayResponseCapLimitMin).describe('0 means uncapped (paid tiers report 0 here)'),
+  "capped": zod.boolean().describe('True when looksGenerated >= capLimit and capLimit > 0')
+})
+
+
+/**
+ * Atomically increments the per-user daily look counter ONLY when the
+attempt is allowed under the supplied tier. Free (basic) is capped at
+3/day. All paid tiers are uncapped. Returns whether the attempt was
+allowed plus the new counter state.
+
+ * @summary Record an attempted AI look generation, enforcing the free-tier daily cap
+ */
+export const lookAttemptBodyUserIdMax = 128;
+
+
+
+export const LookAttemptBody = zod.object({
+  "userId": zod.string().min(1).max(lookAttemptBodyUserIdMax),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond'])
+})
+
+export const lookAttemptResponseLooksGeneratedMin = 0;
+
+export const lookAttemptResponseCapLimitMin = 0;
+
+
+
+export const LookAttemptResponse = zod.object({
+  "allowed": zod.boolean(),
+  "looksGenerated": zod.number().min(lookAttemptResponseLooksGeneratedMin),
+  "capLimit": zod.number().min(lookAttemptResponseCapLimitMin),
+  "reason": zod.string().optional().describe('Optional human-readable reason when allowed=false')
+})
+
+
+/**
+ * Upserts the user's subscription tier so server-side gating (e.g. the
+free-tier look cap) can trust a single source of truth. Called by the
+client after every successful RevenueCat purchase, restore, or
+customerInfo refresh.
+
+ * @summary Mirror the user's current subscription tier server-side
+ */
+export const syncSubscriptionBodyUserIdMax = 128;
+
+
+
+export const SyncSubscriptionBody = zod.object({
+  "userId": zod.string().min(1).max(syncSubscriptionBodyUserIdMax),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']),
+  "status": zod.enum(['active', 'expired', 'cancelled'])
+})
+
+export const SyncSubscriptionResponse = zod.object({
+  "ok": zod.boolean(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond'])
+})
+
+
