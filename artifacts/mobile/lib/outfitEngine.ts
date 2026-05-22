@@ -1944,6 +1944,116 @@ export function generateLooks(params: GenerateParams): Look[] {
     const stylePick = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
 
+      // ─── Editorial bypass ─────────────────────────────────────────────────
+      // Avant-garde + Formal Remix are intentionally cross-vibe. The 5 styling
+      // rules below would flatten exactly what makes those looks editorial,
+      // so we let those bypass color/texture/silhouette caps. Luxury and
+      // streetwear category rules still apply (they're about coherence within
+      // a slot, not editorial freedom).
+      const editorial = occasion === "Formal Remix" || dominantStyle === "Avant-garde";
+      const category = pool_[0].category;
+
+      // Soft-narrow helper: apply a filter and accept it only when it leaves
+      // something behind. This is what prevents the rules from ever starving
+      // a slot — if no item in the pool can satisfy a rule, we keep the
+      // wider pool and let later tiers handle it.
+      const narrow = (f: (arr: CatalogItem[]) => CatalogItem[]) => {
+        const next = f(pool_);
+        if (next.length > 0) pool_ = next;
+      };
+
+      // ─── Rule 1: Color — ≤3 dominant colors unless editorial ──────────────
+      // Once 3 distinct color buckets are placed, restrict new picks to
+      // items that share one of those buckets. Otherwise an outfit can drift
+      // into 5+ colors which always reads chaotic, never editorial.
+      if (!editorial && pieces.length > 0) {
+        const used = new Set(pieces.map((p) => p.color.toLowerCase()));
+        if (used.size >= 3) {
+          narrow((arr) =>
+            arr.filter((i) =>
+              i.colors.some((c) => {
+                const lc = c.toLowerCase();
+                for (const u of used) {
+                  if (lc.includes(u) || u.includes(lc)) return true;
+                }
+                return false;
+              }),
+            ),
+          );
+        }
+      }
+
+      // ─── Rule 2: Texture — complement, not compete ────────────────────────
+      // "Loud" surface treatments (sequin, velvet, lace, etc.) read as the
+      // hero of any look. Cap at 1 per outfit so we don't pile sequin top +
+      // velvet jacket + lace skirt on the same body.
+      if (!editorial) {
+        const LOUD_TEX = /(sequin|velvet|lace|fur|croc|snake|metallic|brocade|jacquard|feather|sherpa|shearling)/i;
+        const loudCount = pieces.filter((p) => LOUD_TEX.test(p.name)).length;
+        if (loudCount >= 1) {
+          narrow((arr) => arr.filter((i) => !LOUD_TEX.test(i.name)));
+        }
+      }
+
+      // ─── Rule 3: Silhouette — balance oversized with fitted ───────────────
+      // Outfits with everything oversized look sloppy; everything fitted
+      // looks costumey. Once 2 pieces lean one direction with nothing
+      // counter-balancing, push the next pick toward the opposite.
+      if (!editorial && pieces.length >= 2) {
+        const OVERSIZED = /(oversized|baggy|loose|wide|relaxed|drop[- ]shoulder|boxy|slouchy|chunky)/i;
+        const FITTED = /(fitted|slim|skinny|tailored|cropped|bodysuit|bandeau|corset|bias[- ]cut|ribbed)/i;
+        const ov = pieces.filter((p) => OVERSIZED.test(p.name)).length;
+        const ft = pieces.filter((p) => FITTED.test(p.name)).length;
+        if (ov >= 2 && ft === 0) {
+          narrow((arr) => arr.filter((i) => !OVERSIZED.test(i.name)));
+        } else if (ft >= 2 && ov === 0) {
+          narrow((arr) => arr.filter((i) => !FITTED.test(i.name)));
+        }
+      }
+
+      // ─── Rule 4: Luxury — accessories elevate, never overpower ────────────
+      // Cap accessory-class spend (bag + jewelry + accessories) at 50% of
+      // already-placed clothing total. Prevents a $4k handbag dominating a
+      // $1k outfit. Applies only when the clothing has already been placed
+      // (i.e. category being picked is in the accessory family).
+      if (
+        (category === "accessories" || category === "jewelry" || category === "bag") &&
+        pieces.length > 0
+      ) {
+        // Cap is 50% of CLOTHING-only total, not all-pieces total — otherwise
+        // each accessory we add raises its own cap and the rule never bites.
+        const isAccCat = (c: string) =>
+          c === "accessories" || c === "jewelry" || c === "bag";
+        const clothingTotal = pieces
+          .filter((p) => !isAccCat(p.category))
+          .reduce((s, p) => s + p.price, 0);
+        const accAlready = pieces
+          .filter((p) => isAccCat(p.category))
+          .reduce((s, p) => s + p.price, 0);
+        const remaining = clothingTotal * 0.5 - accAlready;
+        if (clothingTotal > 0 && remaining > 0) {
+          narrow((arr) => arr.filter((i) => i.price <= remaining));
+        } else if (clothingTotal > 0) {
+          // Already at/over the cap — restrict to the cheapest quartile so
+          // any additional accessory is a whisper, not a shout.
+          const sorted = [...pool_].sort((a, b) => a.price - b.price);
+          const keep = sorted.slice(0, Math.max(1, Math.ceil(sorted.length * 0.25)));
+          if (keep.length > 0) pool_ = keep;
+        }
+      }
+
+      // ─── Rule 5: Streetwear — shoes/jewelry/outerwear reinforce vibe ──────
+      // When the look's dominant style is in the street family (Luxury
+      // Streetwear / Streetwear / Y2K Revival / Techwear), the signal
+      // categories MUST stay in the street family. An Old Money loafer
+      // under a Balenciaga hoodie kills the vibe instantly.
+      if (
+        familyOf(dominantStyle) === "street" &&
+        (category === "shoes" || category === "jewelry" || category === "outerwear")
+      ) {
+        narrow((arr) => arr.filter((i) => i.styles.some((s) => familyOf(s) === "street")));
+      }
+
       // Continuity bias — once we've placed the first piece, prefer items
       // that share a style tag AND a palette color with what's already in
       // the look. This is what stops the engine from following a Loro Piana
