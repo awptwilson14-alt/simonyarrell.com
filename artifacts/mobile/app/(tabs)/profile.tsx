@@ -27,6 +27,7 @@ import { findCelebByName } from "@/lib/celebLookup";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 
 type Section = "looks" | "products";
 
@@ -230,7 +231,27 @@ export default function ProfileScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <BrandWordmark style={{ marginBottom: 20 }} />
+        {/* Screen title + gold rule (batch 122) — Profile was the only tab
+            without a gold-ruled title above its content, breaking the
+            convention established for Home/Explore/Closet/Shop in batches
+            116-117. Matches closet's Inter_700Bold 28px (both tabs are
+            personal "your stuff" surfaces) rather than the Playfair used by
+            Explore/Shop's editorial framing.
+
+            Wrapped together so the parent ScrollView's gap:24 doesn't
+            compound between BrandWordmark and the title — closet escapes
+            this by living outside the content View entirely, but profile's
+            BrandWordmark sits inside ScrollView for layout reasons (the
+            magazine-cover header needs to scroll with content). The wrapper
+            acts as one logical "masthead" sibling in the gap:24 sequence,
+            with tight 6px between wordmark and title inside it. */}
+        <View style={styles.headerMasthead}>
+          <BrandWordmark style={{ marginBottom: 6 }} />
+          <View style={styles.titleBlock}>
+            <Text style={[styles.screenTitle, { color: colors.foreground }]}>Profile</Text>
+            <TitleRule />
+          </View>
+        </View>
         {/* Profile Header — wrapped in an editorial gendered banner. Same
             SPLASH_HEROES pattern used by onboarding (batch 104) and the empty
             states (batches 106/107), but tuned much subtler (0.30 opacity +
@@ -703,6 +724,9 @@ const styles = StyleSheet.create({
     height: "100%",
     opacity: 0.3,
   },
+  headerMasthead: {},
+  titleBlock: { gap: 6 },
+  screenTitle: { fontSize: 28, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   profileHeader: { flexDirection: "row", alignItems: "flex-start", gap: 16 },
   avatar: { width: 68, height: 68, borderRadius: 34, borderWidth: 1.5, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   avatarText: { fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: 1 },
