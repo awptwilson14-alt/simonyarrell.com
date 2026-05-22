@@ -1,6 +1,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
+import { OrnamentRule } from "@/components/OrnamentRule";
 import { useColors } from "@/hooks/useColors";
 
 // Maison Simon "MS" monogram — ornate interlocking gold serif lockup on a
@@ -83,14 +84,25 @@ export function BrandWordmark({
         >
           SIMON YARRELL
         </Text>
+        {/* Editorial gold ornament rule sits directly under the caps —
+            matches the splash reference exactly. Width is tuned to span
+            most of the caps row; diamond center reads as the maison crest. */}
+        <OrnamentRule
+          width={Math.round(capsSize * 8)}
+          diamondSize={Math.max(5, Math.round(capsSize * 0.22))}
+          style={{ marginTop: Math.round(height * 0.10) }}
+        />
         <Text
           style={[
             styles.tagline,
             {
-              color: colors.gold,
+              // Off-white/cream tagline (not solid gold) — matches the
+              // reference where "Luxury Styling, / Powered by Intelligence."
+              // reads as a warm muted highlight beneath the gold rule.
+              color: "rgba(245,240,225,0.92)",
               fontSize: taglineSize,
               lineHeight: Math.round(taglineSize * 1.4),
-              marginTop: Math.round(height * 0.12),
+              marginTop: Math.round(height * 0.10),
             },
           ]}
         >

@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { GoldButton } from "@/components/GoldButton";
+import { OrnamentRule } from "@/components/OrnamentRule";
 import { TitleRule } from "@/components/TitleRule";
 import { MultiFilterChips } from "@/components/FilterChips";
 import { BUDGETS, GENDERS, SEASONS, STYLE_CATEGORIES } from "@/constants/data";
@@ -107,13 +108,14 @@ export default function OnboardingScreen() {
               of the screen open for the hero photo to read through. */}
           <View style={splash.spacer} />
 
-          {/* CTA */}
+          {/* CTA — gold plate button, then a centered ornament-rule
+              ornament, then the serif-italic "Continue as guest" link.
+              Mirrors the splash reference exactly. */}
           <View style={splash.footer}>
             <GoldButton label="GET STARTED" onPress={next} />
-            <Pressable onPress={skip} style={splash.guestBtn}>
-              <Text style={[splash.guestText, { color: colors.mutedForeground }]}>
-                Continue as guest
-              </Text>
+            <OrnamentRule width={140} diamondSize={6} style={splash.footerOrnament} />
+            <Pressable onPress={skip} style={splash.guestBtn} hitSlop={8}>
+              <Text style={splash.guestText}>Continue as guest</Text>
             </Pressable>
           </View>
         </View>
@@ -321,9 +323,15 @@ const splash = StyleSheet.create({
   brandSection: { alignItems: "center" },
   spacer: { flex: 1 },
   logoImg: { width: 280, height: 153 },
-  footer: { gap: 16 },
-  guestBtn: { alignItems: "center", paddingVertical: 8 },
-  guestText: { fontSize: 13, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
+  footer: { gap: 14, alignItems: "stretch" },
+  footerOrnament: { alignSelf: "center", marginTop: 4 },
+  guestBtn: { alignItems: "center", paddingVertical: 4 },
+  guestText: {
+    fontSize: 13,
+    fontFamily: "PlayfairDisplay_400Regular_Italic",
+    color: "rgba(245,240,225,0.85)",
+    letterSpacing: 0.3,
+  },
 });
 
 const setup = StyleSheet.create({

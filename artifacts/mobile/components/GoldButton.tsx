@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   ViewStyle,
 } from "react-native";
 
@@ -55,6 +56,10 @@ export function GoldButton({
           end={{ x: 1, y: 0 }}
           style={[styles.gradient, small && styles.gradientSmall]}
         >
+          {/* Inner gold hairline border — couture-plate treatment from
+              the splash reference. Sits inset 4px on every side so the
+              gradient frames the border, not the other way around. */}
+          <View style={[styles.innerBorder, small && styles.innerBorderSmall]} pointerEvents="none" />
           {loading ? (
             <ActivityIndicator color="#080808" size="small" />
           ) : (
@@ -116,6 +121,22 @@ const styles = StyleSheet.create({
   gradientSmall: {
     paddingVertical: 10,
     paddingHorizontal: 20,
+  },
+  innerBorder: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
+    borderWidth: 0.75,
+    borderColor: "rgba(60,40,10,0.55)",
+    borderRadius: 2,
+  },
+  innerBorderSmall: {
+    top: 3,
+    left: 3,
+    right: 3,
+    bottom: 3,
   },
   label: {
     fontSize: 13,

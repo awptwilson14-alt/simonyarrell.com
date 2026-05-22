@@ -7,6 +7,7 @@ import {
 } from "@expo-google-fonts/inter";
 import {
   PlayfairDisplay_400Regular,
+  PlayfairDisplay_400Regular_Italic,
   PlayfairDisplay_600SemiBold,
   PlayfairDisplay_700Bold,
 } from "@expo-google-fonts/playfair-display";
@@ -93,6 +94,7 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
     PlayfairDisplay_400Regular,
+    PlayfairDisplay_400Regular_Italic,
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
     ...Feather.font,
