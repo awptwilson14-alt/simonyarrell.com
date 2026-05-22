@@ -115,20 +115,13 @@ export function ResilientImage({
   size = "sm",
 }: ResilientImageProps) {
   const [failed, setFailed] = useState(false);
-
-  // Local bundled asset short-circuit: always wins, never decays, never
-  // hits the denylist. Used for AI-generated catalog product photos.
-  if (localSource && !failed) {
-    return (
-      <Image
-        source={localSource}
-        style={style}
-        contentFit="cover"
-        transition={transition}
-        onError={() => setFailed(true)}
-      />
-    );
-  }
+  // `loaded` flips true only when expo-image actually reports a successful
+  // load (not just onLoadEnd, which fires on errors too). Until then the
+  // editorial fallback tile underneath stays visible — fixes the case where
+  // hotlink-protected retailer CDNs (eBay, modesens, etc.) return an opaque
+  // / blank response that never triggers onError, leaving the thumbnail
+  // permanently empty. See batch 133.
+  const [loaded, setLoaded] = useState(false);
 
   // Render-time visual-denylist check — see header comment. Stale AsyncStorage
   // saves (e.g. savedProducts captured before an ID joined the denylist) still
@@ -140,68 +133,89 @@ export function ResilientImage({
     return id ? isBadUnsId(id) : false;
   })();
 
-  if (!uri || failed || denylisted) {
-    const monoSize = size === "lg" ? 44 : size === "md" ? 28 : 20;
-    const iconSize = size === "lg" ? 18 : size === "md" ? 12 : 9;
-    const dotSize  = size === "lg" ? 12 : size === "md" ? 8  : 6;
-    return (
-      <View
-        style={[
-          style,
-          {
-            backgroundColor: "#15151A",
-            borderWidth: 0.5,
-            borderColor: "rgba(198,167,94,0.25)",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            overflow: "hidden",
-          },
-        ]}
+  const hasImage = !!(localSource || (uri && !denylisted));
+  const showOverlay = hasImage && !failed;
+
+  const monoSize = size === "lg" ? 44 : size === "md" ? 28 : 20;
+  const iconSize = size === "lg" ? 18 : size === "md" ? 12 : 9;
+  const dotSize  = size === "lg" ? 12 : size === "md" ? 8  : 6;
+
+  // Editorial fallback tile — always rendered as the base layer so even
+  // when the overlay image is mid-load or silently fails we never present
+  // an empty square. The image, when it does succeed, sits on top with
+  // contentFit:cover and visually replaces the tile.
+  const fallback = (
+    <View
+      style={[
+        style,
+        {
+          backgroundColor: "#15151A",
+          borderWidth: 0.5,
+          borderColor: "rgba(198,167,94,0.25)",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          overflow: "hidden",
+        },
+      ]}
+    >
+      <Text
+        style={{
+          fontFamily: "PlayfairDisplay_700Bold",
+          fontSize: monoSize,
+          color: "#C6A75E",
+          letterSpacing: 0.5,
+        }}
+        numberOfLines={1}
       >
-        <Text
+        {brandMonogram(brand)}
+      </Text>
+      <Feather
+        name={categoryIcon(category)}
+        size={iconSize}
+        color="rgba(245,245,240,0.55)"
+        style={{ marginTop: size === "lg" ? 6 : 2 }}
+      />
+      {color ? (
+        <View
           style={{
-            fontFamily: "PlayfairDisplay_700Bold",
-            fontSize: monoSize,
-            color: "#C6A75E",
-            letterSpacing: 0.5,
+            position: "absolute",
+            bottom: size === "lg" ? 8 : 4,
+            right: size === "lg" ? 8 : 4,
+            width: dotSize,
+            height: dotSize,
+            borderRadius: dotSize / 2,
+            backgroundColor: colorNameToHex(color, fallbackColor),
+            borderWidth: 0.5,
+            borderColor: "rgba(245,245,240,0.35)",
           }}
-          numberOfLines={1}
-        >
-          {brandMonogram(brand)}
-        </Text>
-        <Feather
-          name={categoryIcon(category)}
-          size={iconSize}
-          color="rgba(245,245,240,0.55)"
-          style={{ marginTop: size === "lg" ? 6 : 2 }}
         />
-        {color ? (
-          <View
-            style={{
-              position: "absolute",
-              bottom: size === "lg" ? 8 : 4,
-              right: size === "lg" ? 8 : 4,
-              width: dotSize,
-              height: dotSize,
-              borderRadius: dotSize / 2,
-              backgroundColor: colorNameToHex(color, fallbackColor),
-              borderWidth: 0.5,
-              borderColor: "rgba(245,245,240,0.35)",
-            }}
-          />
-        ) : null}
-      </View>
-    );
+      ) : null}
+    </View>
+  );
+
+  if (!showOverlay) {
+    return fallback;
   }
 
+  // Image overlay sits on top of the fallback. `opacity:0` until the load
+  // event fires successfully — so a CDN that silently returns blank keeps
+  // the editorial tile visible underneath instead of revealing an empty
+  // overlay. Once `loaded` flips true, the overlay covers the tile.
   return (
-    <Image
-      source={{ uri }}
-      style={style}
-      contentFit="cover"
-      transition={transition}
-      onError={() => setFailed(true)}
-    />
+    <View style={[style, { position: "relative", overflow: "hidden" }]}>
+      {fallback}
+      <Image
+        source={localSource ? localSource : { uri: uri! }}
+        style={[
+          { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+          { opacity: loaded ? 1 : 0 },
+        ]}
+        contentFit="cover"
+        transition={transition}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+    </View>
   );
 }
