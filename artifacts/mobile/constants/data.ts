@@ -6,6 +6,10 @@ export interface OutfitPiece {
   category: string;
   color: string;
   imageUrl?: string;
+  /** Bundled local asset (output of `require("...png")`). Preferred over
+   *  imageUrl by ResilientImage. Threaded from CatalogItem.localProductImage
+   *  for items with AI-generated product photos shipped in the bundle. */
+  localImage?: number;
   purchaseUrl?: string;
   // True when the engine picked this piece from the signature-house pool
   // for the current style/celeb (see outfitEngine.ts addPiece). Drives the
@@ -82,6 +86,10 @@ export interface Product {
   style: string;
   description: string;
   imageUrl?: string;
+  /** Bundled local asset (output of `require("...png")`). Preferred over
+   *  imageUrl by ResilientImage. Threaded from OutfitPiece.localImage when
+   *  the user saves a piece backed by an AI-generated catalog photo. */
+  localImage?: number;
   purchaseUrl: string;
   // Celeb attribution carried over from the parent Look when the user saved
   // this piece from a celeb-inspired generation. Optional — catalog PRODUCTS

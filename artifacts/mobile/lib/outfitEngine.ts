@@ -37,6 +37,10 @@ export interface CatalogItem {
   //   buttons link straight to it instead of a brand-site search.
   productImageUrl?: string;
   directProductUrl?: string;
+  /** Local bundled asset (output of `require("...png")`). Highest priority
+   *  in the piece-image fallback chain — used for items with AI-generated
+   *  product photos shipped in the app bundle (e.g. d001 Column Gown). */
+  localProductImage?: number;
 }
 
 interface GenerateParams {
@@ -1290,7 +1294,7 @@ const CATALOG: CatalogItem[] = [
   { id: "figs_b07", name: "Cairo Relaxed Scrub Pant", brand: "FIGS", price: 38, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Slate", "Royal Blue", "Charcoal"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-pants" },
 
   // ── DRESSES — Women ───────────────────────────────────────────────────────
-  { id: "d001", name: "Column Gown", brand: "Valentino Haute Couture", price: 5800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Event", "Party"], genders: ["women"], colors: ["Crimson", "Ivory", "Black"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.valentino.com" },
+  { id: "d001", name: "Column Gown", brand: "Valentino Haute Couture", price: 5800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Event", "Party"], genders: ["women"], colors: ["Crimson", "Ivory", "Black"], imageUrl: uns("1566174053879-31528523f8ae"), localProductImage: require("../assets/images/catalog/d001_column_gown.png"), purchaseUrl: "https://www.valentino.com" },
   { id: "d002", name: "Silk Bias Slip Dress", brand: "Reformation", price: 248, category: "dress", styles: ["Vacation Luxe", "Y2K Revival", "Clean Minimal"], occasions: ["Vacation", "Date Night", "Casual", "Party"], genders: ["women"], colors: ["Champagne", "Sage", "Terracotta"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.thereformation.com" },
   { id: "d003", name: "Cashmere Kaftan", brand: "Loro Piana", price: 3600, category: "dress", styles: ["Vacation Luxe", "Old Money"], occasions: ["Vacation", "Casual", "Event"], genders: ["women"], colors: ["Sand", "Sky", "Soft Pink"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.loropiana.com" },
   { id: "d004", name: "Mini Shirt Dress", brand: "Jacquemus", price: 580, category: "dress", styles: ["Clean Minimal", "Vacation Luxe"], occasions: ["Casual", "Date Night", "Vacation"], genders: ["women"], colors: ["White", "Beige", "Yellow"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.jacquemus.com" },
@@ -1392,7 +1396,7 @@ const CATALOG: CatalogItem[] = [
   { id: "s004", name: "Woven Flat Sandal", brand: "Bottega Veneta", price: 780, category: "shoes", styles: ["Vacation Luxe", "Old Money", "Clean Minimal"], occasions: ["Vacation", "Casual"], genders: ["women"], colors: ["Tan", "Black", "Ivory"], imageUrl: uns("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.bottegaveneta.com" },
   { id: "s005", name: "Leather Sneaker", brand: "Common Projects", price: 580, category: "shoes", styles: ["Clean Minimal", "Luxury Streetwear"], occasions: ["Casual", "Streetwear"], genders: ["women"], colors: ["White", "Black", "Tan"], imageUrl: uns("1542291026-7eec264c27ff"), purchaseUrl: "https://www.commonprojects.com" },
   { id: "s006", name: "Platform Mule", brand: "Versace", price: 680, category: "shoes", styles: ["Y2K Revival", "Evening"], occasions: ["Party", "Date Night", "Event"], genders: ["women"], colors: ["Gold", "Silver", "Black"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.versace.com" },
-  { id: "s007", name: "Amina Calf Satin Pump", brand: "Amina Muaddi", price: 680, category: "shoes", styles: ["Evening", "Y2K Revival"], occasions: ["Event", "Party", "Date Night"], genders: ["women"], colors: ["Crimson", "Black", "Nude"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.aminamuaddi.com" },
+  { id: "s007", name: "Amina Calf Satin Pump", brand: "Amina Muaddi", price: 680, category: "shoes", styles: ["Evening", "Y2K Revival"], occasions: ["Event", "Party", "Date Night"], genders: ["women"], colors: ["Crimson", "Black", "Nude"], imageUrl: uns("1543163521-1bf539c55dd2"), localProductImage: require("../assets/images/catalog/s007_amina_satin_pump.png"), purchaseUrl: "https://www.aminamuaddi.com" },
   { id: "s008", name: "Platform Sneaker", brand: "Stella McCartney", price: 680, category: "shoes", styles: ["Luxury Streetwear", "Y2K Revival"], occasions: ["Casual", "Streetwear"], genders: ["women"], colors: ["White", "Black"], imageUrl: uns("1542291026-7eec264c27ff"), purchaseUrl: "https://www.stellamccartney.com" },
   { id: "s009", name: "Miller Sandal", brand: "Tory Burch", price: 258, category: "shoes", styles: ["Old Money", "Vacation Luxe"], occasions: ["Vacation", "Casual"], genders: ["women"], colors: ["Gold", "Ivory", "Black"], imageUrl: uns("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.toryburch.com" },
   { id: "s010", name: "Pointed-Toe Flat", brand: "A.P.C.", price: 380, category: "shoes", styles: ["Clean Minimal", "Old Money", "Business"], occasions: ["Work", "Casual", "Date Night"], genders: ["women"], colors: ["Black", "Nude", "Tan"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.apc.fr" },
@@ -1451,7 +1455,7 @@ const CATALOG: CatalogItem[] = [
   { id: "a008", name: "Leather Belt", brand: "Hermès", price: 780, category: "accessories", styles: ["Old Money", "Business"], occasions: ["Work", "Casual", "Date Night"], genders: ["men"], colors: ["Cognac", "Black"], imageUrl: uns("1611558709798-e009c8fd7706"), purchaseUrl: "https://www.hermes.com" },
 
   // ── JEWELRY ───────────────────────────────────────────────────────────────
-  { id: "j001", name: "Diamond Drop Earrings", brand: "Bulgari", price: 1900, category: "jewelry", styles: ["Evening", "Old Money"], occasions: ["Event", "Date Night", "Party"], genders: ["women"], colors: ["Gold/Diamond"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.bulgari.com" },
+  { id: "j001", name: "Diamond Drop Earrings", brand: "Bulgari", price: 1900, category: "jewelry", styles: ["Evening", "Old Money"], occasions: ["Event", "Date Night", "Party"], genders: ["women"], colors: ["Gold/Diamond"], imageUrl: uns("1599643477877-530eb83abc8e"), localProductImage: require("../assets/images/catalog/j001_diamond_drop_earrings.png"), purchaseUrl: "https://www.bulgari.com" },
   { id: "j002", name: "Gold Bamboo Hoops", brand: "Tory Burch", price: 168, category: "jewelry", styles: ["Old Money", "Casual", "Vacation Luxe"], occasions: ["Casual", "Work", "Vacation", "Date Night"], genders: ["women"], colors: ["Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.toryburch.com" },
   { id: "j003", name: "Bold Chain Necklace", brand: "ASOS", price: 22, category: "jewelry", styles: ["Y2K Revival", "Luxury Streetwear"], occasions: ["Party", "Date Night", "Casual"], genders: ["women", "men"], colors: ["Gold", "Silver"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.asos.com" },
   { id: "j004", name: "Pearl Drop Earrings", brand: "Mikimoto", price: 2400, category: "jewelry", styles: ["Old Money", "Evening", "Business"], occasions: ["Event", "Work", "Date Night"], genders: ["women"], colors: ["White Pearl/Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.mikimoto.com" },
@@ -1824,6 +1828,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         // enriched with verified retailer data; otherwise fall back to the
         // category-matched placeholder pool and a brand-site search URL.
         imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
+        localImage: item.localProductImage,
         purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
         // Mark when this piece's brand is part of the active signature set
         // (style sig houses ∪ celeb sig brands). The shop panel renders a
@@ -1934,13 +1939,22 @@ export function generateLooks(params: GenerateParams): Look[] {
   if (looks.length < count) runPass({ useBudget: false, useOccasion: true,  useGender: true  });
   // Pass 3: still empty? Drop occasion match too (keep gender).
   if (looks.length < count) runPass({ useBudget: false, useOccasion: false, useGender: true  });
-  // Pass 4: ultimate fallback — show anything, ignoring every filter.
-  if (looks.length < count) runPass({ useBudget: false, useOccasion: false, useGender: false });
+  // NOTE (batch 97): gender is a HARD product rule — "never wrong-gender
+  // model, never a women's-only piece in a men's look". Previous tiers 4 + 5
+  // disabled the gender filter as a last-ditch "always return something"
+  // safety net, which produced the bug where a Men's request surfaced a
+  // Valentino Haute Couture Column Gown + Bulgari Diamond Drop Earrings.
+  // Gender is now enforced at EVERY tier. If gender + everything else
+  // relaxed still yields nothing (only possible for impossibly tiny pools),
+  // we'd rather return zero looks and let the empty-state UI explain than
+  // ship a wrong-gender card.
 
-  // Pass 5: still nothing? Dedup memory may be exhausted — clear it and retry.
+  // Dedup-recovery: clear the fingerprint memory and re-run pass 3 (occasion +
+  // budget relaxed, gender still ON) in case the only thing blocking us was
+  // global dedup memory. Better to show a repeat look than wrong-gender one.
   if (looks.length === 0) {
     _shownFingerprints.clear();
-    runPass({ useBudget: false, useOccasion: false, useGender: false });
+    runPass({ useBudget: false, useOccasion: false, useGender: true });
   }
 
   // HARD GUARANTEE: if even pass 5 produces nothing (tiny catalog, etc.),
@@ -1998,6 +2012,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         category: item.category,
         color: pickPaletteColor(item.colors, bPalette.colors),
         imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
+        localImage: item.localProductImage,
         purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
         signature: sigSet.has(item.brand),
       }));
@@ -2022,10 +2037,18 @@ export function generateLooks(params: GenerateParams): Look[] {
   }
 
   if (looks.length === 0 && !brandLock) {
-    const anyTop = CATALOG.find((i) => i.category === "top");
-    const anyBottom = CATALOG.find((i) => i.category === "bottom");
-    const anyShoe = CATALOG.find((i) => i.category === "shoes");
-    const anyDress = CATALOG.find((i) => i.category === "dress");
+    // Ultra-fallback: hand-assemble a deterministic minimal outfit.
+    // HARD RULE (batch 97): even this last-resort path must filter by gender.
+    // Previously used unfiltered CATALOG.find() which is the second source
+    // of the wrong-gender leak — a Men's request with an exotic style could
+    // land here and pull the first dress in the catalog (always women's).
+    const gPool = CATALOG.filter(
+      (i) => i.genders.includes(genderKey) || i.genders.includes("unisex"),
+    );
+    const anyTop = gPool.find((i) => i.category === "top");
+    const anyBottom = gPool.find((i) => i.category === "bottom");
+    const anyShoe = gPool.find((i) => i.category === "shoes");
+    const anyDress = gPool.find((i) => i.category === "dress");
     const fallbackItems: CatalogItem[] = [];
     if (anyDress && anyShoe) {
       fallbackItems.push(anyDress, anyShoe);
@@ -2052,6 +2075,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         category: item.category,
         color: pickPaletteColor(item.colors, fallbackPalette.colors),
         imageUrl: item.productImageUrl ?? getPieceImage(item.category, item.id),
+        localImage: item.localProductImage,
         purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
         // In ultra-fallback we have NO style/brand filtering, but if the
         // catalog happens to surface a signature-house piece we still want

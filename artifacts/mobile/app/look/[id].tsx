@@ -340,6 +340,7 @@ export default function LookDetailScreen() {
                 <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
                   <ResilientImage
                     uri={piece.imageUrl}
+                    localSource={piece.localImage}
                     style={styles.pieceThumbImg}
                     fallbackColor={categoryColor(piece.category)}
                     brand={piece.brand}
@@ -403,6 +404,7 @@ export default function LookDetailScreen() {
                   <View style={[styles.shopThumb, { backgroundColor: colors.secondary }]}>
                     <ResilientImage
                       uri={piece.imageUrl}
+                    localSource={piece.localImage}
                       style={styles.shopThumbImg}
                       fallbackColor={categoryColor(piece.category)}
                       brand={piece.brand}
@@ -462,7 +464,7 @@ export default function LookDetailScreen() {
                   <Pressable
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      saveProduct({ id: pid, name: piece.name, brand: piece.brand, price: piece.price, category: piece.category, style: look.style, description: "", imageUrl: piece.imageUrl ?? "", purchaseUrl: piece.purchaseUrl ?? "", inspiredBy: look.inspiredBy, lookId: look.id });
+                      saveProduct({ id: pid, name: piece.name, brand: piece.brand, price: piece.price, category: piece.category, style: look.style, description: "", imageUrl: piece.imageUrl ?? "", localImage: piece.localImage, purchaseUrl: piece.purchaseUrl ?? "", inspiredBy: look.inspiredBy, lookId: look.id });
                     }}
                     hitSlop={12}
                     style={styles.heartBtn}
@@ -514,6 +516,7 @@ export default function LookDetailScreen() {
             >
               <ResilientImage
                 uri={piece.imageUrl}
+                    localSource={piece.localImage}
                 style={styles.stripImg}
                 fallbackColor={categoryColor(piece.category)}
                 transition={200}

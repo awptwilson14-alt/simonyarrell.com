@@ -86,6 +86,10 @@ export function colorNameToHex(name?: string, fallback = "#6B7280"): string {
 
 export interface ResilientImageProps {
   uri?: string;
+  /** Bundled local asset (output of `require("...png")`). Takes precedence
+   *  over `uri` when set — used for AI-generated catalog product images
+   *  shipped in the app bundle (e.g. d001 column gown). */
+  localSource?: number;
   // Loose type: the same dimensions object is passed straight through to
   // either a View (fallback) or an expo-image element. Splitting these into
   // separate strict StyleProp generics doesn't compose cleanly across both.
@@ -101,6 +105,7 @@ export interface ResilientImageProps {
 
 export function ResilientImage({
   uri,
+  localSource,
   style,
   fallbackColor = "#6B7280",
   transition = 250,
@@ -110,6 +115,20 @@ export function ResilientImage({
   size = "sm",
 }: ResilientImageProps) {
   const [failed, setFailed] = useState(false);
+
+  // Local bundled asset short-circuit: always wins, never decays, never
+  // hits the denylist. Used for AI-generated catalog product photos.
+  if (localSource && !failed) {
+    return (
+      <Image
+        source={localSource}
+        style={style}
+        contentFit="cover"
+        transition={transition}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
 
   // Render-time visual-denylist check — see header comment. Stale AsyncStorage
   // saves (e.g. savedProducts captured before an ID joined the denylist) still

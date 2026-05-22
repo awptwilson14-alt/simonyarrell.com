@@ -379,7 +379,9 @@ export default function TryOnScreen() {
               return (
                 <View key={piece.id} style={s.piece}>
                   <View style={s.pieceThumb}>
-                    {piece.imageUrl ? (
+                    {piece.localImage ? (
+                      <Image source={piece.localImage} style={s.pieceImg} resizeMode="cover" />
+                    ) : piece.imageUrl ? (
                       <Image source={{ uri: piece.imageUrl }} style={s.pieceImg} resizeMode="cover" />
                     ) : (
                       <Feather name="tag" size={14} color="rgba(245,245,240,0.3)" />

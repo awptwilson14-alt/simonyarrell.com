@@ -85,6 +85,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <View style={[styles.imageWrapper, { backgroundColor: colors.secondary }]}>
         <ResilientImage
           uri={product.imageUrl}
+          localSource={product.localImage}
           style={styles.image}
           brand={product.brand}
           category={product.category}
