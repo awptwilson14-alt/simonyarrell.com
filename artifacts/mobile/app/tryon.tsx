@@ -20,6 +20,8 @@ import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { LOOKS, TRENDS } from "@/constants/data";
+import { SPLASH_HEROES } from "@/constants/heroImages";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 
@@ -39,6 +41,9 @@ const OPACITY_VALUES: Record<OpacityLevel, number> = { sheer: 0.35, blend: 0.65,
 
 export default function TryOnScreen() {
   const colors = useColors();
+  const { userProfile } = useApp();
+  const heroKey: "men" | "women" = userProfile.gender === "Men" ? "men" : "women";
+  const editorialBackdrop = SPLASH_HEROES[heroKey];
   // Brand + trend handoffs for the bottom panel (batch 73). The piece.brand
   // micro-label under each piece thumb routes to /shop with the brand
   // filter pre-applied — same primitive used everywhere else (closet,
@@ -133,21 +138,38 @@ export default function TryOnScreen() {
             <Feather name="x" size={16} color={colors.foreground} />
           </Pressable>
         </View>
-        <View style={s.permBody}>
-          <View style={[s.permCircle, { backgroundColor: colors.card, borderColor: colors.gold }]}>
-            <Feather name="camera" size={40} color={colors.gold} />
+        <View style={s.permBodyWrap}>
+          {/* Gendered editorial backdrop — turns the camera-permission gate
+              from a stark text screen into a moment that previews the kind
+              of look the user will see modeled on themselves once they
+              grant access. Opacity 0.32 + heavy 3-stop dark gradient keeps
+              the gold camera circle + Playfair headline as the focal point. */}
+          <Image
+            source={editorialBackdrop}
+            style={s.permBackdrop}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={["rgba(11,11,12,0.62)", "rgba(11,11,12,0.86)", "rgba(11,11,12,0.96)"]}
+            locations={[0, 0.55, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={s.permBody}>
+            <View style={[s.permCircle, { backgroundColor: colors.card, borderColor: colors.gold }]}>
+              <Feather name="camera" size={40} color={colors.gold} />
+            </View>
+            <Text style={[s.permTitle, { color: colors.foreground }]}>Camera Access Needed</Text>
+            <Text style={[s.permSub, { color: colors.mutedForeground }]}>
+              Maison Simon uses your camera to show outfits on your body in real time — nothing is recorded or stored.
+            </Text>
+            <Pressable onPress={requestPermission} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
+              <Feather name="camera" size={15} color="#0B0B0C" />
+              <Text style={s.goldBtnText}>ALLOW CAMERA</Text>
+            </Pressable>
+            <Pressable onPress={() => router.back()} style={s.ghostBtn}>
+              <Text style={[s.ghostBtnText, { color: colors.mutedForeground }]}>Not now</Text>
+            </Pressable>
           </View>
-          <Text style={[s.permTitle, { color: colors.foreground }]}>Camera Access Needed</Text>
-          <Text style={[s.permSub, { color: colors.mutedForeground }]}>
-            Maison Simon uses your camera to show outfits on your body in real time — nothing is recorded or stored.
-          </Text>
-          <Pressable onPress={requestPermission} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
-            <Feather name="camera" size={15} color="#0B0B0C" />
-            <Text style={s.goldBtnText}>ALLOW CAMERA</Text>
-          </Pressable>
-          <Pressable onPress={() => router.back()} style={s.ghostBtn}>
-            <Text style={[s.ghostBtnText, { color: colors.mutedForeground }]}>Not now</Text>
-          </Pressable>
         </View>
       </View>
     );
@@ -162,8 +184,24 @@ export default function TryOnScreen() {
         <CameraView style={StyleSheet.absoluteFill} facing={facing} />
       ) : (
         <View style={[StyleSheet.absoluteFill, s.webFallback]}>
-          <Feather name="camera" size={48} color="rgba(198,167,94,0.3)" />
-          <Text style={s.webFallbackText}>Live camera preview on device</Text>
+          {/* Web has no camera — surface a gendered editorial still so the
+              try-on surface still feels like the luxury app rather than a
+              dead grey box. Opacity 0.45 (higher than mobile permission
+              gate since this is a permanent state, not a one-tap dismissal). */}
+          <Image
+            source={editorialBackdrop}
+            style={s.webFallbackBackdrop}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={["rgba(11,11,12,0.58)", "rgba(11,11,12,0.84)", "rgba(11,11,12,0.94)"]}
+            locations={[0, 0.55, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={s.webFallbackContent}>
+            <Feather name="camera" size={48} color="rgba(198,167,94,0.5)" />
+            <Text style={s.webFallbackText}>Live camera preview on device</Text>
+          </View>
         </View>
       )}
 
@@ -437,15 +475,26 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#050506" },
 
   webFallback: {
+    backgroundColor: "#0B0B0C",
+    overflow: "hidden",
+  },
+  webFallbackBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    opacity: 0.45,
+  },
+  webFallbackContent: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 16,
-    backgroundColor: "#0B0B0C",
   },
   webFallbackText: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    color: "rgba(245,245,240,0.35)",
+    color: "rgba(245,245,240,0.55)",
+    letterSpacing: 0.5,
   },
 
   // ── Outfit overlay ─────────────────────────────────────────────────
@@ -733,6 +782,16 @@ const s = StyleSheet.create({
   goldBtnText2: { fontSize: 11, fontFamily: "Inter_700Bold", color: "#0B0B0C", letterSpacing: 1.5 },
 
   // ── Permission screen ──────────────────────────────────────────────
+  permBodyWrap: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  permBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    opacity: 0.32,
+  },
   permBody: {
     flex: 1,
     paddingHorizontal: 32,
