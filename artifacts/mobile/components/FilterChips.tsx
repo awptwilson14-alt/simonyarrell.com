@@ -29,18 +29,22 @@ export function FilterChips({ options, selected, onSelect, label }: FilterChipsP
                 Haptics.selectionAsync();
                 onSelect(option);
               }}
-              style={[
+              style={({ pressed }) => [
                 styles.chip,
                 {
                   backgroundColor: active ? colors.gold : "transparent",
                   borderColor: active ? colors.gold : colors.border,
+                  opacity: pressed ? 0.75 : 1,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.chipText,
-                  { color: active ? "#080808" : colors.mutedForeground },
+                  {
+                    color: active ? "#080808" : colors.mutedForeground,
+                    fontFamily: active ? "Inter_700Bold" : "Inter_500Medium",
+                  },
                 ]}
               >
                 {option}
@@ -78,18 +82,22 @@ export function MultiFilterChips({ options, selected, onToggle, label }: MultiFi
                 Haptics.selectionAsync();
                 onToggle(option);
               }}
-              style={[
+              style={({ pressed }) => [
                 styles.chip,
                 {
                   backgroundColor: active ? colors.gold : "transparent",
                   borderColor: active ? colors.gold : colors.border,
+                  opacity: pressed ? 0.75 : 1,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.chipText,
-                  { color: active ? "#080808" : colors.mutedForeground },
+                  {
+                    color: active ? "#080808" : colors.mutedForeground,
+                    fontFamily: active ? "Inter_700Bold" : "Inter_500Medium",
+                  },
                 ]}
               >
                 {option}
@@ -129,7 +137,6 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 12,
-    fontFamily: "Inter_500Medium",
     letterSpacing: 0.5,
   },
 });
