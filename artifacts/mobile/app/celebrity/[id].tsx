@@ -20,6 +20,7 @@ import { useColors } from "@/hooks/useColors";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { LookCard } from "@/components/LookCard";
+import { TitleRule } from "@/components/TitleRule";
 import { TRENDS } from "@/constants/data";
 
 const { width, height } = Dimensions.get("window");
@@ -115,6 +116,18 @@ export default function CelebrityDetailScreen() {
               </Text>
             </View>
             <Text style={styles.heroName}>{celeb.name}</Text>
+            {/* Gold rule (batch 127) — extends the editorial motif onto the
+                celebrity-detail hero overlay, the sibling deep route to
+                look/[id] (batch 126). heroInfo has gap:8 between children
+                (badge → name → italic title); marginTop:-3 tightens the rule
+                to a ~5px pairing under the 34px Playfair heroName, leaving
+                the natural 8px to the italic role line. width:34 matches the
+                heroName font-size (1:1, same proportion as look batch 126).
+                Note: rule stays gold (not celeb.accentColor) so it reads as
+                the consistent MAISON SIMON brand mark rather than a
+                per-celeb accent — same intent as the gold BrandWordmark in
+                the top bar above. */}
+            <TitleRule width={34} style={{ marginTop: -3 }} />
             <Text style={[styles.heroTitle, { color: celeb.accentColor }]}>
               {celeb.title}
             </Text>
