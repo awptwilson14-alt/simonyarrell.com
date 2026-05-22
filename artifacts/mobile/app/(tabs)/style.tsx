@@ -560,14 +560,35 @@ export default function StyleScreen() {
                       : reason === "coverage"
                       ? `${activeBrand} has ${(selectedGender || userProfile.gender).toLowerCase()}'s pieces in our catalog but not enough categories to assemble a full look. Try removing the brand lock to mix with other houses.`
                       : `Looks from ${activeBrand} start around $${avail.cheapestOutfitPrice.toLocaleString()}. Try raising your budget or removing the brand lock.`;
+                  // Mirror the loadingBox backdrop pattern (batch 110) so
+                  // the brand-lock empty state feels continuous with the
+                  // wait that preceded it — same occasion-themed hero
+                  // (or gendered splash fallback), same dim + gradient.
+                  const heroGender = selectedGender || userProfile.gender;
+                  const emptyHeroKey: "men" | "women" = heroGender === "Men" ? "men" : "women";
+                  const emptyBackdrop =
+                    pickOccasionHero(selectedOccasion ?? "", heroGender) ??
+                    SPLASH_HEROES[emptyHeroKey];
                   return (
                     <View style={s.brandEmptyBox}>
-                      <Feather name={iconName} size={28} color={colors.gold} />
-                      <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>{title}</Text>
-                      <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>{body}</Text>
-                      <View style={s.brandEmptyActions}>
-                        <GoldButton label="REMOVE BRAND LOCK" onPress={() => { setActiveBrand(undefined); setTimeout(() => generate(false), 50); }} variant="outline" />
-                        <GoldButton label="START OVER" onPress={reset} variant="ghost" />
+                      <Image
+                        source={emptyBackdrop}
+                        style={s.brandEmptyBackdrop}
+                        resizeMode="cover"
+                      />
+                      <LinearGradient
+                        colors={["rgba(11,11,12,0.62)", "rgba(11,11,12,0.88)", "rgba(11,11,12,0.96)"]}
+                        locations={[0, 0.55, 1]}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={s.brandEmptyContent}>
+                        <Feather name={iconName} size={28} color={colors.gold} />
+                        <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>{title}</Text>
+                        <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>{body}</Text>
+                        <View style={s.brandEmptyActions}>
+                          <GoldButton label="REMOVE BRAND LOCK" onPress={() => { setActiveBrand(undefined); setTimeout(() => generate(false), 50); }} variant="outline" />
+                          <GoldButton label="START OVER" onPress={reset} variant="ghost" />
+                        </View>
                       </View>
                     </View>
                   );
@@ -686,14 +707,22 @@ const s = StyleSheet.create({
   resultsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   resultActions: { gap: 12 },
   brandEmptyBox: {
+    borderWidth: 1,
+    borderColor: "rgba(198,167,94,0.25)",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  brandEmptyBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    opacity: 0.35,
+  },
+  brandEmptyContent: {
     alignItems: "center",
     gap: 14,
     paddingVertical: 40,
     paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: "rgba(198,167,94,0.25)",
-    borderRadius: 16,
-    backgroundColor: "rgba(198,167,94,0.04)",
   },
   brandEmptyTitle: {
     fontSize: 16,
