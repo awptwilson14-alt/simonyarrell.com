@@ -295,7 +295,18 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Feature Pills ── */}
+        {/* ── Feature Pills ──
+            Batch 116 polish: each tile previously rendered as a flat
+            border-only card with a 22px gold icon + 9px label. Elevated
+            with the same editorial language used across the rest of the
+            app: gold hairline rule across the tile top (mirrors the
+            SectionHeader flourish from batch 115), subtle gold-tinted
+            gradient bg (rgba(198,167,94,0.06) → transparent over the
+            card bg) so the gold icon doesn't sit on a flat slab, and a
+            hairline gold ring around the icon (32×32 circle, gold @ 0.4
+            alpha) — same icon-chip vocabulary from the activity-inbox
+            signature card (batch 106) and saved-heart treatment from
+            batches 113/114. */}
         <View style={styles.featurePills}>
           {[
             { icon: "zap" as const, label: "AI Style\nCurator", route: "/(tabs)/style" as const },
@@ -311,7 +322,16 @@ export default function HomeScreen() {
                 { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
               ]}
             >
-              <Feather name={item.icon} size={22} color={colors.gold} />
+              <LinearGradient
+                colors={["rgba(198,167,94,0.08)", "transparent"]}
+                locations={[0, 0.7]}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <View style={[styles.featurePillRule, { backgroundColor: colors.gold }]} />
+              <View style={[styles.featurePillIconRing, { borderColor: "rgba(198,167,94,0.4)" }]}>
+                <Feather name={item.icon} size={18} color={colors.gold} />
+              </View>
               <Text style={[styles.featurePillLabel, { color: colors.foreground }]}>
                 {item.label}
               </Text>
@@ -524,15 +544,35 @@ const styles = StyleSheet.create({
   featurePill: {
     flex: 1,
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 18,
+    gap: 10,
+    paddingVertical: 20,
+    paddingTop: 22,
     borderRadius: 4,
     borderWidth: 0.5,
+    overflow: "hidden",
+    position: "relative",
+  },
+  featurePillRule: {
+    position: "absolute",
+    top: 0,
+    alignSelf: "center",
+    width: 24,
+    height: 1,
+    opacity: 0.7,
+  },
+  featurePillIconRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(198,167,94,0.06)",
   },
   featurePillLabel: {
     fontSize: 9,
-    fontFamily: "Inter_500Medium",
-    letterSpacing: 0.3,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.5,
     textAlign: "center",
     lineHeight: 14,
   },
