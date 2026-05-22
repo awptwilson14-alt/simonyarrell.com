@@ -70,6 +70,16 @@ interface GenerateParams {
   // Vuitton in `top`), that slot is simply skipped — the look may be sparse
   // but it will be 100% on-brand.
   brandLock?: string;
+  // Season the user is dressing for ("Spring" | "Summer" | "Autumn" |
+  // "Winter" | "All Season" | undefined). When set to a specific season we
+  // soft-narrow every clothing pool at construction to items whose inferred
+  // seasons include the selected one — so a Summer pick won't surface wool
+  // coats, a Winter pick won't surface linen tanks, etc. Soft means: if
+  // the narrowing would leave too few items in a category (< 3), we drop
+  // the season filter for that category so the look still assembles. Pure
+  // accessories (jewelry, bag) are not season-filtered — they read year-
+  // round. "All Season" and undefined disable the filter entirely.
+  season?: string;
 }
 
 // ─── Session dedup tracker ───────────────────────────────────────────────────
@@ -1700,8 +1710,43 @@ export function getBrandAvailability(
   };
 }
 
+// ─── Season inference ────────────────────────────────────────────────────────
+// Derive the seasons a catalog item naturally suits from its name. We don't
+// store an explicit seasons field on each item (1700+ items × hand-tagging
+// is brittle), so we infer from fabric / silhouette keywords. An item with
+// no signal defaults to "all seasons" — only items with STRONG seasonal
+// vocabulary are constrained. Pure accessory / bag / jewelry items are not
+// season-filtered at all (handled at the pool callsite).
+const SUMMER_HINTS = /(linen|seersucker|cotton voile|tank|sleeveless|short[s]?(?!\s*sleeve)|sundress|swim|sandal|slide|espadrille|raffia|eyelet|terry|camisole|bandeau|crochet|mini|halter|mesh|jersey tee)/i;
+const WINTER_HINTS = /(wool|cashmere|merino|knit|sweater|turtleneck|parka|puffer|down|fur|shearling|sherpa|fleece|thermal|scarf|glove|beanie|tweed|corduroy|flannel|cable knit|chunky|teddy|quilted)/i;
+// Light layers + transitional fabrics read primarily Spring + Fall.
+const TRANSITIONAL_HINTS = /(trench|cardigan|denim jacket|light blazer|button-down|oxford shirt|raincoat|windbreaker|chambray|ankle boot|loafer)/i;
+type SeasonTag = "Spring" | "Summer" | "Autumn" | "Winter";
+const EVERY_SEASON: SeasonTag[] = ["Spring", "Summer", "Autumn", "Winter"];
+function inferItemSeasons(item: CatalogItem): SeasonTag[] {
+  // Accessories / bags / jewelry are season-neutral by design.
+  if (item.category === "accessories" || item.category === "bag" || item.category === "jewelry") {
+    return EVERY_SEASON;
+  }
+  const n = item.name;
+  const isSummer = SUMMER_HINTS.test(n);
+  const isWinter = WINTER_HINTS.test(n);
+  const isTransitional = TRANSITIONAL_HINTS.test(n);
+  // Mixed signal (e.g. "wool tank") → trust both signals and allow all
+  // four seasons so the engine can use the item flexibly.
+  if (isSummer && isWinter) return EVERY_SEASON;
+  if (isSummer) return ["Spring", "Summer"];
+  if (isWinter) return ["Autumn", "Winter"];
+  if (isTransitional) return ["Spring", "Autumn"];
+  return EVERY_SEASON;
+}
+function matchesSeason(item: CatalogItem, season: string): boolean {
+  if (!season || season === "All Season") return true;
+  return inferItemSeasons(item).includes(season as SeasonTag);
+}
+
 export function generateLooks(params: GenerateParams): Look[] {
-  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName } = params;
+  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName, season } = params;
   const brandLock = params.brandLock ? (BRAND_LOCK_ALIASES[params.brandLock] ?? params.brandLock) : undefined;
   const { max: budgetMax } = parseBudget(budget);
   const genderKey = gender.toLowerCase() as "women" | "men" | "unisex";
@@ -1834,7 +1879,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     }
 
     function pool(cat: CatalogItem["category"]): CatalogItem[] {
-      return CATALOG.filter(
+      const base = CATALOG.filter(
         (item) =>
           item.category === cat &&
           matchesGenderLocal(item) &&
@@ -1846,6 +1891,16 @@ export function generateLooks(params: GenerateParams): Look[] {
           // occasion, or gender are loosened.
           (!brandLock || item.brand === brandLock)
       );
+      // Season filter (batch 132): soft-narrow to items whose inferred
+      // seasons include the user's chosen season. If the narrowing would
+      // starve a category (< 3 items survive) we DROP the season filter
+      // for that category — better to ship a slightly off-season piece
+      // than break a look. "All Season" / undefined skip the filter.
+      if (season && season !== "All Season") {
+        const seasonal = base.filter((item) => matchesSeason(item, season));
+        if (seasonal.length >= 3) return seasonal;
+      }
+      return base;
     }
 
     const tops = pool("top");
@@ -2346,7 +2401,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       name: lookName,
       description: lookDesc,
       occasion,
-      season: pickSeasonForStyle(dominantStyle),
+      season: (season && season !== "All Season") ? season : pickSeasonForStyle(dominantStyle),
       estimatedPrice: total,
       image: getLookImage(dominantStyle, fp, genderKey, lookName),
       pieces,
@@ -2405,12 +2460,22 @@ export function generateLooks(params: GenerateParams): Look[] {
     // (b) the cheapest possible outfit exceeds the budget. Both surface
     // their own UI message via getBrandAvailability(); silently pushing
     // an over-budget look would defeat the budget filter the user picked.
-    const brandPool = CATALOG.filter(
+    const brandPoolBase = CATALOG.filter(
       (i) =>
         i.brand === brandLock &&
         (i.genders.includes(genderKey) || i.genders.includes("unisex")) &&
         (budgetMax === 0 || i.price <= budgetMax),
     );
+    // Season-respect (batch 132): try the seasonally-correct subset first;
+    // only fall back to the unfiltered brand pool if season narrowing would
+    // starve the brand-lock outfit (no top/bottom/dress pair survives).
+    const brandPoolSeasonal = (season && season !== "All Season")
+      ? brandPoolBase.filter((i) => matchesSeason(i, season))
+      : brandPoolBase;
+    const brandPoolHasOutfit =
+      (brandPoolSeasonal.some((i) => i.category === "dress") && brandPoolSeasonal.some((i) => i.category === "shoes")) ||
+      (brandPoolSeasonal.some((i) => i.category === "top") && brandPoolSeasonal.some((i) => i.category === "bottom"));
+    const brandPool = brandPoolHasOutfit ? brandPoolSeasonal : brandPoolBase;
     const bTop = brandPool.find((i) => i.category === "top");
     const bBottom = brandPool.find((i) => i.category === "bottom");
     // Formal Remix safety-net: brand-lock fallback must respect the sneaker
@@ -2453,7 +2518,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         description: generateDescription(occasion, bStyle),
         occasion,
         inspiredBy: celebName,
-        season: pickSeasonForStyle(bStyle),
+        season: (season && season !== "All Season") ? season : pickSeasonForStyle(bStyle),
         estimatedPrice: bTotal,
         image: getLookImage(bStyle, bFp, genderKey, bName),
         pieces: bPieces,
@@ -2470,9 +2535,19 @@ export function generateLooks(params: GenerateParams): Look[] {
     // Previously used unfiltered CATALOG.find() which is the second source
     // of the wrong-gender leak — a Men's request with an exotic style could
     // land here and pull the first dress in the catalog (always women's).
-    const gPool = CATALOG.filter(
+    const gPoolBase = CATALOG.filter(
       (i) => i.genders.includes(genderKey) || i.genders.includes("unisex"),
     );
+    // Season-respect in ultra-fallback (batch 132): same starve-guard as
+    // brand-lock fallback — prefer the seasonal subset, drop to unfiltered
+    // only if season narrowing would leave us without a complete outfit.
+    const gPoolSeasonal = (season && season !== "All Season")
+      ? gPoolBase.filter((i) => matchesSeason(i, season))
+      : gPoolBase;
+    const gPoolHasOutfit =
+      (gPoolSeasonal.some((i) => i.category === "dress") && gPoolSeasonal.some((i) => i.category === "shoes")) ||
+      (gPoolSeasonal.some((i) => i.category === "top") && gPoolSeasonal.some((i) => i.category === "bottom"));
+    const gPool = gPoolHasOutfit ? gPoolSeasonal : gPoolBase;
     const anyTop = gPool.find((i) => i.category === "top");
     const anyBottom = gPool.find((i) => i.category === "bottom");
     const anyShoe = gPool.find((i) => i.category === "shoes");
@@ -2531,7 +2606,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         // Honor the style's season bias instead of hardcoding "All Season" —
         // keeps the season tag aligned with the locked style identity (e.g.
         // Vacation Luxe → Spring/Summer, Evening → Autumn/Winter).
-        season: pickSeasonForStyle(fallbackStyle),
+        season: (season && season !== "All Season") ? season : pickSeasonForStyle(fallbackStyle),
         estimatedPrice: total,
         image: getLookImage(fallbackStyle, fp, genderKey, fallbackName),
         pieces,

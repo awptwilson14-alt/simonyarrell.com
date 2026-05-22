@@ -24,6 +24,11 @@ export interface UserProfile {
   size: string;
   budget: string;
   favoriteStyles: string[];
+  // Season the user is currently dressing for. Drives a soft season filter
+  // at outfit-pool construction so a Summer profile won't surface wool coats
+  // and a Winter profile won't surface linen tanks. "All Season" disables
+  // the filter. Defaults to "All Season" so legacy profiles keep working.
+  season: string;
   onboardingComplete: boolean;
 }
 
@@ -55,6 +60,7 @@ const DEFAULT_PROFILE: UserProfile = {
   size: "M",
   budget: "$500–$1500",
   favoriteStyles: [],
+  season: "All Season",
   onboardingComplete: false,
 };
 
@@ -85,7 +91,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (products) setSavedProducts(JSON.parse(products));
       if (closet) setClosetItems(JSON.parse(closet));
       if (celebs) setSavedCelebrityIds(JSON.parse(celebs));
-      if (profile) setUserProfile(JSON.parse(profile));
+      // Merge persisted profile over defaults so legacy profiles (saved
+      // before a new field like `season` was added) inherit the default
+      // for any missing key instead of becoming undefined.
+      if (profile) setUserProfile({ ...DEFAULT_PROFILE, ...JSON.parse(profile) });
     } catch {}
   };
 

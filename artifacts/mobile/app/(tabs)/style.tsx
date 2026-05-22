@@ -180,6 +180,10 @@ export default function StyleScreen() {
           celebSignatureBrands: activeCeleb?.signatureBrands,
           celebName: activeCeleb?.name,
           brandLock: activeBrand,
+          // Season comes from onboarding (batch 132). Drives a soft season
+          // filter at pool construction so every generated look uses
+          // fabrics + silhouettes that read for the user's chosen season.
+          season: userProfile.season,
         })
       ),
       new Promise((r) => setTimeout(r, 1800)),

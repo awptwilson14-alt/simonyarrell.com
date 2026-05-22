@@ -18,7 +18,7 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { GoldButton } from "@/components/GoldButton";
 import { TitleRule } from "@/components/TitleRule";
 import { MultiFilterChips } from "@/components/FilterChips";
-import { BUDGETS, GENDERS, STYLE_CATEGORIES } from "@/constants/data";
+import { BUDGETS, GENDERS, SEASONS, STYLE_CATEGORIES } from "@/constants/data";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -30,7 +30,10 @@ import { useColors } from "@/hooks/useColors";
 // remains on the home tab (and is now wrapped in an error boundary there).
 
 const { width, height } = Dimensions.get("window");
-const STEPS = 5;
+// 6 steps: 0 splash + 5 setup (profile, style universe, season, size, budget).
+// Season was inserted after style universe (batch 132) so the engine can
+// apply a season filter from the moment the user lands on the home tab.
+const STEPS = 6;
 const SIZES = ["S", "M", "L", "XL", "XXX", "XXXX"];
 
 export default function OnboardingScreen() {
@@ -45,6 +48,7 @@ export default function OnboardingScreen() {
   const [size, setSize] = useState("M");
   const [budget, setBudget] = useState("$500–$1500");
   const [styles_, setStyles] = useState<string[]>([]);
+  const [season, setSeason] = useState("All Season");
 
   const toggleStyle = (s: string) => {
     setStyles((prev) =>
@@ -56,13 +60,13 @@ export default function OnboardingScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step < STEPS - 1) setStep(step + 1);
     else {
-      completeOnboarding({ name: name || "Guest", gender, size, budget, favoriteStyles: styles_ });
+      completeOnboarding({ name: name || "Guest", gender, size, budget, favoriteStyles: styles_, season });
       router.replace("/(tabs)");
     }
   };
 
   const skip = () => {
-    completeOnboarding({ name: "Guest", gender, size, budget, favoriteStyles: styles_ });
+    completeOnboarding({ name: "Guest", gender, size, budget, favoriteStyles: styles_, season });
     router.replace("/(tabs)");
   };
 
@@ -142,6 +146,37 @@ export default function OnboardingScreen() {
       content: (
         <View style={setup.formSection}>
           <MultiFilterChips options={STYLE_CATEGORIES} selected={styles_} onToggle={toggleStyle} />
+        </View>
+      ),
+    },
+    {
+      // Season step (batch 132) — drives the engine's season filter so every
+      // generated look uses fabrics + silhouettes that read for the chosen
+      // season. "All Season" disables the filter for users who don't want
+      // weather constraints (e.g. travel, capsule planning).
+      title: "Which season\nare you dressing for?",
+      subtitle: "Every look will match the season you pick",
+      content: (
+        <View style={setup.formSection}>
+          <View style={setup.seasonGrid}>
+            {SEASONS.map((s) => (
+              <Pressable
+                key={s}
+                onPress={() => { Haptics.selectionAsync(); setSeason(s); }}
+                style={[
+                  setup.seasonBtn,
+                  {
+                    backgroundColor: season === s ? colors.gold : "transparent",
+                    borderColor: season === s ? colors.gold : colors.border,
+                  },
+                ]}
+              >
+                <Text style={[setup.seasonText, { color: season === s ? "#0B0B0C" : colors.mutedForeground }]}>
+                  {s}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       ),
     },
@@ -284,6 +319,9 @@ const setup = StyleSheet.create({
   sizeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   sizeBtn: { width: "30%", borderWidth: 0.5, borderRadius: 4, paddingVertical: 18, alignItems: "center" },
   sizeBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", letterSpacing: 1 },
+  seasonGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  seasonBtn: { width: "47%", borderWidth: 0.5, borderRadius: 4, paddingVertical: 18, alignItems: "center" },
+  seasonText: { fontSize: 14, fontFamily: "Inter_600SemiBold", letterSpacing: 1 },
   budgetRow: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderWidth: 0.5, borderRadius: 4 },
   radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   radioInner: { width: 10, height: 10, borderRadius: 5 },
