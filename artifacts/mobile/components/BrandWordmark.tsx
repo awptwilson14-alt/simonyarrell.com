@@ -7,8 +7,12 @@ import { useColors } from "@/hooks/useColors";
 // transparent background. Replaces the previous flat upright "SY" mark and
 // is rendered for both the stacked hero variant AND the compact inline
 // header variant so the new format reads consistently across the app.
-const msMonogram = require("../assets/images/ms_monogram.png");
-const MONO_ASPECT = 572 / 636; // ~0.899 — native px ratio of the transparent PNG
+// Ornate overlapping "SY" monogram (Simon Yarrell). Decorative Victorian /
+// Baroque serif with filigree scrolls — the S sits in front of the Y so the
+// initials read as an intertwined maison crest. Transparent PNG, square
+// 1024×1024 native, sized via height prop so it scales with the lockup.
+const msMonogram = require("../assets/images/sy_monogram.png");
+const MONO_ASPECT = 1; // square — native 1024×1024 transparent PNG
 
 interface Props {
   centered?: boolean;

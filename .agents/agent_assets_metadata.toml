@@ -1860,3 +1860,9 @@ id = "e4kp0euEw1g4OKsLY7Rx2"
 uri = "file://artifacts/mobile/assets/images/catalog/pr40.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "PY7CqLgIAd6ZSuEN-FyZP"
+uri = "file://artifacts/mobile/assets/images/sy_monogram.png"
+type = "image"
+title = "SY ornate gold monogram"
