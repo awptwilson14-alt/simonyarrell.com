@@ -27,6 +27,7 @@ import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands }
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import type { Look } from "@/constants/data";
 
 const { width, height } = Dimensions.get("window");
@@ -327,6 +328,10 @@ export default function LookDetailScreen() {
         {panel === "details" && (
           <View style={[styles.section, { borderBottomColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>The Look</Text>
+            {/* Gold rule (batch 123) — extends the motif (batches 115-122)
+                into the look-detail section headers. width:24 matches the
+                20px Playfair sectionTitle proportion. */}
+            <TitleRule width={24} style={styles.sectionRule} />
             <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
               {look.pieces.length} pieces · Est. ${look.estimatedPrice.toLocaleString()}
             </Text>
@@ -383,6 +388,8 @@ export default function LookDetailScreen() {
         {panel === "shop" && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Shop the Look</Text>
+            {/* Gold rule (batch 123). */}
+            <TitleRule width={24} style={styles.sectionRule} />
             <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
               Tap any item to purchase directly from the brand
             </Text>
@@ -560,13 +567,19 @@ export default function LookDetailScreen() {
                 : null;
             return (
               <View style={styles.relatedHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  {relatedDrivenByCeleb && look.inspiredBy
-                    ? `More from ${look.inspiredBy}`
-                    : relTrendName
-                    ? `More ${relTrendName}`
-                    : "You Might Also Love"}
-                </Text>
+                {/* titleBlock wraps Text + rule so the right-side CTA
+                    (channel pill) anchors to the column as one unit (batch
+                    123). */}
+                <View style={styles.relatedTitleBlock}>
+                  <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                    {relatedDrivenByCeleb && look.inspiredBy
+                      ? `More from ${look.inspiredBy}`
+                      : relTrendName
+                      ? `More ${relTrendName}`
+                      : "You Might Also Love"}
+                  </Text>
+                  <TitleRule width={24} style={styles.sectionRule} />
+                </View>
                 {relCeleb ? (
                   <Pressable
                     onPress={() => {
@@ -700,6 +713,8 @@ const styles = StyleSheet.create({
   panelTabText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   section: { padding: 24, paddingBottom: 8, borderBottomWidth: 0.5 },
   sectionTitle: { fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", marginBottom: 4 },
+  sectionRule: { marginBottom: 8 },
+  relatedTitleBlock: { flexShrink: 1 },
   sectionMeta: { fontSize: 12, fontFamily: "Inter_400Regular", letterSpacing: 0.3, marginBottom: 20 },
   pieceRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderBottomWidth: 0.5 },
   pieceThumb: { width: 60, height: 60, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center", flexShrink: 0 },
