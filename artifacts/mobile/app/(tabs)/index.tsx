@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { LookCard } from "@/components/LookCard";
 import { TrendCard } from "@/components/TrendCard";
 import { SectionHeader } from "@/components/SectionHeader";
+import { TitleRule } from "@/components/TitleRule";
 import { GoldButton } from "@/components/GoldButton";
 import { HeroAudio } from "@/components/HeroAudio";
 import { LOOKS, TRENDS, isLookInTrend, type Trend } from "@/constants/data";
@@ -427,6 +428,21 @@ export default function HomeScreen() {
           drifts from BRANDS), it stays a flat Text in mutedForeground —
           never a broken nav.
         */}
+        {/* Editorial eyebrow above the strip (batch 121). The wordmark row
+            previously sat in the footer unlabeled — fine as decoration but
+            reading as orphan chrome next to the gold-ruled section headers
+            above it. Centering an eyebrow + TitleRule turns it into a
+            deliberate "PARTNER MAISONS" masthead and extends the gold-rule
+            motif (batches 115-120) into the home footer. Centered (not
+            left-aligned like SectionHeader) because the brand strip itself
+            is center-justified, so the eyebrow needs to share that axis. */}
+        <View style={styles.brandStripEyebrowBlock}>
+          <Text style={[styles.brandStripEyebrow, { color: colors.mutedForeground }]}>
+            PARTNER MAISONS
+          </Text>
+          <TitleRule width={28} />
+        </View>
+
         <View style={[styles.brandStrip, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
           {["GUCCI", "PRADA", "AMIRI", "BALENCIAGA", "SAINT LAURENT", "OFF-WHITE"].map((brand) => {
             const shoppable = brandCatalog.has(brand.toLowerCase());
@@ -576,12 +592,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 14,
   },
+  brandStripEyebrowBlock: {
+    alignItems: "center",
+    gap: 8,
+    marginTop: 24,
+    marginBottom: 4,
+  },
+  brandStripEyebrow: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 2.5,
+  },
   brandStrip: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 20,
-    paddingVertical: 28,
+    paddingVertical: 24,
     paddingHorizontal: 20,
     borderTopWidth: 0.5,
     borderBottomWidth: 0.5,
