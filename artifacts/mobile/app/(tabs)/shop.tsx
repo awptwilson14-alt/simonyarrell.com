@@ -23,6 +23,7 @@ import {
 } from "@/constants/brands";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import { useApp } from "@/context/AppContext";
 import { findCelebByName } from "@/lib/celebLookup";
 
@@ -159,9 +160,8 @@ export default function ShopScreen() {
         <View style={styles.headerRow}>
           <View style={styles.titleBlock}>
             <Text style={[styles.screenTitle, { color: colors.foreground }]}>Shop</Text>
-            {/* Gold hairline rule unifying the screen-title flourish across
-                home (batch 116), explore (117), and closet (117). */}
-            <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
+            {/* Shared TitleRule atom (batch 119). */}
+            <TitleRule />
           </View>
           <Text style={[styles.brandCount, { color: colors.mutedForeground }]}>
             {BRANDS.length} BRANDS
@@ -513,7 +513,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   titleBlock: { gap: 6 },
-  titleRule: { width: 32, height: 1, opacity: 0.7 },
   brandCount: {
     fontSize: 10,
     fontFamily: "Inter_500Medium",

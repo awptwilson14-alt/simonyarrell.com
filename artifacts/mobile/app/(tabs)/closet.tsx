@@ -22,6 +22,7 @@ import { useColors } from "@/hooks/useColors";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { useRouter } from "expo-router";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Bags", "Accessories", "Jewelry"];
 const COLORS_LIST = ["Black", "White", "Navy", "Camel", "Beige", "Ivory", "Grey", "Brown", "Gold", "Silver", "Red", "Green", "Blue"];
@@ -166,10 +167,8 @@ export default function ClosetScreen() {
         <View style={styles.headerContent}>
           <View style={styles.titleBlock}>
             <Text style={[styles.screenTitle, { color: colors.foreground }]}>My Closet</Text>
-            {/* Gold hairline rule under the screen title — same flourish
-                as SectionHeader (batch 115), explore tab (batch 117), and
-                home feature pills (batch 116). */}
-            <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
+            {/* Shared TitleRule atom (batch 119). */}
+            <TitleRule />
           </View>
           <Pressable
             onPress={() => {
@@ -436,7 +435,6 @@ const styles = StyleSheet.create({
   headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 16 },
   titleBlock: { gap: 6 },
   screenTitle: { fontSize: 28, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
-  titleRule: { width: 32, height: 1, opacity: 0.7 },
   addBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 0.5, alignItems: "center", justifyContent: "center" },
   count: { fontSize: 11, fontFamily: "Inter_500Medium", letterSpacing: 2, marginTop: 4 },
   content: { paddingHorizontal: 20, gap: 20 },

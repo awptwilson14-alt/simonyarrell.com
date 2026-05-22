@@ -20,6 +20,7 @@ import { TRENDS, isLookInTrend } from "@/constants/data";
 import { CELEBS } from "@/constants/celebrities";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import { pickStyleHero, filterCelebsByGender } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 
@@ -90,12 +91,9 @@ export default function ExploreScreen() {
         <View style={styles.headerContent}>
           <BrandWordmark style={{ marginBottom: 6 }} />
           <Text style={[styles.screenTitle, { color: colors.foreground }]}>Explore</Text>
-          {/* Editorial gold hairline rule under the screen title — same
-              flourish as SectionHeader (batch 115) and the home feature-pill
-              top rule (batch 116). Unifies the gold-rule motif across every
-              top-level surface. 32px wide, hairline thin, sits just above the
-              tab bar so the title reads as a deliberate masthead. */}
-          <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
+          {/* Shared TitleRule atom (batch 119). marginTop:-8 absorbs the
+              title's paddingTop so the rule hugs the title baseline. */}
+          <TitleRule style={{ marginTop: -8 }} />
           <View style={[styles.tabBar, { borderColor: colors.border }]}>
             {(["trends", "celebrities"] as Tab[]).map((tab) => {
               const active = activeTab === tab;
@@ -384,12 +382,6 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: -0.3,
     paddingTop: 16,
-  },
-  titleRule: {
-    width: 32,
-    height: 1,
-    opacity: 0.7,
-    marginTop: -8,
   },
   tabBar: {
     flexDirection: "row",

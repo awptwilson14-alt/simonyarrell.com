@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
 
 const CONTACT_EMAIL = "mail@maisonsimon.app";
@@ -162,8 +163,8 @@ export default function PartnersScreen() {
           <Text style={[s.heroTitle, { color: colors.foreground }]}>
             Partner with{"\n"}Maison Simon.
           </Text>
-          {/* Gold hairline rule — unifies the editorial title motif. */}
-          <View style={[s.heroRule, { backgroundColor: colors.gold }]} />
+          {/* Shared TitleRule atom (batch 119). */}
+          <TitleRule width={40} />
           <Text style={[s.heroSub, { color: colors.mutedForeground }]}>
             Join our affiliate network and put your brand in front of thousands of luxury fashion enthusiasts — precisely matched by style, occasion, and budget.
           </Text>
@@ -325,7 +326,6 @@ const s = StyleSheet.create({
   heroBadge: { flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 0.5, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignSelf: "flex-start" },
   heroBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 2 },
   heroTitle: { fontSize: 40, fontFamily: "PlayfairDisplay_700Bold", lineHeight: 48, letterSpacing: -0.5 },
-  heroRule: { width: 40, height: 1, opacity: 0.7 },
   heroSub: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 24 },
 
   divider: { height: 0.5, marginVertical: 4 },

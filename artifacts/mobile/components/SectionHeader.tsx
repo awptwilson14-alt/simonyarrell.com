@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
 
 interface SectionHeaderProps {
@@ -16,12 +17,10 @@ export function SectionHeader({ title, subtitle, onSeeAll }: SectionHeaderProps)
       <View style={styles.left}>
         <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
         {/* Editorial gold hairline rule under the title — classic luxury
-            magazine section-header convention (Vogue, Bazaar, Hommes). 28px
-            wide, hairline thin, gold-tinted, sits between title and subtitle
-            so it reads as a deliberate flourish rather than divider noise.
-            Single atom upgrade flows into every section header across home,
-            explore, closet, shop, profile — ~20+ surfaces. */}
-        <View style={[styles.rule, { backgroundColor: colors.gold }]} />
+            magazine section-header convention (Vogue, Bazaar, Hommes).
+            Shared TitleRule atom (batch 119) — same flourish used across
+            every screen title and section header in the app. */}
+        <TitleRule width={28} />
         {subtitle && (
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{subtitle}</Text>
         )}
@@ -56,11 +55,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.3,
-  },
-  rule: {
-    width: 28,
-    height: 1,
-    opacity: 0.7,
   },
   subtitle: {
     fontSize: 12,

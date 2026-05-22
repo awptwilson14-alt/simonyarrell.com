@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { CELEBS } from "@/constants/celebrities";
 import { filterCelebsByGender } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
+import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 
@@ -84,8 +85,8 @@ export default function CelebrityPickerScreen() {
             <Text style={[styles.screenTitle, { color: colors.foreground }]}>
               Celebrity Inspired
             </Text>
-            {/* Gold hairline rule — unifies screen-title motif (batches 115-117). */}
-            <View style={[styles.titleRule, { backgroundColor: colors.gold }]} />
+            {/* Shared TitleRule atom (batch 119). */}
+            <TitleRule width={28} style={{ marginTop: 6, marginBottom: 2 }} />
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
               Choose your style icon
             </Text>
@@ -256,7 +257,6 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: -0.2,
   },
-  titleRule: { width: 28, height: 1, opacity: 0.7, marginTop: 6, marginBottom: 2 },
   subtitle: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
