@@ -10,6 +10,7 @@ import type { Look, OutfitPiece } from "@/constants/data";
 import { TRENDS } from "@/constants/data";
 import { isBadUnsId } from "@/constants/badImageIds";
 import { CATALOG_EXTRAS } from "./catalogExtras";
+import { LOCAL_PRODUCT_ASSETS } from "../assets/images/catalog/_index";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1294,7 +1295,7 @@ const CATALOG: CatalogItem[] = [
   { id: "figs_b07", name: "Cairo Relaxed Scrub Pant", brand: "FIGS", price: 38, category: "bottom", styles: ["Business", "Clean Minimal"], occasions: ["Work"], genders: ["men"], colors: ["Navy", "Black", "Slate", "Royal Blue", "Charcoal"], imageUrl: uns("1584820688313-b22ef25a6b29"), purchaseUrl: "https://www.wearfigs.com/collections/mens-scrub-pants" },
 
   // ── DRESSES — Women ───────────────────────────────────────────────────────
-  { id: "d001", name: "Column Gown", brand: "Valentino Haute Couture", price: 5800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Event", "Party"], genders: ["women"], colors: ["Crimson", "Ivory", "Black"], imageUrl: uns("1566174053879-31528523f8ae"), localProductImage: require("../assets/images/catalog/d001_column_gown.png"), purchaseUrl: "https://www.valentino.com" },
+  { id: "d001", name: "Column Gown", brand: "Valentino Haute Couture", price: 5800, category: "dress", styles: ["Evening", "Old Money"], occasions: ["Event", "Party"], genders: ["women"], colors: ["Crimson", "Ivory", "Black"], imageUrl: uns("1566174053879-31528523f8ae"), purchaseUrl: "https://www.valentino.com" },
   { id: "d002", name: "Silk Bias Slip Dress", brand: "Reformation", price: 248, category: "dress", styles: ["Vacation Luxe", "Y2K Revival", "Clean Minimal"], occasions: ["Vacation", "Date Night", "Casual", "Party"], genders: ["women"], colors: ["Champagne", "Sage", "Terracotta"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.thereformation.com" },
   { id: "d003", name: "Cashmere Kaftan", brand: "Loro Piana", price: 3600, category: "dress", styles: ["Vacation Luxe", "Old Money"], occasions: ["Vacation", "Casual", "Event"], genders: ["women"], colors: ["Sand", "Sky", "Soft Pink"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.loropiana.com" },
   { id: "d004", name: "Mini Shirt Dress", brand: "Jacquemus", price: 580, category: "dress", styles: ["Clean Minimal", "Vacation Luxe"], occasions: ["Casual", "Date Night", "Vacation"], genders: ["women"], colors: ["White", "Beige", "Yellow"], imageUrl: uns("1515886657613-9f3515b0c78f"), purchaseUrl: "https://www.jacquemus.com" },
@@ -1396,7 +1397,7 @@ const CATALOG: CatalogItem[] = [
   { id: "s004", name: "Woven Flat Sandal", brand: "Bottega Veneta", price: 780, category: "shoes", styles: ["Vacation Luxe", "Old Money", "Clean Minimal"], occasions: ["Vacation", "Casual"], genders: ["women"], colors: ["Tan", "Black", "Ivory"], imageUrl: uns("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.bottegaveneta.com" },
   { id: "s005", name: "Leather Sneaker", brand: "Common Projects", price: 580, category: "shoes", styles: ["Clean Minimal", "Luxury Streetwear"], occasions: ["Casual", "Streetwear"], genders: ["women"], colors: ["White", "Black", "Tan"], imageUrl: uns("1542291026-7eec264c27ff"), purchaseUrl: "https://www.commonprojects.com" },
   { id: "s006", name: "Platform Mule", brand: "Versace", price: 680, category: "shoes", styles: ["Y2K Revival", "Evening"], occasions: ["Party", "Date Night", "Event"], genders: ["women"], colors: ["Gold", "Silver", "Black"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.versace.com" },
-  { id: "s007", name: "Amina Calf Satin Pump", brand: "Amina Muaddi", price: 680, category: "shoes", styles: ["Evening", "Y2K Revival"], occasions: ["Event", "Party", "Date Night"], genders: ["women"], colors: ["Crimson", "Black", "Nude"], imageUrl: uns("1543163521-1bf539c55dd2"), localProductImage: require("../assets/images/catalog/s007_amina_satin_pump.png"), purchaseUrl: "https://www.aminamuaddi.com" },
+  { id: "s007", name: "Amina Calf Satin Pump", brand: "Amina Muaddi", price: 680, category: "shoes", styles: ["Evening", "Y2K Revival"], occasions: ["Event", "Party", "Date Night"], genders: ["women"], colors: ["Crimson", "Black", "Nude"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.aminamuaddi.com" },
   { id: "s008", name: "Platform Sneaker", brand: "Stella McCartney", price: 680, category: "shoes", styles: ["Luxury Streetwear", "Y2K Revival"], occasions: ["Casual", "Streetwear"], genders: ["women"], colors: ["White", "Black"], imageUrl: uns("1542291026-7eec264c27ff"), purchaseUrl: "https://www.stellamccartney.com" },
   { id: "s009", name: "Miller Sandal", brand: "Tory Burch", price: 258, category: "shoes", styles: ["Old Money", "Vacation Luxe"], occasions: ["Vacation", "Casual"], genders: ["women"], colors: ["Gold", "Ivory", "Black"], imageUrl: uns("1515347619252-60a4bf4fff4f"), purchaseUrl: "https://www.toryburch.com" },
   { id: "s010", name: "Pointed-Toe Flat", brand: "A.P.C.", price: 380, category: "shoes", styles: ["Clean Minimal", "Old Money", "Business"], occasions: ["Work", "Casual", "Date Night"], genders: ["women"], colors: ["Black", "Nude", "Tan"], imageUrl: uns("1543163521-1bf539c55dd2"), purchaseUrl: "https://www.apc.fr" },
@@ -1455,7 +1456,7 @@ const CATALOG: CatalogItem[] = [
   { id: "a008", name: "Leather Belt", brand: "Hermès", price: 780, category: "accessories", styles: ["Old Money", "Business"], occasions: ["Work", "Casual", "Date Night"], genders: ["men"], colors: ["Cognac", "Black"], imageUrl: uns("1611558709798-e009c8fd7706"), purchaseUrl: "https://www.hermes.com" },
 
   // ── JEWELRY ───────────────────────────────────────────────────────────────
-  { id: "j001", name: "Diamond Drop Earrings", brand: "Bulgari", price: 1900, category: "jewelry", styles: ["Evening", "Old Money"], occasions: ["Event", "Date Night", "Party"], genders: ["women"], colors: ["Gold/Diamond"], imageUrl: uns("1599643477877-530eb83abc8e"), localProductImage: require("../assets/images/catalog/j001_diamond_drop_earrings.png"), purchaseUrl: "https://www.bulgari.com" },
+  { id: "j001", name: "Diamond Drop Earrings", brand: "Bulgari", price: 1900, category: "jewelry", styles: ["Evening", "Old Money"], occasions: ["Event", "Date Night", "Party"], genders: ["women"], colors: ["Gold/Diamond"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.bulgari.com" },
   { id: "j002", name: "Gold Bamboo Hoops", brand: "Tory Burch", price: 168, category: "jewelry", styles: ["Old Money", "Casual", "Vacation Luxe"], occasions: ["Casual", "Work", "Vacation", "Date Night"], genders: ["women"], colors: ["Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.toryburch.com" },
   { id: "j003", name: "Bold Chain Necklace", brand: "ASOS", price: 22, category: "jewelry", styles: ["Y2K Revival", "Luxury Streetwear"], occasions: ["Party", "Date Night", "Casual"], genders: ["women", "men"], colors: ["Gold", "Silver"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.asos.com" },
   { id: "j004", name: "Pearl Drop Earrings", brand: "Mikimoto", price: 2400, category: "jewelry", styles: ["Old Money", "Evening", "Business"], occasions: ["Event", "Work", "Date Night"], genders: ["women"], colors: ["White Pearl/Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.mikimoto.com" },
@@ -1463,6 +1464,21 @@ const CATALOG: CatalogItem[] = [
   // ── Verified extras with real PDP images + direct purchase URLs ─────────────
   ...CATALOG_EXTRAS,
 ];
+
+// ─── Local product asset autopatch ──────────────────────────────────────────
+//
+// Walks the merged CATALOG once at module load and stamps `localProductImage`
+// onto every item that has a bundled AI-generated photo registered in
+// `LOCAL_PRODUCT_ASSETS`. This avoids 170+ inline `require()` calls in the
+// catalog literal and keeps the asset registry in a single file. Items with
+// no local asset are left untouched — they fall back to `productImageUrl` or
+// the placeholder pool as before.
+for (const item of CATALOG) {
+  const localAsset = LOCAL_PRODUCT_ASSETS[item.id];
+  if (localAsset && !item.localProductImage) {
+    item.localProductImage = localAsset;
+  }
+}
 
 // ─── Occasion Normalization ───────────────────────────────────────────────────
 
