@@ -189,10 +189,17 @@ export default function StyleScreen() {
     setStep("refine");
   };
 
-  const generate = async (isMore = false) => {
+  // brandOverride lets callers explicitly pass undefined to bypass the
+  // stale-closure trap when removing the brand lock: setActiveBrand(undefined)
+  // is async, so a follow-up generate() inside the same handler would still
+  // read the old locked brand from this render's closure and yield zero
+  // results. Passing the override forces the engine to use it.
+  const generate = async (isMore = false, brandOverride?: string | null) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setLoading(true);
     if (!isMore) setStep("results");
+
+    const effectiveBrand = brandOverride === null ? undefined : (brandOverride ?? activeBrand);
 
     // Minimum 1.8s loading for UX — the actual generation is synchronous but
     // we want the "consulting brands" moment to feel intentional
@@ -207,7 +214,7 @@ export default function StyleScreen() {
           count: 6,
           celebSignatureBrands: activeCeleb?.signatureBrands,
           celebName: activeCeleb?.name,
-          brandLock: activeBrand,
+          brandLock: effectiveBrand,
           // Season comes from onboarding (batch 132). Drives a soft season
           // filter at pool construction so every generated look uses
           // fabrics + silhouettes that read for the user's chosen season.
@@ -334,6 +341,13 @@ export default function StyleScreen() {
                 onPress={() => {
                   Haptics.selectionAsync();
                   setActiveBrand(undefined);
+                  // If the user is on the results step, immediately
+                  // regenerate without the brand lock so the screen
+                  // doesn't go blank (or stay stuck on the empty state).
+                  // Pass null to force-clear the brand in the closure.
+                  if (step === "results") {
+                    generate(false, null);
+                  }
                 }}
                 style={[s.channelChip, { borderColor: colors.gold }]}
                 hitSlop={6}
@@ -739,7 +753,7 @@ export default function StyleScreen() {
                         <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>{title}</Text>
                         <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>{body}</Text>
                         <View style={s.brandEmptyActions}>
-                          <GoldButton label="REMOVE BRAND LOCK" onPress={() => { setActiveBrand(undefined); setTimeout(() => generate(false), 50); }} variant="outline" />
+                          <GoldButton label="REMOVE BRAND LOCK" onPress={() => { setActiveBrand(undefined); generate(false, null); }} variant="outline" />
                           <GoldButton label="START OVER" onPress={reset} variant="ghost" />
                         </View>
                       </View>
