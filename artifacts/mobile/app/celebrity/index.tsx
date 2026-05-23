@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../../lib/nav";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -75,7 +76,7 @@ export default function CelebrityPickerScreen() {
         <BrandWordmark style={{ marginBottom: 10 }} />
         <View style={styles.headerRow}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => safeBack()}
             style={[styles.backBtn, { borderColor: colors.border }]}
             hitSlop={12}
           >

@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../lib/nav";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -80,7 +81,7 @@ export default function ActivityScreen() {
         }}
       >
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <Pressable onPress={() => safeBack()} hitSlop={12} style={styles.backBtn}>
             <Feather name="chevron-left" size={22} color={colors.foreground} />
           </Pressable>
           <BrandWordmark style={{ flex: 1 }} />

@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../lib/nav";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -150,7 +151,7 @@ export default function PartnersScreen() {
         {/* Top bar */}
         <View style={s.topBar}>
           <BrandWordmark />
-          <Pressable onPress={() => router.back()} hitSlop={12} style={[s.backBtn, { borderColor: colors.border }]}>
+          <Pressable onPress={() => safeBack()} hitSlop={12} style={[s.backBtn, { borderColor: colors.border }]}>
             <Feather name="x" size={15} color={colors.foreground} />
           </Pressable>
         </View>

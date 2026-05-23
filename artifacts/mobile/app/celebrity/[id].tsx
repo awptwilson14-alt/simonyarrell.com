@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../../lib/nav";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -48,7 +49,7 @@ export default function CelebrityDetailScreen() {
         <Text style={{ color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
           Icon not found
         </Text>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => safeBack()}>
           <Text style={{ color: colors.gold, fontFamily: "Inter_500Medium" }}>Go Back</Text>
         </Pressable>
       </View>
@@ -86,7 +87,7 @@ export default function CelebrityDetailScreen() {
           {/* Top bar */}
           <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => safeBack()}
               style={[styles.circleBtn, { backgroundColor: "rgba(11,11,12,0.6)" }]}
               hitSlop={12}
             >

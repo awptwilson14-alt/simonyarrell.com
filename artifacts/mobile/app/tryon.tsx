@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../lib/nav";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -144,7 +145,7 @@ export default function TryOnScreen() {
         <LinearGradient colors={["rgba(198,167,94,0.08)", "transparent"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
         <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
           <BrandWordmark />
-          <Pressable onPress={() => router.back()} hitSlop={12} style={[s.iconBtn, { borderColor: colors.border }]}>
+          <Pressable onPress={() => safeBack()} hitSlop={12} style={[s.iconBtn, { borderColor: colors.border }]}>
             <Feather name="x" size={16} color={colors.foreground} />
           </Pressable>
         </View>
@@ -185,7 +186,7 @@ export default function TryOnScreen() {
               <Feather name="camera" size={15} color="#0B0B0C" />
               <Text style={s.goldBtnText}>ALLOW CAMERA</Text>
             </Pressable>
-            <Pressable onPress={() => router.back()} style={s.ghostBtn}>
+            <Pressable onPress={() => safeBack()} style={s.ghostBtn}>
               <Text style={[s.ghostBtnText, { color: colors.mutedForeground }]}>Not now</Text>
             </Pressable>
           </View>
@@ -312,7 +313,7 @@ export default function TryOnScreen() {
           <Pressable onPress={flipCamera} hitSlop={10} style={s.iconBtn}>
             <Feather name="refresh-cw" size={15} color="#F5F5F0" />
           </Pressable>
-          <Pressable onPress={() => router.back()} hitSlop={10} style={s.iconBtn}>
+          <Pressable onPress={() => safeBack()} hitSlop={10} style={s.iconBtn}>
             <Feather name="x" size={15} color="#F5F5F0" />
           </Pressable>
         </View>

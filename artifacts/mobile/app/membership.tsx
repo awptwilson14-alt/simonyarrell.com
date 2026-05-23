@@ -21,6 +21,7 @@
  */
 
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../lib/nav";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -142,7 +143,7 @@ export default function MembershipScreen() {
       await syncTierToServer(selectedTier);
       setStatusMsg(`Welcome to ${selectedDef.name}!`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setTimeout(() => router.back(), 1800);
+      setTimeout(() => safeBack(), 1800);
     } catch (e: any) {
       if (!e?.userCancelled) {
         setStatusMsg("Something went wrong. Please try again.");
@@ -173,7 +174,7 @@ export default function MembershipScreen() {
         />
         <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
           <BrandWordmark />
-          <Pressable onPress={() => router.back()} hitSlop={12} style={[s.closeBtn, { borderColor: colors.border }]}>
+          <Pressable onPress={() => safeBack()} hitSlop={12} style={[s.closeBtn, { borderColor: colors.border }]}>
             <Feather name="x" size={16} color={colors.foreground} />
           </Pressable>
         </View>
@@ -185,7 +186,7 @@ export default function MembershipScreen() {
           <Text style={[s.activeSub, { color: colors.mutedForeground }]}>
             Your Simon Yarrell {def.name} membership is active. Enjoy {def.tagline.toLowerCase()}
           </Text>
-          <Pressable onPress={() => router.back()} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
+          <Pressable onPress={() => safeBack()} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
             <Text style={s.goldBtnText}>CONTINUE</Text>
           </Pressable>
           <Pressable onPress={handleRestore} disabled={isRestoring} style={s.restoreBtn}>
@@ -211,7 +212,7 @@ export default function MembershipScreen() {
 
       <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
         <BrandWordmark />
-        <Pressable onPress={() => router.back()} hitSlop={12} style={[s.closeBtn, { borderColor: colors.border }]}>
+        <Pressable onPress={() => safeBack()} hitSlop={12} style={[s.closeBtn, { borderColor: colors.border }]}>
           <Feather name="x" size={16} color={colors.foreground} />
         </Pressable>
       </View>

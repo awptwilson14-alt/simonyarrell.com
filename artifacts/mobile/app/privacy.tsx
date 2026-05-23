@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { safeBack } from "../lib/nav";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -82,7 +83,7 @@ export default function PrivacyScreen() {
 
       {/* Header */}
       <View style={[s.header, { paddingTop: topPad + 8, borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={[s.backBtn, { borderColor: colors.border }]}>
+        <Pressable onPress={() => safeBack()} hitSlop={12} style={[s.backBtn, { borderColor: colors.border }]}>
           <Feather name="arrow-left" size={16} color={colors.foreground} />
         </Pressable>
         <BrandWordmark />

@@ -7,6 +7,7 @@
  * effect on the very next BUY tap — no app restart required.
  */
 import { Feather } from "@expo/vector-icons";
+import { safeBack } from "../lib/nav";
 import * as Haptics from "expo-haptics";
 import { router, Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -107,7 +108,7 @@ export default function AffiliateSettingsScreen() {
       >
         <View style={styles.headerRow}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => safeBack()}
             hitSlop={12}
             style={[styles.iconBtn, { borderColor: colors.border }]}
           >

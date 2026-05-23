@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { safeBack } from "../../lib/nav";
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { LinearGradient } from "expo-linear-gradient";
@@ -104,7 +105,7 @@ export default function LookDetailScreen() {
     return (
       <View style={[styles.notFound, { backgroundColor: colors.background }]}>
         <Text style={[{ color: colors.foreground, fontSize: 16, fontFamily: "Inter_600SemiBold" }]}>Look not found</Text>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => safeBack()}>
           <Text style={{ color: colors.gold, fontFamily: "Inter_500Medium" }}>Go Back</Text>
         </Pressable>
       </View>
@@ -142,7 +143,7 @@ export default function LookDetailScreen() {
           />
 
           <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-            <Pressable onPress={() => router.back()} style={[styles.circleBtn, { backgroundColor: "rgba(11,11,12,0.6)" }]} hitSlop={12}>
+            <Pressable onPress={() => safeBack()} style={[styles.circleBtn, { backgroundColor: "rgba(11,11,12,0.6)" }]} hitSlop={12}>
               <Feather name="arrow-left" size={18} color="#F5F5F0" />
             </Pressable>
             <BrandWordmark style={{ opacity: 0.9 }} />
