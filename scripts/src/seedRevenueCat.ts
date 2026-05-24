@@ -158,7 +158,7 @@ async function seedRevenueCat() {
       display_name: displayName,
     };
     if (isTestStore) {
-      body.subscription = { duration };
+      body.subscription = { duration: duration as never };
       body.title = displayName;
     }
     const { data: created, error } = await createProduct({ client, path: { project_id: project.id }, body });
@@ -180,7 +180,7 @@ async function seedRevenueCat() {
         throw new Error(`Failed to add ${label} test store prices`);
       }
     } else {
-      console.log(`Added ${label} test store prices:`, JSON.stringify(data.prices));
+      console.log(`Added ${label} test store prices:`, JSON.stringify((data as TestStorePricesResponse | undefined)?.prices));
     }
   };
 
