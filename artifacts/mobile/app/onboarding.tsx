@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import {
   Dimensions,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,7 @@ import { BUDGETS, GENDERS, SEASONS, STYLE_CATEGORIES } from "@/constants/data";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useResponsive } from "@/hooks/useResponsive";
 
 // NOTE: HeroAudio was previously mounted here in batch 75 to play a Kenny G
 // welcome cue. It triggered a native-binary signature mismatch in expo-audio
@@ -42,6 +44,10 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { completeOnboarding } = useApp();
+  // Desktop web (≥1024px) gets an editorial two-column splash. Mobile +
+  // tablet keep the original full-bleed phone layout untouched.
+  const { isDesktop, isTablet } = useResponsive();
+  const isDesktopWeb = isDesktop && Platform.OS === "web";
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -73,6 +79,85 @@ export default function OnboardingScreen() {
 
   // ── Step 0 — Splash / Welcome ──────────────────────────────────────
   if (step === 0) {
+    // Desktop web variant — editorial two-column layout with the hero on
+    // the right, brand + CTA on the left, content capped at 1280px and
+    // centered. CTA button is fixed-width (not full-bleed) for the
+    // luxury-site feel requested.
+    if (isDesktopWeb) {
+      return (
+        <View style={[splash.container, { backgroundColor: "#0B0B0C" }]}>
+          <View style={splashDesktop.outer}>
+            <View style={splashDesktop.shell}>
+              {/* LEFT column — brand, eyebrow, CTA, guest link. */}
+              <View style={splashDesktop.left}>
+                <View style={splashDesktop.brandBlock}>
+                  <BrandWordmark variant="stacked" height={132} />
+                </View>
+
+                <View style={splashDesktop.copyBlock}>
+                  <Text style={splashDesktop.eyebrow}>
+                    MAISON SIMON · SIMON YARRELL
+                  </Text>
+                  <Text style={splashDesktop.headline}>
+                    Your private{"\n"}atelier of style.
+                  </Text>
+                  <Text style={splashDesktop.subhead}>
+                    An AI-powered styling house composing real luxury
+                    looks from real brands — tailored to your taste,
+                    season, and budget.
+                  </Text>
+                </View>
+
+                <View style={splashDesktop.ctaBlock}>
+                  <View style={splashDesktop.ctaWrap}>
+                    <GoldButton label="GET STARTED" onPress={next} />
+                  </View>
+                  <OrnamentRule
+                    width={160}
+                    diamondSize={6}
+                    style={splashDesktop.ornament}
+                  />
+                  <Pressable
+                    onPress={skip}
+                    style={splashDesktop.guestBtn}
+                    hitSlop={8}
+                  >
+                    <Text style={splash.guestText}>Continue as guest</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* RIGHT column — controlled-crop hero image inside a
+                  gold-hairline frame. */}
+              <View style={splashDesktop.right}>
+                <View
+                  style={[
+                    splashDesktop.heroFrame,
+                    { borderColor: colors.gold },
+                  ]}
+                >
+                  <Image
+                    source={require("../assets/images/splash_hero.png")}
+                    style={splashDesktop.heroImage}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={[
+                      "rgba(11,11,12,0.55)",
+                      "rgba(11,11,12,0.05)",
+                      "rgba(11,11,12,0.55)",
+                    ]}
+                    locations={[0, 0.5, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[splash.container, { backgroundColor: "#0B0B0C" }]}>
         <Image
@@ -313,6 +398,94 @@ export default function OnboardingScreen() {
     </View>
   );
 }
+
+const splashDesktop = StyleSheet.create({
+  // Outer fills viewport, centers the 1280px editorial shell.
+  outer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 48,
+    paddingVertical: 56,
+  },
+  shell: {
+    width: "100%",
+    maxWidth: 1280,
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 64,
+    minHeight: 560,
+  },
+  left: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingVertical: 24,
+  },
+  brandBlock: {
+    alignItems: "flex-start",
+  },
+  copyBlock: {
+    gap: 18,
+    marginTop: 24,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 4,
+    color: "#C6A75E",
+  },
+  headline: {
+    fontSize: 56,
+    lineHeight: 64,
+    fontFamily: "PlayfairDisplay_700Bold",
+    color: "#F5F0E1",
+    letterSpacing: -0.5,
+  },
+  subhead: {
+    fontSize: 16,
+    lineHeight: 26,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(245,240,225,0.78)",
+    maxWidth: 440,
+  },
+  ctaBlock: {
+    marginTop: 32,
+    gap: 16,
+    alignItems: "flex-start",
+  },
+  // Constrains GoldButton to elegant desktop width — phone build kept the
+  // full-bleed treatment via splash.footer (alignItems:"stretch").
+  ctaWrap: {
+    width: 260,
+  },
+  ornament: {
+    alignSelf: "flex-start",
+    marginTop: 4,
+  },
+  guestBtn: {
+    paddingVertical: 4,
+  },
+  right: {
+    flex: 1,
+    alignItems: "stretch",
+    justifyContent: "center",
+  },
+  heroFrame: {
+    flex: 1,
+    minHeight: 560,
+    borderRadius: 4,
+    borderWidth: 1,
+    overflow: "hidden",
+    backgroundColor: "#111113",
+  },
+  // absoluteFill (instead of width/height: "100%") so RN Web doesn't drop
+  // the percentage when the heroFrame's height is resolved by flex rather
+  // than a concrete value — empirically `height: "100%"` collapses inside
+  // flex:1 parents on web and leaves the image invisible.
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});
 
 const splash = StyleSheet.create({
   container: { flex: 1 },
