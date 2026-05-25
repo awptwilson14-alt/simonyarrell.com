@@ -102,6 +102,11 @@ export function DesktopNav() {
 
 const styles = StyleSheet.create({
   bar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     width: "100%",
     height: 72,
     borderBottomWidth: 1,

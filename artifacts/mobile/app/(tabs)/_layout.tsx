@@ -55,13 +55,15 @@ function ClassicTabLayout() {
   const hideBottomBar = isWeb && isDesktop;
 
   return (
-    <View style={styles.layoutRoot}>
-      <DesktopNav />
+    <>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.gold,
         tabBarInactiveTintColor: colors.mutedForeground,
         headerShown: false,
+        sceneStyle: hideBottomBar
+          ? { paddingTop: 72, backgroundColor: colors.background }
+          : undefined,
         tabBarStyle: hideBottomBar
           ? { display: "none" }
           : {
@@ -166,15 +168,15 @@ function ClassicTabLayout() {
         }}
       />
     </Tabs>
-    </View>
+    {/* Desktop top nav is rendered as an absolutely positioned overlay so
+        it doesn't disturb the Tabs navigator's flex tree (wrapping <Tabs>
+        in a parent <View> on web collapsed the scene height and produced
+        a blank screen). The Tabs scene gets paddingTop:72 on desktop so
+        content sits below the bar. */}
+    <DesktopNav />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  layoutRoot: {
-    flex: 1,
-  },
-});
 
 export default function TabLayout() {
   if (isLiquidGlassAvailable()) {
