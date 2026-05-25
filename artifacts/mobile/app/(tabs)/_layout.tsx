@@ -7,7 +7,9 @@ import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
+import { DesktopNav } from "@/components/DesktopNav";
 import { useColors } from "@/hooks/useColors";
+import { useResponsive } from "@/hooks/useResponsive";
 
 function NativeTabLayout() {
   return (
@@ -46,23 +48,32 @@ function ClassicTabLayout() {
   const isDark = true;
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
+  // Hide the bottom tab bar on desktop web (≥1024px); DesktopNav (rendered
+  // above) takes over navigation. Mobile + tablet keep the existing bar
+  // so iPhone/Android/iPad feel unchanged.
+  const { isDesktop } = useResponsive();
+  const hideBottomBar = isWeb && isDesktop;
 
   return (
+    <View style={styles.layoutRoot}>
+      <DesktopNav />
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.gold,
         tabBarInactiveTintColor: colors.mutedForeground,
         headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.card,
-          borderTopWidth: 0.5,
-          borderTopColor: colors.border,
-          elevation: 0,
-          height: isWeb ? 84 : 60,
-          paddingBottom: isWeb ? 34 : 8,
-          paddingTop: 8,
-        },
+        tabBarStyle: hideBottomBar
+          ? { display: "none" }
+          : {
+              position: "absolute",
+              backgroundColor: isIOS ? "transparent" : colors.card,
+              borderTopWidth: 0.5,
+              borderTopColor: colors.border,
+              elevation: 0,
+              height: isWeb ? 84 : 60,
+              paddingBottom: isWeb ? 34 : 8,
+              paddingTop: 8,
+            },
         tabBarBackground: () =>
           isIOS ? (
             <BlurView
@@ -155,8 +166,15 @@ function ClassicTabLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  layoutRoot: {
+    flex: 1,
+  },
+});
 
 export default function TabLayout() {
   if (isLiquidGlassAvailable()) {
