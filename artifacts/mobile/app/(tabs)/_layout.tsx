@@ -168,11 +168,6 @@ function ClassicTabLayout() {
         }}
       />
     </Tabs>
-    {/* Desktop top nav is rendered as an absolutely positioned overlay so
-        it doesn't disturb the Tabs navigator's flex tree (wrapping <Tabs>
-        in a parent <View> on web collapsed the scene height and produced
-        a blank screen). The Tabs scene gets paddingTop:72 on desktop so
-        content sits below the bar. */}
     <DesktopNav />
     </>
   );
