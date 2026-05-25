@@ -31,13 +31,35 @@ function resolve(width: number) {
 }
 
 export function useResponsive() {
+  // Initial state may be wrong in two scenarios:
+  // 1. Expo static web export (output:"static") pre-renders HTML at build
+  //    time with no `window`, so `Dimensions.get("window").width` returns 0
+  //    on the server pass and the hook latches into mobile breakpoint.
+  // 2. Some web environments hydrate before Dimensions has measured the
+  //    real window. We re-measure on mount (effect runs only on the
+  //    client) and again on every resize so the desktop branch activates
+  //    immediately after hydration without needing a manual viewport
+  //    change.
   const [size, setSize] = useState(() => resolve(Dimensions.get("window").width));
 
   useEffect(() => {
-    // Only web needs live resize tracking — native devices don't change
-    // viewport at runtime (orientation rotations re-emit too, harmless).
-    const onChange = ({ window }: { window: ScaledSize }) => {
-      setSize(resolve(window.width));
+    // Post-mount remeasure — fixes static-export hydration where the
+    // initial useState value was computed against an empty window.
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const realWidth = window.innerWidth || Dimensions.get("window").width;
+      const next = resolve(realWidth);
+      setSize((prev) =>
+        prev.width === next.width ? prev : next,
+      );
+    } else {
+      const next = resolve(Dimensions.get("window").width);
+      setSize((prev) =>
+        prev.width === next.width ? prev : next,
+      );
+    }
+
+    const onChange = ({ window: w }: { window: ScaledSize }) => {
+      setSize(resolve(w.width));
     };
     const sub = Dimensions.addEventListener("change", onChange);
     return () => sub.remove();
