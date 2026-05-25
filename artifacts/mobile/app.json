@@ -18,7 +18,9 @@
     },
     "android": {},
     "web": {
-      "favicon": "./assets/images/sy_app_icon.png"
+      "favicon": "./assets/images/sy_app_icon.png",
+      "output": "static",
+      "bundler": "metro"
     },
     "plugins": [
       [
