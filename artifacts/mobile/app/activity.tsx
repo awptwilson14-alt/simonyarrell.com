@@ -143,7 +143,7 @@ export default function ActivityScreen() {
                   card reads as a personal signature, not a generic chip. */}
               <Image
                 source={topCeleb.image}
-                style={[styles.signaturePortrait, { borderColor: `${topCeleb.accentColor}cc` }]}
+                style={StyleSheet.flatten([styles.signaturePortrait, { borderColor: `${topCeleb.accentColor}cc` }])}
                 resizeMode="cover"
               />
               <View style={[styles.signatureAccent, { backgroundColor: topCeleb.accentColor }]} />

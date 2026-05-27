@@ -215,10 +215,14 @@ export function ResilientImage({
       {fallback}
       <Image
         source={localSource ? localSource : { uri: uri! }}
-        style={[
-          { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
-          { opacity: loaded ? 1 : 0 },
-        ]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: loaded ? 1 : 0,
+        }}
         contentFit="cover"
         transition={transition}
         onLoad={() => setLoaded(true)}

@@ -82,7 +82,7 @@ export function LookCard({ look, width: cardWidth, showSave = true }: LookCardPr
       <View style={styles.imageContainer}>
         <Image
           source={source}
-          style={[styles.image, { width: w, backgroundColor: colors.secondary }]}
+          style={StyleSheet.flatten([styles.image, { width: w, backgroundColor: colors.secondary }])}
           resizeMode="cover"
           onError={() => setImgFailed(true)}
         />

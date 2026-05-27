@@ -54,7 +54,7 @@ export function GoldButton({
           colors={["#E4C97A", "#C9A84C", "#A07830"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={[styles.gradient, small && styles.gradientSmall]}
+          style={StyleSheet.flatten([styles.gradient, small && styles.gradientSmall])}
         >
           {/* Inner gold hairline border — couture-plate treatment from
               the splash reference. Sits inset 4px on every side so the
