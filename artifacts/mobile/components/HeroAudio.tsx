@@ -133,6 +133,47 @@ function HeroAudioInner({
       // Defensive — autoplay rejection or platform quirk shouldn't crash
       // the home screen. The toggle still works on subsequent user taps.
     }
+
+    // Web autoplay-gesture bridge. On web (including mobile Safari/Chrome
+    // visiting the PWA) browsers reject audible playback until the user
+    // produces a gesture — so the player above is started muted. Most users
+    // never notice the small speaker icon in the corner, and the ambient
+    // music effectively never plays. To fix this: when `defaultMuted=false`
+    // (the home-hero intent), attach a one-shot document-level listener
+    // for the user's first tap/click/keypress anywhere on the page. That
+    // gesture is sufficient under every browser's autoplay policy, so we
+    // can flip the player to audible and call play() right then. The
+    // visible speaker icon still works for manual mute/unmute afterwards.
+    if (Platform.OS !== "web" || defaultMuted) return;
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    let unlocked = false;
+    const unlock = () => {
+      if (unlocked) return;
+      unlocked = true;
+      try {
+        player.muted = false;
+        player.play();
+        setMuted(false);
+      } catch {
+        // Swallow — the visible speaker toggle remains as a manual fallback.
+      }
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("keydown", unlock);
+      document.removeEventListener("click", unlock);
+    };
+    document.addEventListener("pointerdown", unlock, { once: true });
+    document.addEventListener("touchstart", unlock, { once: true });
+    document.addEventListener("keydown", unlock, { once: true });
+    document.addEventListener("click", unlock, { once: true });
+
+    return () => {
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("keydown", unlock);
+      document.removeEventListener("click", unlock);
+    };
   }, [player, defaultMuted]);
 
   const toggle = () => {
