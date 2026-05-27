@@ -1,7 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { safeBack } from "../../lib/nav";
 import { Image } from "expo-image";
-import * as Linking from "expo-linking";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -25,7 +24,7 @@ import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
-import { applyAffiliate } from "@/lib/affiliate";
+import { openExternalUrl } from "@/lib/openExternal";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -122,11 +121,12 @@ export default function LookDetailScreen() {
 
   const shopAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    look.pieces.forEach((piece) => {
-      if (piece.purchaseUrl) {
-        setTimeout(() => Linking.openURL(applyAffiliate(piece.purchaseUrl!)).catch(() => {}), 200);
-      }
-    });
+    // Only open the FIRST piece — modern browsers block multi-window opens
+    // from a single click as popup-bombing. setTimeout chains were 100%
+    // blocked on web (out-of-gesture). Native users can tap the per-piece
+    // BUY rows below to open each item individually.
+    const first = look.pieces.find((p) => p.purchaseUrl);
+    if (first) openExternalUrl(first.purchaseUrl);
   };
 
   return (
@@ -466,7 +466,7 @@ export default function LookDetailScreen() {
               return (
                 <Pressable
                   key={piece.id}
-                  onPress={() => piece.purchaseUrl && Linking.openURL(applyAffiliate(piece.purchaseUrl)).catch(() => {})}
+                  onPress={() => openExternalUrl(piece.purchaseUrl)}
                   style={({ pressed }) => [
                     styles.shopRow,
                     { borderBottomColor: colors.border, opacity: pressed ? 0.75 : 1 },
@@ -584,7 +584,7 @@ export default function LookDetailScreen() {
           {look.pieces.map((piece) => (
             <Pressable
               key={piece.id}
-              onPress={() => piece.purchaseUrl && Linking.openURL(applyAffiliate(piece.purchaseUrl)).catch(() => {})}
+              onPress={() => openExternalUrl(piece.purchaseUrl)}
               style={[styles.stripThumb, { backgroundColor: colors.secondary }]}
             >
               <ResilientImage

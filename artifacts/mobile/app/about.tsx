@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import React from "react";
 import {
   Alert,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -18,7 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
-import { applyAffiliate } from "@/lib/affiliate";
+import { openExternalUrl } from "@/lib/openExternal";
 
 const WEBSITE_URL = "https://Simonyarrell.com";
 const WEBSITE_LABEL = "Simonyarrell.com";
@@ -37,11 +36,14 @@ export default function AboutScreen() {
   const router = useRouter();
   const topPad = Platform.OS === "web" ? 56 : insets.top;
 
-  const openLink = async (url: string) => {
+  const openLink = (url: string) => {
+    // openExternalUrl handles web popup-blocker fallback (sync window.open →
+    // location.assign) and routes to Linking.openURL on native. The previous
+    // `canOpenURL` gate was always-true for http(s) on web and provided no
+    // real value, so dropping it removes the async-microtask delay that was
+    // also at risk of tripping web popup blockers.
     try {
-      const ok = await Linking.canOpenURL(url);
-      if (ok) await Linking.openURL(applyAffiliate(url));
-      else Alert.alert("Unable to open", url);
+      openExternalUrl(url);
     } catch {
       Alert.alert("Unable to open", url);
     }
