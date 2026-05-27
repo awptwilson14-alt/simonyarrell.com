@@ -3,5 +3,7 @@
   "buildCommand": "pnpm run build:web",
   "installCommand": "pnpm install --frozen-lockfile",
   "outputDirectory": "artifacts/mobile/dist",
-  "framework": null
+  "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": false
 }
