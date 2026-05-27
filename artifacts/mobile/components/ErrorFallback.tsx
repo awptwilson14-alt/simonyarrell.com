@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 24,
     minWidth: 200,
-    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
     elevation: 3,
   },
   buttonText: {
