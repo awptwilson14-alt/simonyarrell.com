@@ -30,6 +30,22 @@ export class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: { componentStack: string }): void {
+    // Diagnostic: production stacks are minified to one-letter names which
+    // makes the persistent "Failed to set an indexed property [0] on
+    // CSSStyleDeclaration" home-tab crash impossible to triage from logs
+    // alone. componentStack from React is NOT minified — it lists the
+    // actual component display names (e.g. HomeScreen > View > LinearGradient)
+    // so we can pinpoint exactly which subtree threw. Log with a clear
+    // [CRASH-TRAP] prefix so the user can copy-paste the offending lines.
+    // eslint-disable-next-line no-console
+    console.error(
+      "[CRASH-TRAP] ErrorBoundary caught render error:",
+      error?.message ?? String(error),
+      "\nComponent stack:",
+      info?.componentStack ?? "(none)",
+      "\nError stack (first 8 frames):",
+      error?.stack?.split("\n").slice(0, 8).join("\n") ?? "(none)",
+    );
     if (typeof this.props.onError === "function") {
       this.props.onError(error, info.componentStack);
     }
