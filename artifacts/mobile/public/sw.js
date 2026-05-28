@@ -12,7 +12,7 @@
  *     responses must be fresh; if offline we surface the failure.
  */
 
-const VERSION = "sy-v9";
+const VERSION = "sy-v10";
 const APP_CACHE = `${VERSION}-app`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const IMAGE_CACHE = `${VERSION}-images`;

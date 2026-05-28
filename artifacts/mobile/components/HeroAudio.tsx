@@ -83,6 +83,16 @@ class HeroAudioBoundary extends React.Component<
 }
 
 export function HeroAudio(props: HeroAudioProps) {
+  // DIAGNOSTIC (Round 8): the home-tab desktop-web crash has persisted
+  // across many rounds and the most recently-added home-only component
+  // is HeroAudio (expo-audio web shim). Disable on web to confirm or
+  // rule out as the cause. Native iOS/Android behavior is unchanged.
+  // If web stops crashing after this deploy, we know the culprit and
+  // can either upgrade expo-audio, swap to an <audio> element, or ship
+  // a permanent web fallback. If web still crashes, we've ruled it out
+  // and the next round disables the next suspect (LinearGradient with
+  // locations array, then BlurView, etc).
+  if (Platform.OS === "web") return null;
   return (
     <HeroAudioBoundary>
       <HeroAudioInner {...props} />
