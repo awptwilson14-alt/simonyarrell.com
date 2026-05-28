@@ -39,7 +39,7 @@ export function TrendCard({
     >
       <Image
         source={trend.image}
-        style={StyleSheet.flatten([styles.image, isLarge ? styles.imageLarge : styles.imageSmall])}
+        style={[styles.image, isLarge ? styles.imageLarge : styles.imageSmall]}
         resizeMode="cover"
       />
       {/* Top scrim — only rendered when the savedBadge would otherwise sit

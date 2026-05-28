@@ -260,21 +260,21 @@ export default function TryOnScreen() {
               {torso?.imageUrl && (
                 <Image
                   source={{ uri: torso.imageUrl }}
-                  style={StyleSheet.flatten([s.garmentLayer, dress ? s.garmentDress : s.garmentTop])}
+                  style={[s.garmentLayer, dress ? s.garmentDress : s.garmentTop]}
                   resizeMode="contain"
                 />
               )}
               {!dress && bottom?.imageUrl && (
                 <Image
                   source={{ uri: bottom.imageUrl }}
-                  style={StyleSheet.flatten([s.garmentLayer, s.garmentBottom])}
+                  style={[s.garmentLayer, s.garmentBottom]}
                   resizeMode="contain"
                 />
               )}
               {shoes?.imageUrl && (
                 <Image
                   source={{ uri: shoes.imageUrl }}
-                  style={StyleSheet.flatten([s.garmentLayer, s.garmentShoes])}
+                  style={[s.garmentLayer, s.garmentShoes]}
                   resizeMode="contain"
                 />
               )}
@@ -286,7 +286,7 @@ export default function TryOnScreen() {
       {/* ── LAYER 3: Subtle gradient scrim at face/clothes boundary ── */}
       <LinearGradient
         colors={["rgba(5,5,6,0.0)", "rgba(5,5,6,0.0)", "rgba(5,5,6,0.0)"]}
-        style={StyleSheet.flatten([s.boundaryFade, { top: FACE_ZONE - 24 + verticalOffset }])}
+        style={[s.boundaryFade, { top: FACE_ZONE - 24 + verticalOffset }]}
         pointerEvents="none"
       />
 

@@ -144,18 +144,10 @@ export function ResilientImage({
   // when the overlay image is mid-load or silently fails we never present
   // an empty square. The image, when it does succeed, sits on top with
   // contentFit:cover and visually replaces the tile.
-  // Flatten incoming `style` before composing. Defensive: callers pass arrays,
-  // ViewStyle objects, or sometimes nested arrays — flattening guarantees the
-  // result reaching expo-image (web-shim wraps a <img>/<div>) is a single
-  // plain object, not an array. RN-Web's style preprocessor iterates with
-  // `for...in` and an unflattened array's numeric keys ("0","1") would map
-  // to invalid CSSStyleDeclaration setters → "Failed to set indexed property".
-  const flatStyle = StyleSheet.flatten(style);
-
   const fallback = (
     <View
       style={[
-        flatStyle,
+        style,
         {
           backgroundColor: "#15151A",
           borderWidth: 0.5,
@@ -211,7 +203,7 @@ export function ResilientImage({
   // the editorial tile visible underneath instead of revealing an empty
   // overlay. Once `loaded` flips true, the overlay covers the tile.
   return (
-    <View style={[flatStyle, { position: "relative", overflow: "hidden" }]}>
+    <View style={[style, { position: "relative", overflow: "hidden" }]}>
       {fallback}
       <Image
         source={localSource ? localSource : { uri: uri! }}
