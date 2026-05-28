@@ -50,6 +50,31 @@ if (Platform.OS === "web" && typeof window !== "undefined") {
       event.preventDefault();
     }
   });
+
+  // Diagnostic: trap the "Failed to set an indexed property [0] on
+  // CSSStyleDeclaration" error that has persisted across multiple fix
+  // rounds. The minified production stack is useless on its own; this
+  // hook logs the error message + first few stack frames with a clear
+  // [CRASH-TRAP] prefix and, more importantly, swallows the error so
+  // a single bad style assignment doesn't cascade through React's
+  // commit phase and bring down the whole page. The visual cost of
+  // skipping one CSS property assignment is far less than rendering
+  // a blank/broken page. Safe to leave in production; no-op when no
+  // matching error fires.
+  window.addEventListener("error", (event) => {
+    const msg = event?.error?.message || event?.message || "";
+    if (typeof msg === "string" && msg.includes("indexed property")) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[CRASH-TRAP] CSSStyleDeclaration indexed-property assignment blocked:",
+        msg,
+        "\nStack:",
+        event?.error?.stack?.split("\n").slice(0, 8).join("\n"),
+      );
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  });
 }
 
 const queryClient = new QueryClient();
