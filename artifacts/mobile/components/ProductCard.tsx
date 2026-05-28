@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 import { openExternalUrl } from "@/lib/openExternal";
 import { useRouter } from "expo-router";
 import React from "react";

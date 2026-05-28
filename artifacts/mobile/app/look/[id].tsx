@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { safeBack } from "../../lib/nav";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {

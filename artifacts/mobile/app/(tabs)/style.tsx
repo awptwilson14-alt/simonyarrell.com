@@ -23,7 +23,7 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero, SPLASH_HEROES } from "@/constants/heroImages";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
 import {
   AIStylistError,

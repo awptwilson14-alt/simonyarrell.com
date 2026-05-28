@@ -22,7 +22,7 @@ import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { findCelebByName } from "@/lib/celebLookup";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 
 /**
  * Activity inbox — the destination for the home header bell. Surfaces signals

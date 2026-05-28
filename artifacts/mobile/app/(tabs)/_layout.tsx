@@ -1,4 +1,4 @@
-import { BlurView } from "expo-blur";
+import { BlurView } from "@/lib/safeWebShims";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";

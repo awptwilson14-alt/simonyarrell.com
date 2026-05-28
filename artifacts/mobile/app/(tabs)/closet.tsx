@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 
 import { GoldButton } from "@/components/GoldButton";
 import { SPLASH_HEROES } from "@/constants/heroImages";

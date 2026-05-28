@@ -22,7 +22,7 @@
 
 import * as Haptics from "expo-haptics";
 import { safeBack } from "../lib/nav";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {

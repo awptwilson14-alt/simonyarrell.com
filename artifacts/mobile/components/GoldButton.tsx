@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 import React from "react";
 import {
   ActivityIndicator,

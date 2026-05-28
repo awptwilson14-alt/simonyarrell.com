@@ -1,4 +1,4 @@
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/safeWebShims";
 import { safeBack } from "../lib/nav";
 import { useRouter } from "expo-router";
 import React from "react";
