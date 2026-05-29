@@ -26,7 +26,7 @@ _Replace the heading above with the project's name, and this line with one sente
 - `artifacts/mobile/constants/data.ts` — `Look` interface (gender-tagged), static `LOOKS` seed (12 entries), `filterLooksForProfile(looks, profile)` — HARD gender + SOFT season filter every LOOKS consumer must route through
 - `artifacts/mobile/lib/outfitEngine.ts` — outfit generation, `CatalogItem` interface, in-line `CATALOG`
 - `artifacts/mobile/lib/catalogExtras.ts` — hand-curated luxury PDPs with verified images/links
-- `artifacts/mobile/lib/catalogFeed.ts` — **auto-generated** Shopify product feed (2,940 real PDPs across 21 brand-direct stores); do not hand-edit, regenerate via the in-chat fetcher
+- `artifacts/mobile/lib/catalogFeed.ts` — **auto-generated** Shopify product feed (3,047 real PDPs across 22 brand-direct stores, incl. Micas under-$500 womenswear); do not hand-edit, regenerate via the in-chat fetcher
 - `artifacts/mobile/lib/affiliate.ts` — click-time URL wrapper (Skimlinks / Rakuten / Impact / Awin / CJ / LTK / ShareASale / generic). Reads runtime override from `affiliateSettings.ts` first, then env vars
 - `artifacts/mobile/lib/affiliateSettings.ts` — AsyncStorage-backed runtime toggle (`enabled`, `network`, `publisherId`) with master kill-switch; in-app UI at `app/affiliate-settings.tsx`
 - `artifacts/mobile/lib/runwayModes.ts` — runway + fashion-week vocab + `composeRunwayBrief()` for the Runway Styling Engine

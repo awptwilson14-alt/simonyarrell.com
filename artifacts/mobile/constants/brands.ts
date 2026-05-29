@@ -840,6 +840,15 @@ export const BRANDS: Brand[] = [
     categories: ["RTW", "Shoes", "Bags", "Accessories"],
   },
   {
+    id: "b_micas",
+    name: "Micas",
+    tier: "fast-fashion",
+    origin: "Los Angeles, USA",
+    known: "Trend-Led Dresses, Going-Out Sets, Affordable",
+    description: "Trend-driven women's fashion — going-out looks and dresses at accessible prices",
+    categories: ["RTW", "Shoes", "Accessories"],
+  },
+  {
     id: "b_forever21",
     name: "Forever 21",
     tier: "fast-fashion",
