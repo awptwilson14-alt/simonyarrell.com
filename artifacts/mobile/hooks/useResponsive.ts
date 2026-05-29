@@ -40,7 +40,20 @@ export function useResponsive() {
   //    client) and again on every resize so the desktop branch activates
   //    immediately after hydration without needing a manual viewport
   //    change.
-  const [size, setSize] = useState(() => resolve(Dimensions.get("window").width));
+  // SSR/hydration-safe initial state. On web, the static export pre-renders
+  // HTML at build time with no `window` (width resolves to 0 → mobile). If the
+  // first CLIENT render read the real window width instead, it would compute
+  // `desktop` and DISAGREE with the server HTML — a hydration mismatch that
+  // forces react-dom to tear down and re-commit the desktop subtree. That
+  // re-commit is what surfaced the "Failed to set an indexed property [0] on
+  // CSSStyleDeclaration" crash on production desktop web. So on web we seed the
+  // first render with width 0 (matching the server), then the effect below
+  // remeasures to the real width post-mount — a normal update, exactly like
+  // dev (which never hydrates). Native has no SSG pass, so it reads real
+  // dimensions immediately to avoid a layout flash.
+  const [size, setSize] = useState(() =>
+    resolve(Platform.OS === "web" ? 0 : Dimensions.get("window").width),
+  );
 
   useEffect(() => {
     // Post-mount remeasure — fixes static-export hydration where the
