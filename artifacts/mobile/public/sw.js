@@ -12,7 +12,7 @@
  *     responses must be fresh; if offline we surface the failure.
  */
 
-const VERSION = "sy-v11";
+const VERSION = "sy-v12";
 const APP_CACHE = `${VERSION}-app`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -128,7 +128,11 @@ self.addEventListener("fetch", (event) => {
       const cached = await cache.match(req);
       const fetchPromise = fetch(req)
         .then((resp) => {
-          if (resp.ok) cache.put(req, resp.clone());
+          // Only cache full 200 responses. Caching a 206 partial response
+          // (range requests — e.g. media/audio seeks) throws
+          // "Failed to execute 'put' on 'Cache': Partial response (status
+          // code 206) is unsupported" and rejects the SW promise.
+          if (resp.ok && resp.status === 200) cache.put(req, resp.clone());
           return resp;
         })
         .catch(() => cached);

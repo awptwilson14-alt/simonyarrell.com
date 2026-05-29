@@ -39,6 +39,16 @@ export function DesktopNav() {
 
   if (!isDesktop || Platform.OS !== "web") return null;
 
+  // DIAGNOSTIC (Round 10): DesktopNav is the ONLY desktop-web-only component
+  // on the Enter-the-Studio → home path (never renders during onboarding or
+  // on mobile), which matches the desktop-only crash signature exactly.
+  // Temporarily return null on web to confirm it as the culprit. If the home
+  // tab stops crashing after this deploy, the bug lives in this component's
+  // `Link asChild` + `Pressable` style-array pattern reaching a DOM <a>, and
+  // the next round ships a refactored nav (plain Pressable + router.push,
+  // flattened styles). Cosmetic-only loss on web for one deploy.
+  return null;
+
   return (
     <View
       style={[
