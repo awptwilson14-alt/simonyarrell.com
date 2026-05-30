@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { Link, usePathname } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -36,19 +36,17 @@ export function DesktopNav() {
   const { isDesktop, maxContentWidth } = useResponsive();
   const colors = useColors();
   const pathname = usePathname();
+  const router = useRouter();
 
   if (!isDesktop || Platform.OS !== "web") return null;
 
-  // DIAGNOSTIC (Round 10): DesktopNav is the ONLY desktop-web-only component
-  // on the Enter-the-Studio → home path (never renders during onboarding or
-  // on mobile), which matches the desktop-only crash signature exactly.
-  // Temporarily return null on web to confirm it as the culprit. If the home
-  // tab stops crashing after this deploy, the bug lives in this component's
-  // `Link asChild` + `Pressable` style-array pattern reaching a DOM <a>, and
-  // the next round ships a refactored nav (plain Pressable + router.push,
-  // flattened styles). Cosmetic-only loss on web for one deploy.
-  return null;
-
+  // NOTE: navigation uses `router.push` + plain `Pressable` rather than
+  // `<Link asChild>`. On web, expo-router's `Link` renders a real `<a>` DOM
+  // host element and, with `asChild`, merges the child's RN style ARRAY onto
+  // that `<a>`. React DOM can't apply an array to a host element's style and
+  // throws "Failed to set an indexed property [0] on CSSStyleDeclaration",
+  // crashing the desktop home tab. Pressable/Text/View flatten arrays
+  // natively, so routing imperatively keeps arrays away from any DOM host.
   return (
     <View
       style={[
@@ -60,14 +58,12 @@ export function DesktopNav() {
       ]}
     >
       <View style={[styles.inner, { maxWidth: maxContentWidth }]}>
-        <Link href="/" asChild>
-          <Pressable style={styles.brand} hitSlop={6}>
-            <Feather name="award" size={16} color={colors.gold} />
-            <Text style={[styles.brandText, { color: colors.gold }]}>
-              SIMON YARRELL
-            </Text>
-          </Pressable>
-        </Link>
+        <Pressable style={styles.brand} hitSlop={6} onPress={() => router.push("/")}>
+          <Feather name="award" size={16} color={colors.gold} />
+          <Text style={[styles.brandText, { color: colors.gold }]}>
+            SIMON YARRELL
+          </Text>
+        </Pressable>
 
         <View style={styles.links}>
           {NAV_ITEMS.map((item) => {
@@ -76,35 +72,36 @@ export function DesktopNav() {
                 ? pathname === "/" || pathname === "/index"
                 : pathname.startsWith(item.href);
             return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable hitSlop={6}>
-                  <Text
-                    style={[
-                      styles.linkText,
-                      {
-                        color: isActive ? colors.gold : colors.foreground,
-                        opacity: isActive ? 1 : 0.78,
-                      },
-                    ]}
-                  >
-                    {item.label.toUpperCase()}
-                  </Text>
-                </Pressable>
-              </Link>
+              <Pressable
+                key={item.href}
+                hitSlop={6}
+                onPress={() => router.push(item.href)}
+              >
+                <Text
+                  style={[
+                    styles.linkText,
+                    {
+                      color: isActive ? colors.gold : colors.foreground,
+                      opacity: isActive ? 1 : 0.78,
+                    },
+                  ]}
+                >
+                  {item.label.toUpperCase()}
+                </Text>
+              </Pressable>
             );
           })}
         </View>
 
-        <Link href="/membership" asChild>
-          <Pressable
-            style={[styles.cta, { borderColor: colors.gold }]}
-            hitSlop={6}
-          >
-            <Text style={[styles.ctaText, { color: colors.gold }]}>
-              MEMBERSHIP
-            </Text>
-          </Pressable>
-        </Link>
+        <Pressable
+          style={[styles.cta, { borderColor: colors.gold }]}
+          hitSlop={6}
+          onPress={() => router.push("/membership")}
+        >
+          <Text style={[styles.ctaText, { color: colors.gold }]}>
+            MEMBERSHIP
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

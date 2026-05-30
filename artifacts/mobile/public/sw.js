@@ -12,7 +12,7 @@
  *     responses must be fresh; if offline we surface the failure.
  */
 
-const VERSION = "sy-v12";
+const VERSION = "sy-v13";
 const APP_CACHE = `${VERSION}-app`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -78,7 +78,11 @@ self.addEventListener("fetch", (event) => {
           // (status is reported as 0), so cache on `opaque` OR `ok`.
           const resp = await fetch(req);
           const isOpaque = resp.type === "opaque";
-          if (isOpaque || resp.ok) {
+          // `resp.ok` is true for the whole 200–299 range, which INCLUDES 206.
+          // Caching a 206 partial response throws "Partial response (status
+          // code 206) is unsupported" and rejects the SW promise, so exclude
+          // it explicitly here too (opaque responses report status 0).
+          if ((isOpaque || resp.ok) && resp.status !== 206) {
             cache.put(req, resp.clone()).then(() => trimCache(IMAGE_CACHE, MAX_IMAGE_ENTRIES));
           }
           return resp;
@@ -102,7 +106,13 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const resp = await fetch(req);
-          if (resp.ok && url.origin === self.location.origin) {
+          // Exclude 206 — `resp.ok` covers 200–299, and caching a partial
+          // response throws "Partial response unsupported".
+          if (
+            resp.ok &&
+            resp.status !== 206 &&
+            url.origin === self.location.origin
+          ) {
             const cache = await caches.open(APP_CACHE);
             cache.put(req, resp.clone());
           }

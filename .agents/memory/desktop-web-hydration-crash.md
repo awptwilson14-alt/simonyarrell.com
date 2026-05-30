@@ -1,39 +1,56 @@
 ---
 name: Desktop-web "indexed property [0]" crash
-description: Why the Maison Simon mobile app crashes only on desktop web, and how to actually reproduce/fix it
+description: Confirmed root cause + fix for the Maison Simon desktop-web "Failed to set an indexed property [0] on CSSStyleDeclaration" crash
 ---
 
 # Desktop-web "Failed to set an indexed property [0] on CSSStyleDeclaration" crash
 
-The Maison Simon Expo app (`artifacts/mobile`) ships web as a **static export**
-(`app.json` → `web.output: "static"`). Each route is prerendered to HTML at build
-time with **no `window`**, so any width-based logic resolves to a phone layout.
-On the client, a desktop-width screen would compute the desktop layout on the very
-first render → **hydration mismatch** → React tears down and re-commits the desktop
-subtree, which surfaced the long-standing crash.
+## Confirmed root cause (verified by direct reproduction)
+A **style ARRAY reaching a raw DOM host element**. React DOM's `setValueForStyle`
+iterates the style object with `for (k in styles)`; if `styles` is an array it
+walks indices `"0","1"...` and calls `style["0"] = ...` → "Failed to set an indexed
+property [0] on CSSStyleDeclaration". RN-Web flattens array styles for
+`View`/`Text`/`Pressable`, so the array only escapes to the DOM through a real
+host element.
 
-**Fix (already in code):** on web, `hooks/useResponsive.ts` seeds the first render
-with width 0 (phone layout, matching the server HTML), then remeasures to the real
-width in a post-mount effect — a normal update, not a hydration mismatch.
+The offender was **`components/DesktopNav.tsx`** using expo-router
+`<Link asChild><Pressable style={[...]}>`. On web, `Link` renders a real `<a>`
+DOM element and, with `asChild`, merges the child `Pressable`'s RN **style array**
+onto that `<a>`. The `<a>` host does not flatten → array hits React DOM → crash.
 
-**Why:** many prior "surgical" rounds (shadow props, gradient/blur shims, crash
-trap, disabling DesktopNav) did not fix it because none addressed the hydration
-mismatch, which is the real mechanism.
+**Fix:** navigate imperatively — `const router = useRouter()` + plain
+`<Pressable onPress={() => router.push(href)}>`, no `<Link>`/`asChild`, so no `<a>`
+host ever receives an RN style array. (Pressable/Text/View keep their array styles;
+those flatten fine.)
 
-**How to reproduce — the part that cost many rounds:**
-- It is **impossible to reproduce in the dev preview** (Metro `expo start`): dev
-  never does SSR/hydration, so the mismatch never happens.
-- It only reproduces against a **static export served as HTML, opened at a desktop
-  viewport ≥1024px** (`hooks/useResponsive.ts` DESKTOP_MIN). Headless Chrome at the
-  default ~800px width is below the breakpoint → no desktop branch → no repro.
-- A full `expo export --platform web` of this app prerenders thousands of routes and
-  takes well over 90s — it exceeds a single 120s bash call. Don't expect to build +
-  serve + screenshot it in one shot from bash.
+**Why it was desktop-only:** `DesktopNav` only renders on web at ≥1024px
+(`hooks/useResponsive.ts` DESKTOP_MIN); mobile/tablet/native never mount it.
 
-**Deploy gotcha:** the live site (simonyarrell.com) is updated separately from local
-commits. A fix can be committed locally yet absent from the deployed branch, so the
-user keeps seeing the crash on a site that doesn't have the fix. Always confirm the
-fix is actually on the deployed branch before concluding a fix "didn't work".
+## Reproduction — IS possible in the dev preview (corrects earlier note)
+It DOES reproduce in `expo start` dev preview, contrary to a prior hydration-theory
+note. Two requirements:
+1. **Desktop viewport ≥1024px** — screenshot at e.g. `[1280, 800]`. Headless
+   Chrome's default ~800px is below the breakpoint, so DesktopNav never mounts and
+   you see no crash (this is what made earlier rounds think it was unreproducible).
+2. **Land on a tab route directly** (`/explore`, `/style`, ...) — `/` redirects to
+   `/onboarding` when onboarding isn't complete, so it never reaches the tab layout
+   where DesktopNav lives.
+With DesktopNav's `Link asChild` present at 1280px → ErrorBoundary "Something went
+wrong" + the indexed-property TypeError in console. With router.push → clean.
 
-**Browser extensions were a red herring** — the crash reproduces in incognito; it is
-a genuine static-export hydration bug, not MetaMask/SES lockdown.
+## General rule
+Never pass an RN style array (`style={[...]}`) through any wrapper that forwards it
+to a DOM host element (expo-router `Link asChild`, anything rendering `<a>`/`<div>`).
+Either flatten with `StyleSheet.flatten(...)` before it hits the host, or avoid the
+host wrapper entirely (imperative navigation).
+
+## Browser extensions were a red herring
+MetaMask / SES lockdown / chrome-extension noise in the console is unrelated; the
+crash reproduces clean in dev.
+
+## Deploy gotcha
+The live site is deployed separately from local commits. A committed fix can be
+absent from the deployed build, so the user keeps seeing the crash on a stale site.
+Confirm the fix is on the deployed build (and bump `public/sw.js` VERSION so stale
+service-worker caches purge) before concluding a fix "didn't work". See
+`vercel-deploy-stale-build.md`.

@@ -1,3 +1,4 @@
+- [Desktop-web indexed-property crash](desktop-web-hydration-crash.md) — CONFIRMED: expo-router `<Link asChild>` leaks an RN style array onto the web `<a>` host → React DOM crash; fix = router.push + plain Pressable.
 - [Vercel deploy stale build](vercel-deploy-stale-build.md) — prod "still broken" but code is fixed → compare sw.js VERSION across local/GitHub-main/live; if GitHub>live it's a Vercel deploy failure, not a code bug.
 - [Budget is a hard cap on the look TOTAL](budget-hard-cap.md) — every displayed look's SUM of pieces must be ≤ selected budget, not just per-item; both generateLooks + generateLookFromAIPlan enforce it; never add a useBudget:false fill pass.
 - [Promo code grant-tier UX trap](promo-codes.md) — grant_tier promos flip membership.tsx to the member-splash early-return; promo controls must live in BOTH branches.
