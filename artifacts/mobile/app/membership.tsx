@@ -34,6 +34,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -62,7 +63,14 @@ export default function MembershipScreen() {
 
   const { offerings, isLoading, purchase, restore, isPurchasing, isRestoring, appUserId, refetchCustomerInfo } =
     useSubscription();
-  const { tier: currentTier } = useEntitlements();
+  const {
+    tier: currentTier,
+    discountPercent,
+    promoCode,
+    promoLabel,
+    redeemPromo,
+    clearPromo,
+  } = useEntitlements();
   const { userProfile } = useApp();
 
   // Default selection: the required tier from the deep-link param if valid,
@@ -112,6 +120,48 @@ export default function MembershipScreen() {
   const displayPrice = livePriceMatches
     ? (selectedPkg?.product.priceString ?? selectedDef.priceLabel)
     : selectedDef.priceLabel;
+
+  // ── Promo discount display ──────────────────────────────────────────────
+  // % codes adjust the prices shown on the paywall. The selected tier's
+  // discounted price drives the subscribe button + confirm modal copy.
+  const hasDiscount = discountPercent > 0;
+  const fmtUSD = (usd: number) => `$${usd.toFixed(2)}`;
+  const discounted = (usd: number) => fmtUSD(usd * (1 - discountPercent / 100));
+  const finalDisplayPrice =
+    hasDiscount && selectedDef.priceUSD > 0 ? discounted(selectedDef.priceUSD) : displayPrice;
+
+  const [promoInput, setPromoInput] = useState("");
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [redeeming, setRedeeming] = useState(false);
+
+  const handleRedeem = async () => {
+    if (!promoInput.trim() || redeeming) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRedeeming(true);
+    setPromoMsg(null);
+    const res = await redeemPromo(promoInput);
+    setRedeeming(false);
+    if (!res.ok) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setPromoMsg("That code isn't valid. Check the spelling and try again.");
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setPromoInput("");
+    if (res.state.grantedTier) {
+      // The screen flips to the "Member" splash on the next render because
+      // currentTier now reflects the granted tier.
+      setStatusMsg(`${res.state.label} unlocked. Welcome to the house.`);
+    } else {
+      setPromoMsg(`${res.state.label} applied to every membership below.`);
+    }
+  };
+
+  const handleClearPromo = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await clearPromo();
+    setPromoMsg(null);
+  };
 
   const handleSubscribe = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -196,6 +246,16 @@ export default function MembershipScreen() {
               <Text style={[s.restoreText, { color: colors.mutedForeground }]}>Restore Purchases</Text>
             )}
           </Pressable>
+          {promoCode && (
+            <View style={s.activePromoNote}>
+              <Text style={[s.activePromoNoteText, { color: colors.mutedForeground }]}>
+                Complimentary access via {promoCode}
+              </Text>
+              <Pressable onPress={handleClearPromo} hitSlop={10}>
+                <Text style={[s.promoRemoveText, { color: colors.mutedForeground }]}>Remove</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -311,9 +371,20 @@ export default function MembershipScreen() {
                     </Text>
                   </View>
                   <View style={s.tierPricing}>
-                    <Text style={[s.tierPrice, { color: colors.foreground }]}>
-                      {def.priceLabel}
-                    </Text>
+                    {hasDiscount && def.priceUSD > 0 ? (
+                      <>
+                        <Text style={[s.tierPriceStrike, { color: colors.mutedForeground }]}>
+                          {def.priceLabel}
+                        </Text>
+                        <Text style={[s.tierPrice, { color: colors.gold }]}>
+                          {discounted(def.priceUSD)}
+                        </Text>
+                      </>
+                    ) : (
+                      <Text style={[s.tierPrice, { color: colors.foreground }]}>
+                        {def.priceLabel}
+                      </Text>
+                    )}
                     <Text style={[s.tierPer, { color: colors.mutedForeground }]}>per month</Text>
                   </View>
                 </View>
@@ -331,6 +402,70 @@ export default function MembershipScreen() {
               </Pressable>
             );
           })}
+        </View>
+
+        {/* Promo code — redeem a discount or a complimentary membership. */}
+        <View style={[s.promoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {promoCode ? (
+            <View style={s.promoActive}>
+              <View style={s.promoActiveInfo}>
+                <View style={s.promoActiveTop}>
+                  <Feather name="tag" size={13} color={colors.gold} />
+                  <Text style={[s.promoActiveCode, { color: colors.gold }]}>{promoCode}</Text>
+                </View>
+                <Text style={[s.promoActiveLabel, { color: colors.mutedForeground }]}>
+                  {promoLabel}
+                </Text>
+              </View>
+              <Pressable onPress={handleClearPromo} hitSlop={10} style={s.promoRemove}>
+                <Text style={[s.promoRemoveText, { color: colors.mutedForeground }]}>Remove</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <View style={s.promoHeading}>
+                <Feather name="tag" size={13} color={colors.gold} />
+                <Text style={[s.promoTitle, { color: colors.foreground }]}>Have a promo code?</Text>
+              </View>
+              <View style={s.promoRow}>
+                <TextInput
+                  value={promoInput}
+                  onChangeText={(t) => {
+                    setPromoInput(t);
+                    if (promoMsg) setPromoMsg(null);
+                  }}
+                  placeholder="Enter code"
+                  placeholderTextColor={colors.mutedForeground}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={handleRedeem}
+                  editable={!redeeming}
+                  style={[
+                    s.promoInput,
+                    { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+                  ]}
+                />
+                <Pressable
+                  onPress={handleRedeem}
+                  disabled={!promoInput.trim() || redeeming}
+                  style={[
+                    s.promoBtn,
+                    { borderColor: colors.gold, opacity: !promoInput.trim() || redeeming ? 0.5 : 1 },
+                  ]}
+                >
+                  {redeeming ? (
+                    <ActivityIndicator size="small" color={colors.gold} />
+                  ) : (
+                    <Text style={[s.promoBtnText, { color: colors.gold }]}>REDEEM</Text>
+                  )}
+                </Pressable>
+              </View>
+            </>
+          )}
+          {promoMsg && (
+            <Text style={[s.promoMsg, { color: colors.mutedForeground }]}>{promoMsg}</Text>
+          )}
         </View>
 
         {statusMsg && (
@@ -361,7 +496,7 @@ export default function MembershipScreen() {
           ) : (
             <Text style={s.goldBtnText}>
               {selectedPkg
-                ? `START ${selectedDef.name.toUpperCase()} — ${displayPrice}/MO`
+                ? `START ${selectedDef.name.toUpperCase()} — ${finalDisplayPrice}/MO`
                 : "MEMBERSHIP UNAVAILABLE"}
             </Text>
           )}
@@ -389,7 +524,7 @@ export default function MembershipScreen() {
           <View style={[s.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[s.modalTitle, { color: colors.foreground }]}>Confirm Purchase</Text>
             <Text style={[s.modalSub, { color: colors.mutedForeground }]}>
-              Subscribe to {selectedDef.name} for {displayPrice}/month?
+              Subscribe to {selectedDef.name} for {finalDisplayPrice}/month?
             </Text>
             <View style={s.modalActions}>
               <Pressable
@@ -513,6 +648,11 @@ const s = StyleSheet.create({
   tierTagline: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 15 },
   tierPricing: { alignItems: "flex-end", gap: 1 },
   tierPrice: { fontSize: 18, fontFamily: "PlayfairDisplay_700Bold" },
+  tierPriceStrike: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    textDecorationLine: "line-through",
+  },
   tierPer: { fontSize: 9, fontFamily: "Inter_400Regular" },
   tierFeatures: { gap: 6, paddingLeft: 32, paddingTop: 4 },
   tierFeatureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -527,6 +667,50 @@ const s = StyleSheet.create({
     padding: 12,
   },
   statusMsgText: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+
+  promoCard: {
+    borderWidth: 0.5,
+    borderRadius: 2,
+    padding: 16,
+    gap: 12,
+  },
+  promoHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
+  promoTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", letterSpacing: 0.3 },
+  promoRow: { flexDirection: "row", gap: 10 },
+  promoInput: {
+    flex: 1,
+    borderWidth: 0.5,
+    borderRadius: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 1,
+  },
+  promoBtn: {
+    paddingHorizontal: 20,
+    borderWidth: 0.5,
+    borderRadius: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 92,
+  },
+  promoBtnText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  promoMsg: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+  promoActive: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  promoActiveInfo: { flex: 1, gap: 4 },
+  promoActiveTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  promoActiveCode: { fontSize: 13, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  promoActiveLabel: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 15 },
+  promoRemove: { paddingVertical: 4, paddingHorizontal: 4 },
+  promoRemoveText: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    textDecorationLine: "underline",
+    letterSpacing: 0.3,
+  },
+  activePromoNote: { alignItems: "center", gap: 4, marginTop: 4 },
+  activePromoNoteText: { fontSize: 11, fontFamily: "Inter_400Regular", letterSpacing: 0.3 },
 
   goldBtn: {
     flexDirection: "row",

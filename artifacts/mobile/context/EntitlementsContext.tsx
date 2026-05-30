@@ -23,7 +23,15 @@
  * continue to work unchanged.
  */
 
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -34,9 +42,18 @@ import {
   TIER_DEFINITIONS,
   minTierFor,
   tierIncludes,
+  tierRank,
   type Feature,
   type TierId,
 } from "@/lib/tiers";
+import {
+  clearPromoCode,
+  getPromoState,
+  loadPromoConfig,
+  redeemPromoCode,
+  subscribePromo,
+  type RedeemResult,
+} from "@/lib/promoSettings";
 import { TierLockPrompt } from "@/components/TierLockPrompt";
 
 interface RequireFeatureOptions {
@@ -66,6 +83,16 @@ interface EntitlementsValue {
   bumpLooksToday: () => void;
   /** Direct way to open the upgrade prompt for an explicit tier. */
   showUpgradePrompt: (target: TierId, reason?: string) => void;
+  /** Active promo discount (0 when none). Applies to displayed prices. */
+  discountPercent: number;
+  /** Normalized active promo code, or null. */
+  promoCode: string | null;
+  /** Human-readable label for the active promo, or null. */
+  promoLabel: string | null;
+  /** Redeem a promo code. Grants tier + server-syncs when it's a comp code. */
+  redeemPromo: (raw: string) => Promise<RedeemResult>;
+  /** Remove the active promo (reverts discount / granted tier). */
+  clearPromo: () => Promise<void>;
 }
 
 const Ctx = createContext<EntitlementsValue | null>(null);
@@ -75,7 +102,22 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
   const queryClient = useQueryClient();
   const { customerInfo, appUserId } = useSubscription();
 
-  const tier = useMemo(() => deriveTierFromCustomerInfo(customerInfo), [customerInfo]);
+  // Promo state lives in an external store (AsyncStorage-backed) so it can be
+  // read synchronously and shared with the membership screen. Hydrate once.
+  const promo = useSyncExternalStore(subscribePromo, getPromoState, getPromoState);
+  useEffect(() => {
+    loadPromoConfig();
+  }, []);
+
+  // The RC entitlements are the base tier; a redeemed comp code can override
+  // UP to a higher tier (never down). Highest of the two wins.
+  const rcTier = useMemo(() => deriveTierFromCustomerInfo(customerInfo), [customerInfo]);
+  const tier = useMemo<TierId>(() => {
+    if (promo.grantedTier && tierRank(promo.grantedTier) > tierRank(rcTier)) {
+      return promo.grantedTier;
+    }
+    return rcTier;
+  }, [rcTier, promo.grantedTier]);
 
   // Server-tracked daily usage. Only queried when we have a stable appUserId
   // (RC anonymous ID hydrates on mount). Free tier needs this for the cap;
@@ -132,6 +174,43 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
     );
   }, [appUserId, queryClient]);
 
+  // Mirror a granted tier to the server so the daily-cap check honours it.
+  const syncTier = useCallback(
+    async (tierId: TierId) => {
+      if (!appUserId) return;
+      try {
+        await fetch("/api/subscriptions/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: appUserId, tier: tierId, status: "active" }),
+        });
+        usageQuery.refetch();
+      } catch {
+        /* non-fatal — RC + local override still gate the client */
+      }
+    },
+    [appUserId, usageQuery],
+  );
+
+  const redeemPromo = useCallback(
+    async (raw: string): Promise<RedeemResult> => {
+      const result = await redeemPromoCode(raw);
+      if (result.ok && result.state.grantedTier) {
+        await syncTier(result.state.grantedTier);
+      }
+      return result;
+    },
+    [syncTier],
+  );
+
+  const clearPromo = useCallback(async () => {
+    const hadGrant = promo.grantedTier;
+    await clearPromoCode();
+    // If a comp tier was active, revert the server mirror to the real RC tier
+    // so the daily cap re-applies (basic users get capped again).
+    if (hadGrant) await syncTier(rcTier);
+  }, [promo.grantedTier, rcTier, syncTier]);
+
   const requireFeature = useCallback(
     (feature: Feature, options?: RequireFeatureOptions): boolean => {
       if (tierIncludes(tier, feature)) return true;
@@ -159,8 +238,29 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
       refreshUsage: () => usageQuery.refetch(),
       bumpLooksToday,
       showUpgradePrompt,
+      discountPercent: promo.discountPercent,
+      promoCode: promo.code,
+      promoLabel: promo.label,
+      redeemPromo,
+      clearPromo,
     }),
-    [tier, appUserId, can, requireFeature, looksToday, lookCap, capped, usageQuery, bumpLooksToday, showUpgradePrompt],
+    [
+      tier,
+      appUserId,
+      can,
+      requireFeature,
+      looksToday,
+      lookCap,
+      capped,
+      usageQuery,
+      bumpLooksToday,
+      showUpgradePrompt,
+      promo.discountPercent,
+      promo.code,
+      promo.label,
+      redeemPromo,
+      clearPromo,
+    ],
   );
 
   return (
