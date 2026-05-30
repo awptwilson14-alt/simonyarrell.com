@@ -1,1 +1,1 @@
-- [Desktop-web hydration crash](desktop-web-hydration-crash.md) — static-export prerenders phone layout; desktop-width client re-commit caused the "indexed property [0]" crash. Repro needs a served static export at ≥1024px, never dev. Fix = seed width 0 on web in useResponsive.
+- [Vercel deploy stale build](vercel-deploy-stale-build.md) — prod "still broken" but code is fixed → compare sw.js VERSION across local/GitHub-main/live; if GitHub>live it's a Vercel deploy failure, not a code bug.
