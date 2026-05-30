@@ -143,3 +143,153 @@ export const SyncSubscriptionResponse = zod.object({
 })
 
 
+/**
+ * Resolves a promo code to its effect. Returns `found: false` when the
+code is unknown or inactive. Used by the client redemption flow as a
+fallback after the offline built-in codes miss.
+
+ * @summary Look up an active promo code (public)
+ */
+export const promoLookupQueryCodeMax = 64;
+
+
+
+export const PromoLookupQueryParams = zod.object({
+  "code": zod.coerce.string().min(1).max(promoLookupQueryCodeMax)
+})
+
+export const promoLookupResponsePercentMax = 100;
+
+
+
+export const PromoLookupResponse = zod.object({
+  "found": zod.boolean(),
+  "code": zod.string().optional(),
+  "label": zod.string().optional(),
+  "kind": zod.enum(['percent_off', 'grant_tier']).optional(),
+  "percent": zod.number().min(1).max(promoLookupResponsePercentMax).optional(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']).optional()
+})
+
+
+/**
+ * Requires the `x-admin-key` header. Returns every custom code.
+ * @summary List all admin-managed promo codes (admin)
+ */
+export const listPromoCodesResponsePercentMax = 100;
+
+
+
+export const ListPromoCodesResponseItem = zod.object({
+  "id": zod.number(),
+  "code": zod.string(),
+  "kind": zod.enum(['percent_off', 'grant_tier']),
+  "percent": zod.number().min(1).max(listPromoCodesResponsePercentMax).optional(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']).optional(),
+  "label": zod.string(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListPromoCodesResponse = zod.array(ListPromoCodesResponseItem)
+
+
+/**
+ * Requires the `x-admin-key` header.
+ * @summary Create a promo code (admin)
+ */
+export const createPromoCodeBodyCodeMax = 64;
+
+export const createPromoCodeBodyPercentMax = 100;
+
+export const createPromoCodeBodyLabelMax = 200;
+
+
+
+export const CreatePromoCodeBody = zod.object({
+  "code": zod.string().min(1).max(createPromoCodeBodyCodeMax),
+  "kind": zod.enum(['percent_off', 'grant_tier']),
+  "percent": zod.number().min(1).max(createPromoCodeBodyPercentMax).optional(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']).optional(),
+  "label": zod.string().min(1).max(createPromoCodeBodyLabelMax),
+  "active": zod.boolean().optional()
+})
+
+export const createPromoCodeResponsePercentMax = 100;
+
+
+
+export const CreatePromoCodeResponse = zod.object({
+  "id": zod.number(),
+  "code": zod.string(),
+  "kind": zod.enum(['percent_off', 'grant_tier']),
+  "percent": zod.number().min(1).max(createPromoCodeResponsePercentMax).optional(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']).optional(),
+  "label": zod.string(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * Requires the `x-admin-key` header. Only supplied fields change.
+ * @summary Update a promo code (admin)
+ */
+
+
+
+export const UpdatePromoCodeParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const updatePromoCodeBodyCodeMax = 64;
+
+export const updatePromoCodeBodyPercentMax = 100;
+
+export const updatePromoCodeBodyLabelMax = 200;
+
+
+
+export const UpdatePromoCodeBody = zod.object({
+  "code": zod.string().min(1).max(updatePromoCodeBodyCodeMax).optional(),
+  "kind": zod.enum(['percent_off', 'grant_tier']).optional(),
+  "percent": zod.number().min(1).max(updatePromoCodeBodyPercentMax).optional(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']).optional(),
+  "label": zod.string().min(1).max(updatePromoCodeBodyLabelMax).optional(),
+  "active": zod.boolean().optional()
+})
+
+export const updatePromoCodeResponsePercentMax = 100;
+
+
+
+export const UpdatePromoCodeResponse = zod.object({
+  "id": zod.number(),
+  "code": zod.string(),
+  "kind": zod.enum(['percent_off', 'grant_tier']),
+  "percent": zod.number().min(1).max(updatePromoCodeResponsePercentMax).optional(),
+  "tier": zod.enum(['basic', 'premium', 'pro', 'vip', 'diamond']).optional(),
+  "label": zod.string(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * Requires the `x-admin-key` header.
+ * @summary Delete a promo code (admin)
+ */
+
+
+
+export const DeletePromoCodeParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeletePromoCodeResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

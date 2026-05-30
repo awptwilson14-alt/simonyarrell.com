@@ -12,7 +12,8 @@
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { lookupPromo, type PromoCode } from "./promoCodes";
+import { lookupPromo, normalizeCode, type PromoCode } from "./promoCodes";
+import { lookupServerPromo } from "./promoAdmin";
 import type { TierId } from "./tiers";
 
 export interface PromoState {
@@ -28,6 +29,24 @@ export interface PromoState {
 
 const EMPTY: PromoState = { code: null, discountPercent: 0, grantedTier: null, label: null };
 const STORAGE_KEY = "promoConfig.v1";
+
+/**
+ * Persisted shape. Built-in (static) codes store only `code` — the effect is
+ * re-derived from `promoCodes.ts` on every load. Server (admin-created) codes
+ * also store an effect `snapshot` taken at redemption time, so the grant
+ * survives offline reloads and is NOT silently revoked if the owner later
+ * edits/deactivates the code (editing affects FUTURE redemptions only — normal
+ * promo-code semantics).
+ */
+interface PromoSnapshot {
+  discountPercent: number;
+  grantedTier: TierId | null;
+  label: string;
+}
+interface StoredPromo {
+  code: string;
+  snapshot?: PromoSnapshot;
+}
 
 let cached: PromoState = EMPTY;
 let loaded = false;
@@ -50,6 +69,23 @@ function fromPromoCode(p: PromoCode): PromoState {
   return { code: p.code, discountPercent: 0, grantedTier: p.effect.tier, label: p.label };
 }
 
+function fromSnapshot(code: string, snap: PromoSnapshot): PromoState {
+  return {
+    code,
+    discountPercent: snap.discountPercent,
+    grantedTier: snap.grantedTier,
+    label: snap.label,
+  };
+}
+
+function snapshotOf(state: PromoState): PromoSnapshot {
+  return {
+    discountPercent: state.discountPercent,
+    grantedTier: state.grantedTier,
+    label: state.label ?? "",
+  };
+}
+
 /**
  * Hydrate from AsyncStorage on boot. Idempotent. Re-derives the effect from
  * the current `PROMO_CODES` list so code definitions can evolve without
@@ -60,9 +96,15 @@ export async function loadPromoConfig(): Promise<PromoState> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as { code?: string };
-      const p = parsed.code ? lookupPromo(parsed.code) : null;
-      cached = p ? fromPromoCode(p) : EMPTY;
+      const parsed = JSON.parse(raw) as Partial<StoredPromo>;
+      if (parsed.code && parsed.snapshot) {
+        // Server (admin-created) code — restore the snapshot taken at redeem.
+        cached = fromSnapshot(parsed.code, parsed.snapshot);
+      } else if (parsed.code) {
+        // Built-in code — re-derive from the static source of truth.
+        const p = lookupPromo(parsed.code);
+        cached = p ? fromPromoCode(p) : EMPTY;
+      }
     }
   } catch {
     /* corrupt storage → leave defaults */
@@ -85,19 +127,48 @@ export type RedeemResult =
   | { ok: true; state: PromoState }
   | { ok: false; reason: "invalid" };
 
-/** Validate + persist a redemption. Returns the resolved effect or invalid. */
-export async function redeemPromoCode(raw: string): Promise<RedeemResult> {
-  const p = lookupPromo(raw);
-  if (!p) return { ok: false, reason: "invalid" };
-  cached = fromPromoCode(p);
-  loaded = true;
+async function persist(stored: StoredPromo): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ code: cached.code }));
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
   } catch {
     /* persistence failure is non-fatal — in-memory copy still active */
   }
-  notify();
-  return { ok: true, state: cached };
+}
+
+/**
+ * Validate + persist a redemption. Tries the offline built-in codes first
+ * (instant, works without a network), then falls back to the server-managed
+ * codes the owner created in the admin screen. Returns the resolved effect or
+ * invalid.
+ */
+export async function redeemPromoCode(raw: string): Promise<RedeemResult> {
+  // 1. Built-in (static) codes — re-derived from promoCodes.ts on every load.
+  const builtIn = lookupPromo(raw);
+  if (builtIn) {
+    cached = fromPromoCode(builtIn);
+    loaded = true;
+    await persist({ code: cached.code! });
+    notify();
+    return { ok: true, state: cached };
+  }
+
+  // 2. Server (admin-created) codes — snapshot the effect at redeem time.
+  try {
+    const result = await lookupServerPromo(normalizeCode(raw));
+    if (result.found && result.code) {
+      cached =
+        result.kind === "grant_tier" && result.tier
+          ? { code: result.code, discountPercent: 0, grantedTier: result.tier, label: result.label ?? "" }
+          : { code: result.code, discountPercent: result.percent ?? 0, grantedTier: null, label: result.label ?? "" };
+      loaded = true;
+      await persist({ code: cached.code!, snapshot: snapshotOf(cached) });
+      notify();
+      return { ok: true, state: cached };
+    }
+  } catch {
+    /* network/server error → treat as not found (generic invalid copy) */
+  }
+  return { ok: false, reason: "invalid" };
 }
 
 /** Remove any active promo (reverts to no discount / no grant). */

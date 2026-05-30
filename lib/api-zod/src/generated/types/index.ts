@@ -6,10 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './createPromoCodeRequest';
+export * from './deletePromoCodeResponse';
 export * from './getUsageTodayParams';
 export * from './healthStatus';
 export * from './lookAttemptRequest';
 export * from './lookAttemptResponse';
+export * from './promoCodeList';
+export * from './promoCodeRecord';
+export * from './promoKind';
+export * from './promoLookupParams';
+export * from './promoLookupResponse';
 export * from './stylistPlanRequest';
 export * from './stylistPlanRequestGender';
 export * from './stylistPlanRequestSeason';
@@ -22,4 +29,5 @@ export * from './subscriptionSyncRequest';
 export * from './subscriptionSyncRequestStatus';
 export * from './subscriptionSyncResponse';
 export * from './tierId';
+export * from './updatePromoCodeRequest';
 export * from './usageTodayResponse';

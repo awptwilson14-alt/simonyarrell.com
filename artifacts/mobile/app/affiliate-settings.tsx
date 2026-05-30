@@ -230,6 +230,21 @@ export default function AffiliateSettingsScreen() {
           here does not require regenerating any data, and saved products keep working
           forever even if you switch providers.
         </Text>
+
+        <OrnamentRule style={{ marginVertical: 24 }} />
+
+        <Pressable
+          onPress={() => router.push("/admin-promos")}
+          style={[styles.adminLink, { borderColor: colors.border, backgroundColor: colors.card }]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: colors.foreground }]}>Promo codes</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
+              Create & modify discount and comp codes.
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -272,6 +287,14 @@ const styles = StyleSheet.create({
   },
   rowTitle: { fontSize: 14, fontWeight: "600" },
   rowSub: { fontSize: 12, marginTop: 4, lineHeight: 16 },
+  adminLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 12,
+    gap: 12,
+  },
   networkGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   networkChip: {
     borderWidth: 1,

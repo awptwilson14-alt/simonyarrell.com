@@ -172,11 +172,104 @@ export interface SubscriptionSyncResponse {
   tier: TierId;
 }
 
+export type PromoKind = typeof PromoKind[keyof typeof PromoKind];
+
+
+export const PromoKind = {
+  percent_off: 'percent_off',
+  grant_tier: 'grant_tier',
+} as const;
+
+export interface PromoLookupResponse {
+  found: boolean;
+  code?: string;
+  label?: string;
+  kind?: PromoKind;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  percent?: number;
+  tier?: TierId;
+}
+
+export interface PromoCodeRecord {
+  id: number;
+  code: string;
+  kind: PromoKind;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  percent?: number;
+  tier?: TierId;
+  label: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PromoCodeList = PromoCodeRecord[];
+
+export interface CreatePromoCodeRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  code: string;
+  kind: PromoKind;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  percent?: number;
+  tier?: TierId;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  label: string;
+  active?: boolean;
+}
+
+export interface UpdatePromoCodeRequest {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  code?: string;
+  kind?: PromoKind;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  percent?: number;
+  tier?: TierId;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  label?: string;
+  active?: boolean;
+}
+
+export interface DeletePromoCodeResponse {
+  ok: boolean;
+}
+
 export type GetUsageTodayParams = {
 /**
  * @minLength 1
  * @maxLength 128
  */
 userId: string;
+};
+
+export type PromoLookupParams = {
+/**
+ * @minLength 1
+ * @maxLength 64
+ */
+code: string;
 };
 

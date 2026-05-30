@@ -16,6 +16,8 @@ tags:
     description: Per-user daily usage metering (look generation caps for free tier)
   - name: subscriptions
     description: User subscription tier sync (mirrors RevenueCat entitlements server-side)
+  - name: promo
+    description: Promo / comp code lookup (public) and admin-managed code CRUD
 paths:
   /healthz:
     get:
@@ -130,6 +132,136 @@ paths:
                 $ref: "#/components/schemas/SubscriptionSyncResponse"
         "400":
           description: Invalid request body
+  /promo/lookup:
+    get:
+      operationId: promoLookup
+      tags: [promo]
+      summary: Look up an active promo code (public)
+      description: |
+        Resolves a promo code to its effect. Returns `found: false` when the
+        code is unknown or inactive. Used by the client redemption flow as a
+        fallback after the offline built-in codes miss.
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+      responses:
+        "200":
+          description: Lookup resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromoLookupResponse"
+        "400":
+          description: Missing or invalid code
+  /promo/codes:
+    get:
+      operationId: listPromoCodes
+      tags: [promo]
+      summary: List all admin-managed promo codes (admin)
+      description: Requires the `x-admin-key` header. Returns every custom code.
+      responses:
+        "200":
+          description: Codes listed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromoCodeList"
+        "401":
+          description: Missing or invalid admin key
+        "503":
+          description: Admin features disabled (no admin key configured)
+    post:
+      operationId: createPromoCode
+      tags: [promo]
+      summary: Create a promo code (admin)
+      description: Requires the `x-admin-key` header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePromoCodeRequest"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromoCodeRecord"
+        "400":
+          description: Invalid request body
+        "401":
+          description: Missing or invalid admin key
+        "409":
+          description: A code with that name already exists
+        "503":
+          description: Admin features disabled
+  /promo/codes/{id}:
+    patch:
+      operationId: updatePromoCode
+      tags: [promo]
+      summary: Update a promo code (admin)
+      description: Requires the `x-admin-key` header. Only supplied fields change.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePromoCodeRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromoCodeRecord"
+        "400":
+          description: Invalid request body
+        "401":
+          description: Missing or invalid admin key
+        "404":
+          description: Code not found
+        "409":
+          description: A code with that name already exists
+        "503":
+          description: Admin features disabled
+    delete:
+      operationId: deletePromoCode
+      tags: [promo]
+      summary: Delete a promo code (admin)
+      description: Requires the `x-admin-key` header.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletePromoCodeResponse"
+        "401":
+          description: Missing or invalid admin key
+        "404":
+          description: Code not found
+        "503":
+          description: Admin features disabled
 components:
   schemas:
     HealthStatus:
@@ -305,3 +437,113 @@ components:
       required:
         - ok
         - tier
+    PromoKind:
+      type: string
+      enum: [percent_off, grant_tier]
+    PromoLookupResponse:
+      type: object
+      properties:
+        found:
+          type: boolean
+        code:
+          type: string
+        label:
+          type: string
+        kind:
+          $ref: "#/components/schemas/PromoKind"
+        percent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        tier:
+          $ref: "#/components/schemas/TierId"
+      required:
+        - found
+    PromoCodeRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        kind:
+          $ref: "#/components/schemas/PromoKind"
+        percent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        tier:
+          $ref: "#/components/schemas/TierId"
+        label:
+          type: string
+        active:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - code
+        - kind
+        - label
+        - active
+        - createdAt
+        - updatedAt
+    PromoCodeList:
+      type: array
+      items:
+        $ref: "#/components/schemas/PromoCodeRecord"
+    CreatePromoCodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        kind:
+          $ref: "#/components/schemas/PromoKind"
+        percent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        tier:
+          $ref: "#/components/schemas/TierId"
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        active:
+          type: boolean
+      required:
+        - code
+        - kind
+        - label
+    UpdatePromoCodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        kind:
+          $ref: "#/components/schemas/PromoKind"
+        percent:
+          type: integer
+          minimum: 1
+          maximum: 100
+        tier:
+          $ref: "#/components/schemas/TierId"
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        active:
+          type: boolean
+    DeletePromoCodeResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
