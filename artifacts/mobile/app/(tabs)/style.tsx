@@ -761,6 +761,43 @@ export default function StyleScreen() {
                   );
                 })()}
 
+                {/* Generic over-budget empty-state (no brand lock). Budget is a
+                    HARD cap — the total of every displayed look must stay within
+                    the selected budget, so a too-tight budget can legitimately
+                    yield zero assemblable looks. Explain it and route the user
+                    back to raise the budget rather than show a blank grid. */}
+                {results.length === 0 && !activeBrand && !loading && !aiLoading && !aiError && (() => {
+                  const heroGender = selectedGender || userProfile.gender;
+                  const emptyHeroKey: "men" | "women" = heroGender === "Men" ? "men" : "women";
+                  const emptyBackdrop =
+                    pickOccasionHero(selectedOccasion ?? "", heroGender) ??
+                    SPLASH_HEROES[emptyHeroKey];
+                  return (
+                    <View style={s.brandEmptyBox}>
+                      <Image
+                        source={emptyBackdrop}
+                        style={s.brandEmptyBackdrop}
+                        resizeMode="cover"
+                      />
+                      <LinearGradient
+                        colors={["rgba(11,11,12,0.62)", "rgba(11,11,12,0.88)", "rgba(11,11,12,0.96)"]}
+                        locations={[0, 0.55, 1]}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={s.brandEmptyContent}>
+                        <Feather name="dollar-sign" size={28} color={colors.gold} />
+                        <Text style={[s.brandEmptyTitle, { color: colors.foreground }]}>Nothing within your budget</Text>
+                        <Text style={[s.brandEmptyText, { color: colors.mutedForeground }]}>
+                          We couldn't assemble a complete {selectedOccasion ? `${selectedOccasion.toLowerCase()} ` : ""}look where every piece totals within {selectedBudget}. Raise your budget to unlock more options.
+                        </Text>
+                        <View style={s.brandEmptyActions}>
+                          <GoldButton label="ADJUST BUDGET" onPress={reset} variant="outline" />
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })()}
+
                 {/* Results grid */}
                 {results.length > 0 && (
                   <View style={s.resultsGrid}>

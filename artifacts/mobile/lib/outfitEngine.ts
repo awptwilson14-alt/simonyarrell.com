@@ -2427,10 +2427,13 @@ export function generateLooks(params: GenerateParams): Look[] {
 
   // Pass 1: honor every filter the user set (ideal match).
   runPass({ useBudget: true,  useOccasion: true,  useGender: true  });
-  // Pass 2: budget too tight? Drop the price cap but keep occasion + gender.
-  if (looks.length < count) runPass({ useBudget: false, useOccasion: true,  useGender: true  });
-  // Pass 3: still empty? Drop occasion match too (keep gender).
-  if (looks.length < count) runPass({ useBudget: false, useOccasion: false, useGender: true  });
+  // Pass 2: short on looks? Relax occasion/style to fill the grid, but KEEP
+  // the budget cap + gender. Budget is a HARD product rule — the TOTAL of
+  // every displayed look must stay within the user's selected budget, so we
+  // would rather show fewer looks than ever surface an over-budget outfit.
+  // (Previously Pass 2/3 dropped the price cap to always fill `count`, which
+  // is exactly what produced over-budget looks on the budget page.)
+  if (looks.length < count) runPass({ useBudget: true, useOccasion: false, useGender: true });
   // NOTE (batch 97): gender is a HARD product rule — "never wrong-gender
   // model, never a women's-only piece in a men's look". Previous tiers 4 + 5
   // disabled the gender filter as a last-ditch "always return something"
@@ -2446,7 +2449,7 @@ export function generateLooks(params: GenerateParams): Look[] {
   // global dedup memory. Better to show a repeat look than wrong-gender one.
   if (looks.length === 0) {
     _shownFingerprints.clear();
-    runPass({ useBudget: false, useOccasion: false, useGender: true });
+    runPass({ useBudget: true, useOccasion: false, useGender: true });
   }
 
   // HARD GUARANTEE: if even pass 5 produces nothing (tiny catalog, etc.),
@@ -2623,7 +2626,16 @@ export function generateLooks(params: GenerateParams): Look[] {
     }
   }
 
-  return shuffle(looks);
+  // HARD budget cap (single source of truth): the TOTAL of every displayed
+  // look must not exceed the user's selected budget. The passes above keep the
+  // running total within budgetMax, but the deterministic fallbacks assemble
+  // straight from the catalog without summing, so a 2-piece fallback where each
+  // piece is individually in-budget can still total over. Filter here as the
+  // final guarantee. budgetMax === 0 means "no budget selected" → no cap.
+  const withinBudget = budgetMax > 0
+    ? looks.filter((l) => l.estimatedPrice <= budgetMax)
+    : looks;
+  return shuffle(withinBudget);
 }
 
 // ─── AI Stylist plan resolver ────────────────────────────────────────────────
@@ -2743,6 +2755,13 @@ export function generateLookFromAIPlan(
   }
 
   if (pieces.length < 2) return null;
+
+  // HARD budget cap (parity with generateLooks): the TOTAL of every displayed
+  // look must stay within the user's selected budget. Per-slot filtering keeps
+  // individual pieces in budget, but a starved slot drops the price ceiling and
+  // the sum can still exceed it — drop the look honestly rather than surface an
+  // over-budget outfit. budgetMax === 0 means "no budget selected" → no cap.
+  if (budgetMax > 0 && total > budgetMax) return null;
 
   const fp = fingerprint(pieces.map((p) => p.id));
   return {
