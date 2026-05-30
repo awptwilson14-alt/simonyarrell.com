@@ -14,6 +14,15 @@ import { db, promoCodes, type PromoCodeRow } from "@workspace/db";
 
 const router: IRouter = Router();
 
+/**
+ * The 4 launch codes are compiled into the mobile bundle (`promoCodes.ts`) and
+ * checked BEFORE the server at redeem time, so a server code reusing one of
+ * these names could never win. Reject the collision at create/update so the
+ * owner isn't confused by a code that silently never applies. Keep in sync with
+ * `artifacts/mobile/lib/promoCodes.ts`.
+ */
+const BUILTIN_CODES = new Set(["MAISON20", "MAISON30", "MAISON50", "DIAMONDHOUSE"]);
+
 /** Strip whitespace + uppercase so "maison 20" and "MAISON20" both match. */
 function normalizeCode(raw: string): string {
   return raw.replace(/\s+/g, "").toUpperCase();
@@ -64,6 +73,22 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Postgres raises SQLSTATE 23505 on a unique-constraint violation. The create/
+ * update handlers pre-check for a duplicate code, but two concurrent admin
+ * requests can both pass that check and race to INSERT — the DB unique index on
+ * `code` is the real guard. Map that race to a deterministic 409 instead of a
+ * misleading 500.
+ */
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: string }).code === "23505"
+  );
+}
 
 /** Validate kind-specific fields. Returns an error string or null. */
 function validateEffect(
@@ -140,6 +165,12 @@ router.post("/promo/codes", requireAdmin, async (req, res) => {
   }
   const { kind, percent, tier, label, active } = parsed.data;
   const code = normalizeCode(parsed.data.code);
+  if (BUILTIN_CODES.has(code)) {
+    res
+      .status(409)
+      .json({ error: "That code is reserved by a built-in code" });
+    return;
+  }
   const effectErr = validateEffect(kind, percent, tier);
   if (effectErr) {
     res.status(400).json({ error: effectErr });
@@ -168,6 +199,10 @@ router.post("/promo/codes", requireAdmin, async (req, res) => {
       .returning();
     res.json(CreatePromoCodeResponse.parse(toRecord(inserted[0])));
   } catch (err) {
+    if (isUniqueViolation(err)) {
+      res.status(409).json({ error: "A code with that name already exists" });
+      return;
+    }
     req.log.error({ err }, "promo/codes: create failed");
     res.status(500).json({ error: "Failed to create promo code" });
   }
@@ -214,7 +249,16 @@ router.patch("/promo/codes/:id", requireAdmin, async (req, res) => {
     }
 
     const set: Partial<typeof promoCodes.$inferInsert> = {};
-    if (next.code !== undefined) set.code = normalizeCode(next.code);
+    if (next.code !== undefined) {
+      const nextCode = normalizeCode(next.code);
+      if (BUILTIN_CODES.has(nextCode)) {
+        res
+          .status(409)
+          .json({ error: "That code is reserved by a built-in code" });
+        return;
+      }
+      set.code = nextCode;
+    }
     if (next.label !== undefined) set.label = next.label;
     if (next.active !== undefined) set.active = next.active;
     // Always keep kind + its companion field consistent.
@@ -241,6 +285,10 @@ router.patch("/promo/codes/:id", requireAdmin, async (req, res) => {
       .returning();
     res.json(UpdatePromoCodeResponse.parse(toRecord(updated[0])));
   } catch (err) {
+    if (isUniqueViolation(err)) {
+      res.status(409).json({ error: "A code with that name already exists" });
+      return;
+    }
     req.log.error({ err }, "promo/codes: update failed");
     res.status(500).json({ error: "Failed to update promo code" });
   }
