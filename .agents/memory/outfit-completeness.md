@@ -20,3 +20,11 @@ description: Every generated outfit must be complete (no partial outfits); women
 **Composes WITH the budget hard-cap, doesn't fight it:** a required bag that can't fit budget drops the look (honest empty-state), never shows a partial OR over-budget outfit. The final total-budget filter still runs after backfill.
 
 **Accepted tradeoff:** requiring a women's bag means a thinly-stocked brand-lock with NO bag in catalog now yields zero women's looks — intended honest empty-state, consistent with the budget-hard-cap philosophy. This is in tension with the "show looks for sparse brand-locks" safety net; completeness wins because it's the explicit spec. Do NOT reintroduce partial-outfit fallbacks to "fill the grid."
+
+## Men's bag silhouette whitelist (no totes for men)
+
+**Rule:** a men's look may only carry a backpack / crossbody (sling, messenger) / briefcase / duffel (holdall, weekender). Totes — and market/shopper/pouch bags — are excluded from MEN's looks. Women & unisex unaffected. Bags stay OPTIONAL for men.
+
+**Why:** product owner styling spec — a tote reads as a women's/utility carry and looks wrong on a men's outfit. Catalog tags everything just `category:"bag"`, so the only signal for bag silhouette is the item NAME.
+
+**How to apply:** `isBagAppropriateForGender(item, genderKey)` in `outfitEngine.ts` — non-bag categories and non-men genders pass through; for men it DENYs `/tote|market bag|shopper/` first (so "crossbody tote" correctly denies) then requires an ALLOW-list name match. Because catalog bags are name-only, this is intentionally a NAME regex, not a structured type field. Applied at EVERY men's bag path: `generateLooks` separates-branch extras pool, `generateLookFromAIPlan` `slotPool` (both budget passes), and `ensureCategory` backfill. Men's deterministic fallbacks (brand-lock + ultra) never add a bag, so they need no filter. Over-filtering is safe: bags are optional for men, so the look just ends bagless-but-complete (never partial). Server `stylist.ts` SYSTEM_PROMPT mirrors the rule as belt-and-suspenders, but the client resolver is the real guarantee.

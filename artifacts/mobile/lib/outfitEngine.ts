@@ -1774,6 +1774,30 @@ function isCompleteOutfit(
   return true;
 }
 
+// ─── Men's bag styling rule ──────────────────────────────────────────────────
+// A tote reads as a women's / utility carry, so it must never complete a men's
+// look. Per the styling spec, a men's outfit may only carry a structured
+// masculine bag: a backpack, a crossbody (incl. sling / messenger), a briefcase,
+// or a duffel (incl. holdall / weekender). Any "bag"-category item that doesn't
+// match one of those silhouettes (totes, pouches, market bags, mis-tagged feed
+// rows, etc.) is excluded from men's looks. Women's and unisex looks are
+// unaffected. Bags are RECOMMENDED (optional) for men, so over-filtering simply
+// yields a bag-less — but still complete — men's outfit, never a partial one.
+const MENS_BAG_DENY = /\btote\b|market\s*bag|shopper/i;
+const MENS_BAG_ALLOW =
+  /backpack|rucksack|cross[\s-]?body|sling|messenger|brief\s*case|briefcase|attach[eé]|portfolio|duffel|duffle|holdall|weekender/i;
+
+function isBagAppropriateForGender(
+  item: { name?: string; category?: string },
+  genderKey: string,
+): boolean {
+  if (item.category !== "bag") return true; // rule only applies to bags
+  if (genderKey !== "men") return true; // only constrains men's looks
+  const name = (item.name ?? "").toLowerCase();
+  if (MENS_BAG_DENY.test(name)) return false; // explicit: no totes for men
+  return MENS_BAG_ALLOW.test(name); // whitelist masculine silhouettes only
+}
+
 export function generateLooks(params: GenerateParams): Look[] {
   const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName, season } = params;
   const brandLock = params.brandLock ? (BRAND_LOCK_ALIASES[params.brandLock] ?? params.brandLock) : undefined;
@@ -2395,10 +2419,12 @@ export function generateLooks(params: GenerateParams): Look[] {
         addPiece(bag);
       } else {
         // Men / unisex: a bag is RECOMMENDED, not required. Prefer a real bag
-        // (crossbody, tote, briefcase…) when the budget has room, falling back
-        // to a smaller accessory. Never blocks the look from completing.
+        // (backpack, crossbody, briefcase, duffel — NEVER a tote for men) when
+        // the budget has room, falling back to a smaller accessory. Never blocks
+        // the look from completing.
         if (total < cap * 0.85) {
-          const extrasPool = bags.length > 0 ? bags : accessories;
+          const eligibleBags = bags.filter((b) => isBagAppropriateForGender(b, genderKey));
+          const extrasPool = eligibleBags.length > 0 ? eligibleBags : accessories;
           const affordableExtras = extrasPool.filter((e) => e.price + total <= cap);
           const extra = stylePick(affordableExtras);
           if (extra) addPiece(extra);
@@ -2746,6 +2772,7 @@ export function generateLookFromAIPlan(
         item.category === slot.category &&
         matchesGender(item) &&
         seasonOk(item) &&
+        isBagAppropriateForGender(item, genderKey) &&
         item.price <= budgetMax,
     );
     if (base.length === 0) {
@@ -2754,7 +2781,8 @@ export function generateLookFromAIPlan(
         (item) =>
           item.category === slot.category &&
           matchesGender(item) &&
-          seasonOk(item),
+          seasonOk(item) &&
+          isBagAppropriateForGender(item, genderKey),
       );
     }
     return base;
@@ -2824,6 +2852,7 @@ export function generateLookFromAIPlan(
         item.category === category &&
         matchesGender(item) &&
         seasonOk(item) &&
+        isBagAppropriateForGender(item, genderKey) &&
         !usedIds.has(item.id) &&
         (budgetMax === 0 || item.price + total <= budgetMax),
     );
@@ -2837,6 +2866,7 @@ export function generateLookFromAIPlan(
               item.category === category &&
               matchesGender(item) &&
               seasonOk(item) &&
+              isBagAppropriateForGender(item, genderKey) &&
               !usedIds.has(item.id),
           );
     if (pool.length === 0) return;
