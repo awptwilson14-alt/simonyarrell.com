@@ -1750,6 +1750,30 @@ function matchesSeason(item: CatalogItem, season: string): boolean {
   return inferItemSeasons(item).includes(season as SeasonTag);
 }
 
+// ─── Outfit completeness contract ────────────────────────────────────────────
+// Single source of truth for "is this a complete, wearable outfit?" — enforced
+// identically by generateLooks (rule-based) and generateLookFromAIPlan (AI).
+// Rules (per the product spec):
+//   • Men / unisex: 1 top + 1 bottom + 1 shoes  (outerwear optional, bag recommended)
+//   • Women:        (1 dress  OR  1 top + 1 bottom) + 1 shoes + 1 bag
+//     — the handbag is REQUIRED for women; a women's look without a coordinating
+//       bag is treated as a partial outfit and dropped.
+// No partial outfits ever reach the grid: every look-builder runs this gate as
+// its final check, and an unsatisfiable catalog (e.g. a thinly-stocked brand-
+// lock that has no bag) legitimately yields fewer/zero looks — the honest
+// empty-state, not a half-assembled card.
+function isCompleteOutfit(
+  pieces: ReadonlyArray<{ category: string }>,
+  genderKey: string,
+): boolean {
+  const has = (c: string) => pieces.some((p) => p.category === c);
+  if (!has("shoes")) return false;
+  const hasCoreClothes = has("dress") || (has("top") && has("bottom"));
+  if (!hasCoreClothes) return false;
+  if (genderKey === "women") return has("bag");
+  return true;
+}
+
 export function generateLooks(params: GenerateParams): Look[] {
   const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName, season } = params;
   const brandLock = params.brandLock ? (BRAND_LOCK_ALIASES[params.brandLock] ?? params.brandLock) : undefined;
@@ -2284,12 +2308,13 @@ export function generateLooks(params: GenerateParams): Look[] {
       if (!shoe) continue;
       addPiece(shoe);
 
-      // Optional bag
-      if (total < cap * 0.8 && bags.length > 0) {
-        const affordableBags = bags.filter((b) => b.price + total <= cap);
-        const bag = stylePick(affordableBags);
-        if (bag) addPiece(bag);
-      }
+      // Handbag — REQUIRED for women (dress branch only runs for women). A
+      // dress + shoes without a coordinating bag is a partial outfit per the
+      // completeness contract, so drop the look when no in-budget bag fits.
+      const affordableBags = bags.filter((b) => b.price + total <= cap);
+      const bag = stylePick(affordableBags);
+      if (!bag) continue;
+      addPiece(bag);
 
       // Optional jewelry
       if (total < cap * 0.9 && jewelry.length > 0) {
@@ -2360,16 +2385,30 @@ export function generateLooks(params: GenerateParams): Look[] {
         if (outer) addPiece(outer);
       }
 
-      // Optional bag (for women mostly) or accessories
-      const extras = genderKey === "women" ? bags : accessories;
-      if (extras.length > 0 && total < cap * 0.85) {
-        const affordableExtras = extras.filter((e) => e.price + total <= cap);
-        const extra = stylePick(affordableExtras);
-        if (extra) addPiece(extra);
+      if (genderKey === "women") {
+        // Handbag — REQUIRED for women per the completeness contract. Drop the
+        // look when no in-budget bag can complete it rather than show a
+        // top+bottom+shoes outfit with no coordinating bag.
+        const affordableBags = bags.filter((b) => b.price + total <= cap);
+        const bag = stylePick(affordableBags);
+        if (!bag) continue;
+        addPiece(bag);
+      } else {
+        // Men / unisex: a bag is RECOMMENDED, not required. Prefer a real bag
+        // (crossbody, tote, briefcase…) when the budget has room, falling back
+        // to a smaller accessory. Never blocks the look from completing.
+        if (total < cap * 0.85) {
+          const extrasPool = bags.length > 0 ? bags : accessories;
+          const affordableExtras = extrasPool.filter((e) => e.price + total <= cap);
+          const extra = stylePick(affordableExtras);
+          if (extra) addPiece(extra);
+        }
       }
     }
 
-    if (pieces.length < 2) continue;
+    // Completeness gate — no partial outfits ever reach the grid. Men/unisex
+    // need top+bottom+shoes; women need (dress | top+bottom)+shoes+bag.
+    if (!isCompleteOutfit(pieces, genderKey)) continue;
 
     // Dedup check — fingerprint by sorted item ids
     const fp = fingerprint(pieces.map((p) => p.id));
@@ -2495,15 +2534,22 @@ export function generateLooks(params: GenerateParams): Look[] {
       ? brandPool.find((i) => i.category === "shoes" && inferShoeType(i) === "sneakers")
       : brandPool.find((i) => i.category === "shoes");
     const bDress = brandPool.find((i) => i.category === "dress");
-    const bOuter = brandPool.find((i) => i.category === "outerwear");
+    const bBag = brandPool.find((i) => i.category === "bag");
     const bFb: CatalogItem[] = [];
-    if (bDress && bShoe) bFb.push(bDress, bShoe);
-    else if (bTop && bBottom && bShoe) bFb.push(bTop, bBottom, bShoe);
-    else if (bTop && bBottom) bFb.push(bTop, bBottom);
-    else if (bTop && bShoe) bFb.push(bTop, bShoe);
-    else if (bBottom && bShoe) bFb.push(bBottom, bShoe);
-    else if (bOuter && bBottom) bFb.push(bOuter, bBottom);
-    if (bFb.length >= 2) {
+    // Even this last-resort brand-lock safety net must ship a COMPLETE outfit
+    // — no partial cards. Assemble a complete core (dress | top+bottom) + shoes,
+    // and for women add the REQUIRED coordinating bag. If the locked brand
+    // can't supply a complete outfit for this gender, push nothing and let the
+    // honest empty-state explain rather than surface a half-look.
+    if (genderKey === "women") {
+      if (bDress && bShoe) bFb.push(bDress, bShoe);
+      else if (bTop && bBottom && bShoe) bFb.push(bTop, bBottom, bShoe);
+      if (bFb.length > 0 && bBag) bFb.push(bBag);
+      else bFb.length = 0; // no bag (or no core) → cannot complete a women's look
+    } else if (bTop && bBottom && bShoe) {
+      bFb.push(bTop, bBottom, bShoe);
+    }
+    if (isCompleteOutfit(bFb, genderKey)) {
       const bStyle = pick(occasionStyles);
       const bPalette = pickPaletteForStyle(bStyle);
       const sigSet = new Set(celebSignatureBrands ?? []);
@@ -2560,15 +2606,21 @@ export function generateLooks(params: GenerateParams): Look[] {
     const anyBottom = gPool.find((i) => i.category === "bottom");
     const anyShoe = gPool.find((i) => i.category === "shoes");
     const anyDress = gPool.find((i) => i.category === "dress");
+    const anyBag = gPool.find((i) => i.category === "bag");
     const fallbackItems: CatalogItem[] = [];
-    if (anyDress && anyShoe) {
-      fallbackItems.push(anyDress, anyShoe);
+    // Ultra-fallback must still be a COMPLETE outfit — never a 2-piece partial.
+    // Women need (dress | top+bottom) + shoes + the required bag; men/unisex
+    // need top+bottom+shoes. Drawn from the full catalog, so women's bags are
+    // available here even though brand-lock above may not have one.
+    if (genderKey === "women") {
+      if (anyDress && anyShoe) fallbackItems.push(anyDress, anyShoe);
+      else if (anyTop && anyBottom && anyShoe) fallbackItems.push(anyTop, anyBottom, anyShoe);
+      if (fallbackItems.length > 0 && anyBag) fallbackItems.push(anyBag);
+      else fallbackItems.length = 0;
     } else if (anyTop && anyBottom && anyShoe) {
       fallbackItems.push(anyTop, anyBottom, anyShoe);
-    } else if (anyTop && anyBottom) {
-      fallbackItems.push(anyTop, anyBottom);
     }
-    if (fallbackItems.length >= 2) {
+    if (isCompleteOutfit(fallbackItems, genderKey)) {
       const fallbackStyle = pick(occasionStyles);
       const fallbackPalette = pickPaletteForStyle(fallbackStyle);
       // Ultra-fallback ignores every brand filter, so by construction no
@@ -2734,10 +2786,7 @@ export function generateLookFromAIPlan(
   const usedIds = new Set<string>();
   let total = 0;
 
-  for (const slot of plan.slots) {
-    const pool = slotPool(slot).filter((i) => !usedIds.has(i.id));
-    const item = rankBySlot(pool, slot);
-    if (!item) continue; // catalog gap for this slot — drop honestly
+  const addResolved = (item: CatalogItem): void => {
     usedIds.add(item.id);
     total += item.price;
     pieces.push({
@@ -2752,9 +2801,75 @@ export function generateLookFromAIPlan(
       purchaseUrl: item.directProductUrl ?? buildPurchaseUrl(item),
       signature: true,
     });
+  };
+
+  for (const slot of plan.slots) {
+    const pool = slotPool(slot).filter((i) => !usedIds.has(i.id));
+    const item = rankBySlot(pool, slot);
+    if (!item) continue; // catalog gap for this slot — drop honestly
+    addResolved(item);
   }
 
-  if (pieces.length < 2) return null;
+  // Completeness backfill — the AI plan can under-specify (omit shoes, a bottom,
+  // or — for women — the required bag). Rather than ship a partial outfit, pull
+  // the missing REQUIRED categories straight from the catalog, honoring the same
+  // HARD gender + season rules and preferring in-budget, on-style pieces. If a
+  // required category can't be filled, the look fails the completeness gate
+  // below and is dropped honestly.
+  const styleKey = plan.style.toLowerCase();
+  const ensureCategory = (category: CatalogItem["category"]): void => {
+    if (pieces.some((p) => p.category === category)) return;
+    const inBudget = CATALOG.filter(
+      (item) =>
+        item.category === category &&
+        matchesGender(item) &&
+        seasonOk(item) &&
+        !usedIds.has(item.id) &&
+        (budgetMax === 0 || item.price + total <= budgetMax),
+    );
+    // Keep gender + season HARD; only relax the budget headroom if needed (the
+    // final total-budget gate still drops the look if this blows the cap).
+    const pool =
+      inBudget.length > 0
+        ? inBudget
+        : CATALOG.filter(
+            (item) =>
+              item.category === category &&
+              matchesGender(item) &&
+              seasonOk(item) &&
+              !usedIds.has(item.id),
+          );
+    if (pool.length === 0) return;
+    const ranked = [...pool].sort(
+      (a, b) =>
+        (b.styles.some((s) => s.toLowerCase() === styleKey) ? 1 : 0) -
+        (a.styles.some((s) => s.toLowerCase() === styleKey) ? 1 : 0),
+    );
+    addResolved(ranked[0]);
+  };
+
+  const hasCat = (c: CatalogItem["category"]) => pieces.some((p) => p.category === c);
+  if (genderKey === "women") {
+    // Women: complete core (dress OR top+bottom) + shoes + bag.
+    if (!hasCat("dress") && !(hasCat("top") && hasCat("bottom"))) {
+      if (hasCat("top")) ensureCategory("bottom");
+      else if (hasCat("bottom")) ensureCategory("top");
+      else {
+        ensureCategory("top");
+        ensureCategory("bottom");
+      }
+    }
+    ensureCategory("shoes");
+    ensureCategory("bag");
+  } else {
+    // Men / unisex: top + bottom + shoes.
+    ensureCategory("top");
+    ensureCategory("bottom");
+    ensureCategory("shoes");
+  }
+
+  // No partial outfits — gate on the same completeness contract as generateLooks.
+  if (!isCompleteOutfit(pieces, genderKey)) return null;
 
   // HARD budget cap (parity with generateLooks): the TOTAL of every displayed
   // look must stay within the user's selected budget. Per-slot filtering keeps

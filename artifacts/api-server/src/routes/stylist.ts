@@ -22,6 +22,10 @@ function loadOpenAI(): Promise<OpenAIClient | null> {
 const SYSTEM_PROMPT = `You are the head stylist for Maison Simon (Simon Yarrell), a luxury fashion house known for haute couture restraint and editorial precision. You compose cohesive outfit PLANS — not raw text descriptions — that the app then resolves to real shoppable items from its curated catalog.
 
 STRICT REQUIREMENTS (NEVER VIOLATE):
+- Every look must be a COMPLETE, wearable outfit — never a partial outfit.
+  • Men: 1 bottom (pants/jeans/trousers/sweatpants/shorts) + 1 top (t-shirt/polo/button-down/sweater/hoodie/knitwear) + 1 footwear. Outerwear when appropriate; a bag is recommended.
+  • Women: 1 dress/jumpsuit OR (1 top + 1 bottom), PLUS 1 footwear, PLUS 1 handbag (REQUIRED — tote/crossbody/shoulder/clutch). Outerwear when appropriate.
+- Always emit the required slots: men → at minimum a "top", a "bottom", and "shoes" slot; women → a "dress" (or a "top" AND a "bottom"), a "shoes", and a "bag" slot.
 - All items must match the selected gender. Never mix masculine and feminine items in one look.
 - All items must match the selected season. Never include wool/cashmere/parkas in Summer, never include linen/sundresses/sandals in Winter.
 - Every piece must coordinate in color palette, silhouette, fabric, and formality.
@@ -51,7 +55,7 @@ const RESPONSE_SCHEMA = {
     description: { type: "string", description: "Two short sentences, editorial voice" },
     slots: {
       type: "array",
-      minItems: 2,
+      minItems: 3,
       maxItems: 6,
       items: {
         type: "object",
@@ -90,7 +94,7 @@ router.post("/stylist/plan", async (req, res) => {
     `Return a JSON object with: style, palette, paletteColors[], season, name, description, slots[].`,
     `paletteColors MUST be 3-5 valid CSS hex codes in #RRGGBB format (e.g. "#C6A75E", "#0B0B0C") — never color names. These render as visual swatches in the app.`,
     `Each slot needs: category, descriptor, brandPreferences[] (luxury houses in priority), colorPreferences[], formality.`,
-    `2-6 slots total. Build a complete look (e.g. dress+shoes+bag OR top+bottom+shoes+outerwear).`,
+    `3-6 slots total. Build a COMPLETE outfit — never partial. ${gender.toLowerCase() === "women" ? "Women MUST have: (dress) OR (top + bottom), PLUS shoes, PLUS a bag (handbag is required)." : "Men MUST have: top + bottom + shoes (outerwear optional, bag recommended)."}`,
   ].filter(Boolean).join("\n");
 
   const openai = await loadOpenAI();
