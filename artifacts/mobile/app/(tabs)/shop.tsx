@@ -48,6 +48,18 @@ const TIER_ICON: Record<BrandTier, React.ComponentProps<typeof Feather>["name"]>
   "fast-fashion": "zap",
 };
 
+// Budget bucket to seed when handing off "STYLE WITH <BRAND>" to /style.
+// Luxury & ultra-luxury houses price every piece above the default
+// $500–$1500 cap, so without a brand-appropriate budget the brand-locked
+// grid always comes back empty ("over your budget") and the user sees zero
+// clothes. Must be a valid BUDGETS bucket (constants/data.ts) — /style only
+// applies it when it matches. Lower tiers keep the user's existing budget.
+const TIER_STYLE_BUDGET: Partial<Record<BrandTier, string>> = {
+  "ultra-luxury": "$6000+",
+  luxury: "$6000+",
+  premium: "$3000–$6000",
+};
+
 export default function ShopScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -386,9 +398,18 @@ export default function ShopScreen() {
                             // catalog items). Snapshotted + cleared on the
                             // /style side so cold-opening the Style tab
                             // later doesn't re-apply the lock.
+                            // Also seed a tier-appropriate budget so luxury
+                            // houses (whose pieces sit above the default
+                            // $500–$1500 cap) actually return clothes instead
+                            // of an empty "over your budget" grid.
                             router.push({
                               pathname: "/(tabs)/style",
-                              params: { brand: brand.name },
+                              params: {
+                                brand: brand.name,
+                                ...(TIER_STYLE_BUDGET[brand.tier]
+                                  ? { budget: TIER_STYLE_BUDGET[brand.tier] }
+                                  : {}),
+                              },
                             })
                           }
                         >

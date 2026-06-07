@@ -88,12 +88,13 @@ export default function StyleScreen() {
   // Snapshotted to local state on mount so it survives within this Style
   // session, then the route params are immediately cleared so the bias
   // does NOT leak the next time the user opens the Style tab.
-  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam } = useLocalSearchParams<{
+  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam, budget: budgetParam } = useLocalSearchParams<{
     celebrity?: string;
     celebName?: string;
     lookHint?: string;
     trendHint?: string;
     brand?: string;
+    budget?: string;
   }>();
   const [activeCeleb, setActiveCeleb] = useState<CelebFull | undefined>(undefined);
   // Optional iconic-look hint when the user tapped a specific Signature Look
@@ -175,8 +176,18 @@ export default function StyleScreen() {
     setActiveCeleb(undefined);
     setActiveLookHint(undefined);
     setActiveTrendHint(undefined);
-    router.setParams({ brand: undefined });
-  }, [brandParam, router]);
+    // Seed a brand-appropriate budget when /shop hands off "STYLE WITH <BRAND>".
+    // Luxury & ultra-luxury houses price every piece above the default
+    // $500–$1500 cap, so without this the brand-locked grid is always empty
+    // ("over your budget") — the user picks a luxury designer and sees zero
+    // clothes. Budget stays a HARD cap (we only raise the ceiling for this
+    // explicit brand-lock session); the user can still lower it on the refine
+    // step. Only applied when the param is a known BUDGETS bucket.
+    if (budgetParam && BUDGETS.includes(budgetParam)) {
+      setSelectedBudget(budgetParam);
+    }
+    router.setParams({ brand: undefined, budget: undefined });
+  }, [brandParam, budgetParam, router]);
 
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
