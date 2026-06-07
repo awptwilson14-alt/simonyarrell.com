@@ -1,0 +1,114 @@
+Outfit Generation Rules (Required)
+
+General Rules
+
+* Every generated outfit must be a complete, wearable outfit.
+* Do not generate partial outfits.
+* No duplicate outfits.
+* No duplicate combinations of clothing items.
+* Every item in the outfit must match the overall style, season, occasion, color palette, and aesthetic.
+* All products must be real products with real images and real purchase links.
+* Do not mix conflicting aesthetics, seasons, or formality levels within the same outfit.
+
+Men’s Outfit Requirements
+
+Every men’s outfit must include:
+
+1. Bottoms (choose one)
+    * Pants
+    * Jeans
+    * Trousers
+    * Sweatpants
+    * Shorts
+2. Top (choose one)
+    * T-shirt
+    * Polo
+    * Button-down shirt
+    * Sweater
+    * Hoodie
+    * Knitwear
+3. Footwear (required)
+    * Sneakers
+    * Dress shoes
+    * Boots
+    * Loafers
+    * Sandals (when appropriate)
+4. Outerwear (when appropriate)
+    * Blazer
+    * Suit jacket
+    * Bomber jacket
+    * Denim jacket
+    * Overcoat
+    * Leather jacket
+    * Any jacket must match the style and formality of the outfit.
+5. Bag (recommended)
+    * Crossbody bag
+    * Tote bag
+    * Messenger bag
+    * Briefcase
+    * Backpack
+    * Luxury men’s bag
+
+Women’s Outfit Requirements
+
+Every women’s outfit must include:
+
+1. Top or One-Piece (choose one)
+    * Shirt
+    * Blouse
+    * Sweater
+    * Bodysuit
+    * Dress
+    * Jumpsuit
+2. Bottom (required unless wearing a dress or jumpsuit)
+    * Pants
+    * Jeans
+    * Trousers
+    * Skirt
+    * Shorts
+3. Footwear (required)
+    * Sneakers
+    * Heels
+    * Flats
+    * Boots
+    * Sandals
+    * Loafers
+4. Handbag (required)
+    * Tote bag
+    * Crossbody bag
+    * Shoulder bag
+    * Clutch
+    * Luxury handbag
+    * The handbag must coordinate with the outfit.
+5. Outerwear (when appropriate)
+    * Blazer
+    * Coat
+    * Jacket
+    * Trench coat
+    * Cardigan
+    * Outerwear must match the outfit’s style and season.
+
+Validation Rules
+
+Before displaying any outfit, verify:
+
+* Men’s outfits contain:
+    * 1 Bottom
+    * 1 Top
+    * 1 Pair of Shoes
+    * Optional matching outerwear
+    * Recommended matching bag
+* Women’s outfits contain:
+    * Dress OR Top + Bottom
+    * 1 Pair of Shoes
+    * 1 Matching Purse/Handbag
+    * Optional matching outerwear
+
+Outfit Quality Requirements
+
+* Generate only fashion-forward, professionally styled looks.
+* Every item must complement the other items.
+* Prioritize color coordination, silhouette balance, brand consistency, and styling cohesion.
+* Avoid repetitive item combinations.
+* Ensure outfit diversity across generated results.
+* Every look should appear as if it was styled by a professional luxury fashion stylist.
