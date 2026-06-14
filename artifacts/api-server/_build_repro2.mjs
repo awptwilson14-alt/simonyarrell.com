@@ -1,0 +1,1 @@
+import { build } from "esbuild"; await build({entryPoints:["/tmp/repro2.ts"],bundle:true,platform:"node",format:"cjs",outfile:"/tmp/repro2.cjs",alias:{"@":"/home/runner/workspace/artifacts/mobile"},loader:{".png":"empty",".jpg":"empty",".jpeg":"empty",".webp":"empty",".mp3":"empty",".mp4":"empty",".ttf":"empty",".otf":"empty",".svg":"empty"},logLevel:"error"});

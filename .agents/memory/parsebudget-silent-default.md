@@ -28,3 +28,17 @@ product photo (`piece.imageUrl`), deduped across the batch, never `piece.localIm
 (that field is bundled AI artwork). This swap is scoped to runway only —
 `generateLookFromAIPlan` still returns editorial heroes for the normal AI flow,
 which wants them.
+
+**Related — broken product images / "no product image" placeholders:** a piece can
+HAVE a `productImageUrl` and still render the brand-monogram placeholder tile if
+the URL is hotlink-blocked. Resale CDNs (jolicloset → HTTP 403, also 1stdibs /
+ebayimg) are the offenders AND aren't the brand's own site. ALL Shopify-feed items
+(`catalogFeed.ts`) use `cdn.shopify.com` — brand-direct PDP photos that hotlink
+fine. Fix: `ResolveAIPlanParams.requireBrandDirectImage` (+ `hasReliableProductImage`
+host whitelist in `outfitEngine.ts`) makes the resolver pick ONLY items whose image
+is on a brand-direct host. It's a HARD constraint threaded through EVERY candidate
+filter incl. the budget-relaxed fallbacks (never relaxed like budget). Runway passes
+it `true`; verified the feed alone resolves 40/40 complete looks per gender at
+`$6000+`. **Why brand-direct, not a per-URL liveness probe:** can't HEAD-check
+thousands of items at runtime, and resale CDNs aren't "from their website" anyway.
+To add a host, extend `BRAND_DIRECT_IMAGE_HOSTS` (exact/sub-domain match).

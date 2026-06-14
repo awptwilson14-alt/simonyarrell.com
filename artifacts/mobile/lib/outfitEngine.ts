@@ -2745,6 +2745,33 @@ export interface ResolveAIPlanParams {
   gender: string;       // "Women" | "Men" | "Unisex"
   budget: string;
   season?: string;      // user's onboarding season — overrides plan.season
+  // When true, only catalog items with a reliable, brand-direct product image
+  // (a live photo that actually loads — see hasReliableProductImage) are eligible.
+  // Used by the Runway engine so every resolved piece shows a real website photo,
+  // never a hotlink-blocked resale CDN image that degrades to a monogram tile.
+  requireBrandDirectImage?: boolean;
+}
+
+// Hosts that serve brand-direct product photography and permit hotlinking, so
+// the image reliably renders in <Image>. The Shopify storefront CDN backs all
+// auto-generated feed items (real PDPs from the brand's own store). Resale CDNs
+// (jolicloset, 1stdibs, ebayimg, etc.) are NOT brand-direct and several
+// hotlink-block (HTTP 403) → the piece falls back to a brand-monogram tile.
+const BRAND_DIRECT_IMAGE_HOSTS = ["cdn.shopify.com"];
+
+/** True when the item's product image is a reliable, brand-direct, hotlink-safe
+ *  URL that will actually render — used to guarantee runway looks never surface a
+ *  broken/placeholder image. */
+export function hasReliableProductImage(item: CatalogItem): boolean {
+  const url = item.productImageUrl ?? item.imageUrl;
+  if (!url) return false;
+  // Match on the URL hostname (exact or sub-domain) rather than a loose substring
+  // so a whitelisted host can't be spoofed via a path/query segment.
+  const host = /^https?:\/\/([^/?#]+)/i.exec(url)?.[1]?.toLowerCase();
+  if (!host) return false;
+  return BRAND_DIRECT_IMAGE_HOSTS.some(
+    (h) => host === h || host.endsWith(`.${h}`),
+  );
 }
 
 export function generateLookFromAIPlan(
@@ -2765,24 +2792,32 @@ export function generateLookFromAIPlan(
     return matchesSeason(item, effectiveSeason);
   };
 
+  // HARD when requested by the caller (Runway): the item must carry a reliable,
+  // brand-direct product image. Kept HARD through every fallback so a starved
+  // slot never reintroduces a hotlink-blocked/placeholder image.
+  const imageOk = (item: CatalogItem): boolean =>
+    !params.requireBrandDirectImage || hasReliableProductImage(item);
+
   const slotPool = (slot: AIStylistSlot): CatalogItem[] => {
-    // HARD: category + gender + season. Brand preference is a soft sort.
+    // HARD: category + gender + season + image. Brand preference is a soft sort.
     const base = CATALOG.filter(
       (item) =>
         item.category === slot.category &&
         matchesGender(item) &&
         seasonOk(item) &&
         isBagAppropriateForGender(item, genderKey) &&
+        imageOk(item) &&
         item.price <= budgetMax,
     );
     if (base.length === 0) {
-      // Drop the budget ceiling rather than gender/season — those are HARD.
+      // Drop the budget ceiling rather than gender/season/image — those are HARD.
       return CATALOG.filter(
         (item) =>
           item.category === slot.category &&
           matchesGender(item) &&
           seasonOk(item) &&
-          isBagAppropriateForGender(item, genderKey),
+          isBagAppropriateForGender(item, genderKey) &&
+          imageOk(item),
       );
     }
     return base;
@@ -2853,11 +2888,12 @@ export function generateLookFromAIPlan(
         matchesGender(item) &&
         seasonOk(item) &&
         isBagAppropriateForGender(item, genderKey) &&
+        imageOk(item) &&
         !usedIds.has(item.id) &&
         (budgetMax === 0 || item.price + total <= budgetMax),
     );
-    // Keep gender + season HARD; only relax the budget headroom if needed (the
-    // final total-budget gate still drops the look if this blows the cap).
+    // Keep gender + season + image HARD; only relax the budget headroom if needed
+    // (the final total-budget gate still drops the look if this blows the cap).
     const pool =
       inBudget.length > 0
         ? inBudget
@@ -2867,6 +2903,7 @@ export function generateLookFromAIPlan(
               matchesGender(item) &&
               seasonOk(item) &&
               isBagAppropriateForGender(item, genderKey) &&
+              imageOk(item) &&
               !usedIds.has(item.id),
           );
     if (pool.length === 0) return;

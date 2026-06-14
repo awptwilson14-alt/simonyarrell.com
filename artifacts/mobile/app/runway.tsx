@@ -149,6 +149,11 @@ export default function RunwayScreen() {
           gender: userProfile.gender,
           budget: "$6000+",
           season: userProfile.season,
+          // Runway looks must show REAL website product photos for every piece.
+          // This restricts resolution to brand-direct images that actually load
+          // (e.g. the Shopify storefront CDN), so no piece ever degrades to a
+          // hotlink-blocked resale-CDN image / brand-monogram placeholder.
+          requireBrandDirectImage: true,
         },
         3,
       );
