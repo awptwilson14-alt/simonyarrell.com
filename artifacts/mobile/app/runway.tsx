@@ -52,6 +52,37 @@ import {
 } from "@/lib/runwayModes";
 import type { Look } from "@/constants/data";
 
+/**
+ * Runway looks must show REAL designer product photography (no AI-rendered
+ * editorial heroes, no duplicates). Each resolved look already carries real
+ * catalog pieces; pick the most look-defining piece that has a genuine remote
+ * product image (`imageUrl`) — never `localImage`, which is bundled AI artwork.
+ * Dedupe across the batch so no two runway cards share a hero. Falls back to
+ * the look's editorial hero only when a look has no real product image at all.
+ */
+const RUNWAY_HERO_PRIORITY = ["dress", "outerwear", "top", "bottom", "shoes", "bag"];
+
+function pickRunwayHeroImage(look: Look, used: Set<string>): Look["image"] {
+  const ordered = [...look.pieces].sort(
+    (a, b) =>
+      (RUNWAY_HERO_PRIORITY.indexOf(a.category) + 1 || 99) -
+      (RUNWAY_HERO_PRIORITY.indexOf(b.category) + 1 || 99),
+  );
+  // First pass: a real product image not already used by another card.
+  for (const piece of ordered) {
+    if (piece.imageUrl && !used.has(piece.imageUrl)) {
+      used.add(piece.imageUrl);
+      return { uri: piece.imageUrl };
+    }
+  }
+  // Second pass: allow reuse rather than fall back to an AI hero.
+  for (const piece of ordered) {
+    if (piece.imageUrl) return { uri: piece.imageUrl };
+  }
+  // No real product image on any piece — keep the existing editorial hero.
+  return look.image;
+}
+
 export default function RunwayScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -104,20 +135,33 @@ export default function RunwayScreen() {
           // Runway is its own occasion vocabulary — pin to "Editorial" so the
           // server's brand picker leans atelier/runway rather than weekend.
           occasion: "Editorial",
-          budget: "$$$",
+          // Runway is "Real Luxury" couture — use the top budget tier. NB:
+          // "$$$" is NOT a tier parseBudget() understands; it silently fell back
+          // to the $500–$1500 cap, which couture looks can't fit, so the
+          // resolver returned zero complete looks → the red error. "$6000+" is
+          // the couture tier and resolves reliably across all genders.
+          budget: "$6000+",
           season: seasonForReq,
           prompt: composedPrompt,
           favoriteStyles: userProfile.favoriteStyles,
         },
         {
           gender: userProfile.gender,
-          budget: "$$$",
+          budget: "$6000+",
           season: userProfile.season,
         },
         3,
       );
-      registerGeneratedLooks(generated);
-      setLooks(generated);
+      // Swap each look's hero to a REAL designer product photo (deduped across
+      // the batch, AI-rendered heroes avoided) so the runway reflects the
+      // selected city's actual fashion, not generic editorial artwork.
+      const usedHeroes = new Set<string>();
+      const withRealHeroes = generated.map((look) => ({
+        ...look,
+        image: pickRunwayHeroImage(look, usedHeroes),
+      }));
+      registerGeneratedLooks(withRealHeroes);
+      setLooks(withRealHeroes);
       refreshUsage();
     } catch (err) {
       if (err instanceof LookCapExceededError) {
