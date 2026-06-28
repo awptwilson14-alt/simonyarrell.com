@@ -24,6 +24,7 @@ import { HeroAudio } from "@/components/HeroAudio";
 import { LOOKS, TRENDS, isLookInTrend, filterLooksForProfile, type Trend } from "@/constants/data";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebByName } from "@/lib/celebLookup";
+import { currentWeekLabel } from "@/constants/tvShows";
 import { pickStyleHero, pickLookHero, pickSplashHero } from "@/constants/heroImages";
 import { assignUniqueLookImages } from "@/lib/outfitEngine";
 import { useApp } from "@/context/AppContext";
@@ -409,6 +410,53 @@ export default function HomeScreen() {
           })}
         </View>
 
+        {/* ── TV Show Inspirations banner ──
+            Full-width editorial entry to /tv-shows. Deliberately NOT a 5th
+            feature pill — the pills are a fixed 4-wide flex grid and a 5th
+            would crush them. UNGATED: browsing shows/characters is free; the
+            generation tap inside hits the normal style-tab AI cap. The
+            UPDATED WEEKLY badge mirrors the list screen's rotation cue. */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push("/tv-shows");
+          }}
+          style={({ pressed }) => [
+            styles.tvBanner,
+            { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+          ]}
+        >
+          <LinearGradient
+            colors={["rgba(198,167,94,0.12)", "rgba(198,167,94,0.02)", "transparent"]}
+            locations={[0, 0.5, 1]}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <View style={[styles.tvBannerIconRing, { borderColor: "rgba(198,167,94,0.4)" }]}>
+            <Feather name="tv" size={20} color={colors.gold} />
+          </View>
+          <View style={styles.tvBannerText}>
+            <View style={styles.tvBannerTopRow}>
+              <Text style={[styles.tvBannerKicker, { color: colors.gold }]}>
+                TV SHOW INSPIRATIONS
+              </Text>
+              <View style={[styles.tvBannerBadge, { borderColor: colors.gold }]}>
+                <Feather name="refresh-cw" size={8} color={colors.gold} />
+                <Text style={[styles.tvBannerBadgeText, { color: colors.gold }]}>
+                  {currentWeekLabel()}
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.tvBannerTitle, { color: colors.foreground }]}>
+              Dress like the screen's most-styled characters
+            </Text>
+            <Text style={[styles.tvBannerSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+              This week's top 10 · tap to explore
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </Pressable>
+
         {/* ── Trending Styles ──
             Global trends rail (vs the personalized Trends You Love rail
             above). Two fixes vs prior:
@@ -688,7 +736,68 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     gap: 10,
+    marginBottom: 14,
+  },
+  tvBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginHorizontal: 20,
     marginBottom: 36,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    overflow: "hidden",
+    position: "relative",
+  },
+  tvBannerIconRing: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 0.5,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(198,167,94,0.06)",
+    flexShrink: 0,
+  },
+  tvBannerText: { flex: 1, gap: 4 },
+  tvBannerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  tvBannerKicker: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.5,
+  },
+  tvBannerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 0.5,
+    borderRadius: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    flexShrink: 0,
+  },
+  tvBannerBadgeText: {
+    fontSize: 7,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1,
+  },
+  tvBannerTitle: {
+    fontSize: 14,
+    fontFamily: "PlayfairDisplay_600SemiBold",
+    letterSpacing: -0.1,
+    lineHeight: 19,
+  },
+  tvBannerSub: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.3,
   },
   featurePill: {
     flex: 1,

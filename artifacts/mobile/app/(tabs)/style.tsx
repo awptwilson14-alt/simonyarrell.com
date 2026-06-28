@@ -35,6 +35,7 @@ import { useEntitlements } from "@/context/EntitlementsContext";
 import { useSubscription } from "@/lib/revenuecat";
 import { type CelebFull } from "@/constants/celebrities";
 import { findCelebById } from "@/lib/celebLookup";
+import { buildMuseFromCharId, isTvMuseId, showIdFromMuseId } from "@/constants/tvShows";
 
 const { width } = Dimensions.get("window");
 const CARD_W = (width - 48 - 12) / 2;
@@ -88,13 +89,18 @@ export default function StyleScreen() {
   // Snapshotted to local state on mount so it survives within this Style
   // session, then the route params are immediately cleared so the bias
   // does NOT leak the next time the user opens the Style tab.
-  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam, budget: budgetParam } = useLocalSearchParams<{
+  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam, budget: budgetParam, tvchar: tvCharParam, museHint: museHintParam } = useLocalSearchParams<{
     celebrity?: string;
     celebName?: string;
     lookHint?: string;
     trendHint?: string;
     brand?: string;
     budget?: string;
+    // TV Show Inspirations (constants/tvShows.ts). `tvchar` is a composite
+    // muse id `tv:<showId>:<charId>` resolved to a synthetic CelebFull via
+    // buildMuseFromCharId; `museHint` is the tapped signature-look name.
+    tvchar?: string;
+    museHint?: string;
   }>();
   const [activeCeleb, setActiveCeleb] = useState<CelebFull | undefined>(undefined);
   // Optional iconic-look hint when the user tapped a specific Signature Look
@@ -188,6 +194,34 @@ export default function StyleScreen() {
     }
     router.setParams({ brand: undefined, budget: undefined });
   }, [brandParam, budgetParam, router]);
+
+  // One-shot capture of the TV-character route param (TV Show Inspirations).
+  // Resolves `tv:<showId>:<charId>` into a synthetic CelebFull muse and reuses
+  // the EXACT same activeCeleb plumbing as a real celebrity — brand bias for
+  // the local generate(), INSPIRED BY pill, etc. Unlike the celeb flow we ALSO
+  // seed the prompt, because generateWithAI() channels via prompt only (it
+  // doesn't read celeb brands), so seeding is what makes the AI path honour the
+  // character. Mutually exclusive with celeb/trend/brand — clears them so the
+  // header chip slot shows ONE source-of-bias. Snapshot-then-clear like above.
+  useEffect(() => {
+    if (!tvCharParam) return;
+    const muse = buildMuseFromCharId(tvCharParam);
+    if (muse) {
+      setActiveCeleb(muse);
+      setActiveLookHint(museHintParam || undefined);
+      setActiveTrendHint(undefined);
+      setActiveBrand(undefined);
+      // Seed the prompt so the AI path channels the character. A tapped
+      // signature look is more specific, so prefer it; otherwise channel the
+      // character's overall style. Only seed when the prompt is empty so we
+      // never clobber text the user already typed.
+      const seed = museHintParam
+        ? `${museHintParam} — styled like ${muse.name} (${muse.style})`
+        : `Styled like ${muse.name} — ${muse.style}`;
+      setPrompt((p) => (p.trim().length === 0 ? seed : p));
+    }
+    router.setParams({ tvchar: undefined, museHint: undefined });
+  }, [tvCharParam, museHintParam, router]);
 
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -466,7 +500,14 @@ export default function StyleScreen() {
                 <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();
-                    router.push(`/celebrity/${activeCeleb.id}`);
+                    // A TV-character muse (id `tv:<showId>:<charId>`) has no
+                    // /celebrity/ profile — route back to its show instead.
+                    if (isTvMuseId(activeCeleb.id)) {
+                      const showId = showIdFromMuseId(activeCeleb.id);
+                      if (showId) router.push(`/tv-shows/${showId}`);
+                    } else {
+                      router.push(`/celebrity/${activeCeleb.id}`);
+                    }
                   }}
                   hitSlop={6}
                   accessibilityRole="button"

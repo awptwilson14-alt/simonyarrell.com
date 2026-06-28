@@ -18,6 +18,7 @@ import { Feather } from "@expo/vector-icons";
 import { TrendCard } from "@/components/TrendCard";
 import { TRENDS, isLookInTrend } from "@/constants/data";
 import { CELEBS } from "@/constants/celebrities";
+import { currentWeekLabel } from "@/constants/tvShows";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
@@ -238,6 +239,30 @@ export default function ExploreScreen() {
               <Text style={[styles.viewAllText, { color: colors.gold }]}>
                 BROWSE ALL {visibleCelebs.length} ICONS
               </Text>
+              <Feather name="arrow-right" size={13} color={colors.gold} />
+            </Pressable>
+
+            {/* TV Show Inspirations entry — parallel muse source to celebrity
+                icons: pick a character to generate a real-catalog look. Routes
+                to the weekly top-10 list. */}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push("/tv-shows");
+              }}
+              style={[styles.tvShowsBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            >
+              <View style={[styles.tvShowsIcon, { borderColor: "rgba(198,167,94,0.4)" }]}>
+                <Feather name="tv" size={15} color={colors.gold} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.tvShowsTitle, { color: colors.foreground }]}>
+                  TV Show Inspirations
+                </Text>
+                <Text style={[styles.tvShowsSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  This week's top 10 · {currentWeekLabel()}
+                </Text>
+              </View>
               <Feather name="arrow-right" size={13} color={colors.gold} />
             </Pressable>
 
@@ -489,6 +514,36 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     flex: 1,
     textAlign: "center",
+  },
+  tvShowsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 0.5,
+    borderRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  tvShowsIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 0.5,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(198,167,94,0.06)",
+  },
+  tvShowsTitle: {
+    fontSize: 13,
+    fontFamily: "PlayfairDisplay_600SemiBold",
+    letterSpacing: 0.1,
+  },
+  tvShowsSub: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.3,
+    marginTop: 2,
   },
   rowLabel: {
     fontSize: 9,
