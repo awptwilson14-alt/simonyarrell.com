@@ -155,7 +155,7 @@ export const CELEB_GENDERS: Record<string, "men" | "women"> = {
   snoop: "men", jeezy: "men", harry: "men", pharrell: "men", asap: "men",
   lewis: "men", sga: "men", nas: "men",
   rihanna: "women", zendaya: "women", audrey: "women", marilyn: "women",
-  ladygaga: "women", chloe: "women",
+  ladygaga: "women", chloe: "women", kim: "women", maryjblige: "women",
 };
 
 export function filterCelebsByGender<T extends { id: string }>(celebs: T[], gender: string): T[] {
