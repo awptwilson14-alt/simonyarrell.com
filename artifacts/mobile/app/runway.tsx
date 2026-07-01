@@ -41,6 +41,7 @@ import {
   attemptLookGeneration,
   generateAILooks,
 } from "@/lib/aiStylist";
+import { whenShownLooksReady } from "@/lib/shownLooks";
 import {
   FASHION_WEEK_MODES,
   RUNWAY_MODES,
@@ -108,6 +109,9 @@ export default function RunwayScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setError(null);
     setLoading(true);
+    // Wait for the persistent "already generated" memory to hydrate before we
+    // produce any look, so a prior-session combo can never resurface (no-dup rule).
+    await whenShownLooksReady();
     try {
       // Server-side daily-cap check. Free tier (basic) is blocked at 3/day;
       // paid tiers always pass. Failures fall open inside the helper.

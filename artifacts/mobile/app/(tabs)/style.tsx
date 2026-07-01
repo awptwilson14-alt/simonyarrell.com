@@ -24,7 +24,8 @@ import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { pickOccasionHero, SPLASH_HEROES } from "@/constants/heroImages";
 import { LinearGradient } from "@/lib/safeWebShims";
-import { generateLooks, resetShownLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
+import { generateLooks, assignUniqueLookImages, getBrandAvailability } from "@/lib/outfitEngine";
+import { whenShownLooksReady } from "@/lib/shownLooks";
 import {
   AIStylistError,
   LookCapExceededError,
@@ -140,12 +141,6 @@ export default function StyleScreen() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [generateCount, setGenerateCount] = useState(0);
 
-  // Fresh dedup state every time the Style flow mounts — no duplicate names
-  // or images carrying over from a previous Style session.
-  useEffect(() => {
-    resetShownLooks();
-  }, []);
-
   // One-shot capture of the celeb route param. Snapshot into local state
   // for this Style session, then clear the URL so navigating away and
   // back doesn't silently re-apply the celeb brand bias.
@@ -244,6 +239,10 @@ export default function StyleScreen() {
     setLoading(true);
     if (!isMore) setStep("results");
 
+    // Wait for the persistent "already generated" memory to hydrate before we
+    // produce any look, so a prior-session combo can never resurface (no-dup rule).
+    await whenShownLooksReady();
+
     const effectiveBrand = brandOverride === null ? undefined : (brandOverride ?? activeBrand);
 
     // TV Show Inspirations flow: when the active muse is a synthetic TV
@@ -287,6 +286,9 @@ export default function StyleScreen() {
     setAiError(null);
     setAiLoading(true);
     setStep("results");
+    // Wait for the persistent "already generated" memory to hydrate before we
+    // produce any look, so a prior-session combo can never resurface (no-dup rule).
+    await whenShownLooksReady();
     try {
       // Server-side daily-cap check before we hit the AI. Free tier (basic)
       // is metered to 3/day; paid tiers pass through. Falls open on
@@ -352,7 +354,6 @@ export default function StyleScreen() {
   };
 
   const reset = () => {
-    resetShownLooks();
     setStep("occasion");
     setSelectedOccasion("");
     setPrompt("");

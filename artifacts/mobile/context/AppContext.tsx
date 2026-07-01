@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loadAffiliateConfig } from "@/lib/affiliateSettings";
+import { initShownLooks } from "@/lib/shownLooks";
 import React, {
   createContext,
   useCallback,
@@ -82,6 +83,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // (raw URLs), which is the safe default that closes the first-tap
     // race. Hydration failure is non-fatal and stays no-op.
     loadAffiliateConfig().catch(() => {});
+    // Hydrate the persistent "already generated" look memory so a combination
+    // that was produced in ANY prior session never regenerates. Fire-and-forget;
+    // failure just means we start with an empty (in-session-only) memory.
+    initShownLooks().catch(() => {});
   }, []);
 
   const loadPersistedData = async () => {

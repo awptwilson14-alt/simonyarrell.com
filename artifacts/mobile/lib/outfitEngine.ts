@@ -96,9 +96,51 @@ interface GenerateParams {
 const _shownFingerprints = new Set<string>();
 const _shownNames = new Set<string>();
 
+// Optional persistence hook — wired up by lib/shownLooks.ts at app startup so
+// every generated combination is remembered across app sessions and therefore
+// NEVER regenerated. No-op until set (safe default for tests / SSR).
+let _persistFingerprint: ((fp: string) => void) | null = null;
+export function setShownLooksPersister(fn: (fp: string) => void): void {
+  _persistFingerprint = fn;
+}
+// Seed the in-memory shown-set from persisted storage. Call ONCE at startup
+// (before any generation) with the fingerprints saved on prior sessions.
+export function hydrateShownLooks(fps: string[]): void {
+  for (const fp of fps) _shownFingerprints.add(fp);
+}
+// True when this exact outfit (sorted piece ids) has already been shown before.
+function isShown(fp: string): boolean {
+  return _shownFingerprints.has(fp);
+}
+// Commit an outfit to the shown-set AND persist it so it can never regenerate.
+function markShown(fp: string): void {
+  if (_shownFingerprints.has(fp)) return;
+  _shownFingerprints.add(fp);
+  _persistFingerprint?.(fp);
+}
+
 export function resetShownLooks() {
   _shownFingerprints.clear();
   _shownNames.clear();
+}
+
+// HARD gender rule — a selected gender NEVER receives an opposite-gender item.
+// An item is eligible for a chosen gender ("women" / "men") only when it is
+// explicitly tagged for THAT gender, OR it is purely unisex (tagged unisex with
+// no opposite-gender tag). This is stricter than a plain includes("unisex")
+// check: catalog/feed items tagged e.g. ["men","unisex"] are men's items and
+// must NOT leak into women's looks (and vice versa). Pure ["unisex"] pieces
+// (sneakers, some accessories) still show for everyone. A "unisex" PROFILE sees
+// everything. Every gender-filtered pool in this module routes through here.
+function itemMatchesGender(
+  item: CatalogItem,
+  genderKey: "women" | "men" | "unisex",
+): boolean {
+  if (genderKey === "unisex") return true;
+  const opposite = genderKey === "men" ? "women" : "men";
+  if (item.genders.includes(genderKey)) return true;
+  if (item.genders.includes(opposite)) return false;
+  return item.genders.includes("unisex");
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -1678,7 +1720,7 @@ export function getBrandAvailability(
   const pool = CATALOG.filter(
     (i) =>
       i.brand === actualBrand &&
-      (i.genders.includes(genderKey) || i.genders.includes("unisex")),
+      itemMatchesGender(i, genderKey),
   );
   if (pool.length === 0) {
     return { hasGenderItems: false, hasAssemblableOutfit: false, cheapestOutfitPrice: 0, budgetMax };
@@ -1852,8 +1894,7 @@ export function generateLooks(params: GenerateParams): Look[] {
 
   // Gender filter
   function matchesGender(item: CatalogItem): boolean {
-    if (genderKey === "unisex") return true;
-    return item.genders.includes(genderKey) || item.genders.includes("unisex");
+    return itemMatchesGender(item, genderKey);
   }
 
   // Occasion filter (relaxed: at least one occasion matches)
@@ -2481,8 +2522,8 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     // Dedup check — fingerprint by sorted item ids
     const fp = fingerprint(pieces.map((p) => p.id));
-    if (_shownFingerprints.has(fp)) continue;
-    _shownFingerprints.add(fp);
+    if (isShown(fp)) continue;
+    markShown(fp);
 
     // Record per-batch unique-piece reservations so the NEXT look in this
     // batch picks a different sneaker, designer, and primary clothing
@@ -2559,11 +2600,14 @@ export function generateLooks(params: GenerateParams): Look[] {
   // we'd rather return zero looks and let the empty-state UI explain than
   // ship a wrong-gender card.
 
-  // Dedup-recovery: clear the fingerprint memory and re-run pass 3 (occasion +
-  // budget relaxed, gender still ON) in case the only thing blocking us was
-  // global dedup memory. Better to show a repeat look than wrong-gender one.
+  // Dedup-recovery: re-run pass 3 (occasion + budget relaxed, gender still ON).
+  // We deliberately DO NOT clear the shown-fingerprint memory anymore — the
+  // user's hard rule is that a combination, once generated, must NEVER surface
+  // again (combos are only kept by SAVING them). The random top-N picks inside
+  // runPass may still discover a fresh, never-shown combination on this retry;
+  // if the pool is genuinely exhausted the grid legitimately comes back empty
+  // and the empty-state UI explains it, rather than repeating an old look.
   if (looks.length === 0) {
-    _shownFingerprints.clear();
     runPass({ useBudget: true, useOccasion: false, useGender: true });
   }
 
@@ -2590,7 +2634,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     const brandPoolBase = CATALOG.filter(
       (i) =>
         i.brand === brandLock &&
-        (i.genders.includes(genderKey) || i.genders.includes("unisex")) &&
+        itemMatchesGender(i, genderKey) &&
         (budgetMax === 0 || i.price <= budgetMax),
     );
     // Season-respect (HARDENED): the brand-lock fallback also obeys the
@@ -2649,6 +2693,9 @@ export function generateLooks(params: GenerateParams): Look[] {
       const bTotal = bFb.reduce((s, i) => s + i.price, 0);
       const bFp = fingerprint(bPieces.map((p) => p.id));
       const bName = generateLookName(occasion, bStyle);
+      // Hard no-duplicate rule: never resurface an already-generated combo.
+      if (!isShown(bFp)) {
+      markShown(bFp);
       looks.push({
         id: `gen_brandlock_fb_${Date.now()}`,
         name: bName,
@@ -2664,6 +2711,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         tags: [occasion.toLowerCase(), bPalette.name.toLowerCase(), bPieces[0].brand.toLowerCase()],
         colorPalette: bPalette.name,
       });
+      }
     }
   }
 
@@ -2673,9 +2721,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     // Previously used unfiltered CATALOG.find() which is the second source
     // of the wrong-gender leak — a Men's request with an exotic style could
     // land here and pull the first dress in the catalog (always women's).
-    const gPoolBase = CATALOG.filter(
-      (i) => i.genders.includes(genderKey) || i.genders.includes("unisex"),
-    );
+    const gPoolBase = CATALOG.filter((i) => itemMatchesGender(i, genderKey));
     // Season-respect in ultra-fallback (HARDENED): same rule as brand-lock
     // — strict seasonal subset only. If even the entire-catalog seasonal
     // pool can't assemble a 2-piece, we return the (possibly empty) looks
@@ -2738,6 +2784,9 @@ export function generateLooks(params: GenerateParams): Look[] {
       // which (a) burned a second name from _shownNames per fallback look and
       // (b) seeded the image with a name unrelated to the one shown on the card.
       const fallbackName = generateLookName(occasion, fallbackStyle);
+      // Hard no-duplicate rule: never resurface an already-generated combo.
+      if (!isShown(fp)) {
+      markShown(fp);
       looks.push({
         id: `gen_fallback_${Date.now()}`,
         name: fallbackName,
@@ -2760,6 +2809,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         tags: [occasion.toLowerCase(), fallbackPalette.name.toLowerCase(), pieces[0].brand.toLowerCase()],
         colorPalette: fallbackPalette.name,
       });
+      }
     }
   }
 
@@ -2851,10 +2901,8 @@ export function generateLookFromAIPlan(
   const requireBag = !params.tvInspiration;
   const requireSeparates = !!params.tvInspiration;
 
-  const matchesGender = (item: CatalogItem): boolean => {
-    if (genderKey === "unisex") return true;
-    return item.genders.includes(genderKey) || item.genders.includes("unisex");
-  };
+  const matchesGender = (item: CatalogItem): boolean =>
+    itemMatchesGender(item, genderKey);
 
   const seasonOk = (item: CatalogItem): boolean => {
     if (!effectiveSeason || effectiveSeason === "All Season") return true;
@@ -3035,11 +3083,16 @@ export function generateLookFromAIPlan(
   // over-budget outfit. budgetMax === 0 means "no budget selected" → no cap.
   if (budgetMax > 0 && total > budgetMax) return null;
 
+  const fp = fingerprint(pieces.map((p) => p.id));
+  // Hard no-duplicate rule: never return a combination already generated in any
+  // prior batch/session. Combos are only kept by SAVING them, never regenerated.
+  if (isShown(fp)) return null;
+
   // Commit this look's pieces to the cross-look set ONLY now that it passed
   // every gate, so a dropped (null) look never poisons the dedup pool.
   if (usedAcross) for (const p of pieces) usedAcross.add(p.id);
+  markShown(fp);
 
-  const fp = fingerprint(pieces.map((p) => p.id));
   return {
     id: `ai_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
     name: plan.name,
