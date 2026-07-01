@@ -1773,16 +1773,22 @@ function matchesSeason(item: CatalogItem, season: string): boolean {
 function isCompleteOutfit(
   pieces: ReadonlyArray<{ category: string }>,
   genderKey: string,
-  opts?: { requireBag?: boolean },
+  opts?: { requireBag?: boolean; requireSeparates?: boolean },
 ): boolean {
   const requireBag = opts?.requireBag ?? true;
+  const requireSeparates = opts?.requireSeparates ?? false;
   const has = (c: string) => pieces.some((p) => p.category === c);
   if (!has("shoes")) return false;
-  const hasCoreClothes = has("dress") || (has("top") && has("bottom"));
+  // TV Inspiration requires a top + bottom core (requireSeparates=true): a dress
+  // does NOT substitute — TV looks are always top+bottom+shoes based. Every other
+  // flow accepts a dress in place of top+bottom.
+  const hasCoreClothes = requireSeparates
+    ? has("top") && has("bottom")
+    : has("dress") || (has("top") && has("bottom"));
   if (!hasCoreClothes) return false;
   // Women normally need a coordinating handbag to count as complete. The TV
   // Inspiration flow relaxes this (requireBag=false): a TV look is complete at
-  // top+bottom+shoes (or dress+shoes), no bag needed.
+  // top+bottom+shoes, no bag needed.
   if (genderKey === "women" && requireBag) return has("bag");
   return true;
 }
@@ -2044,8 +2050,10 @@ export function generateLooks(params: GenerateParams): Look[] {
     const sigBrandList = getSignatureBrands(dominantStyle, 8);
     const sigBrands = new Set<string>([...celebSignatureBrands, ...sigBrandList]);
 
-    // Decide outfit structure
+    // Decide outfit structure. TV Inspiration looks are ALWAYS top+bottom+shoes
+    // based — never dress-based — so the dress branch is disabled in that flow.
     const useDress =
+      !tvInspiration &&
       genderKey === "women" &&
       dresses.length > 0 &&
       Math.random() > 0.5;
@@ -2363,10 +2371,10 @@ export function generateLooks(params: GenerateParams): Look[] {
       if (!shoe) continue;
       addPiece(shoe);
 
-      // Handbag — REQUIRED for women (dress branch only runs for women), EXCEPT
-      // in the TV Inspiration flow where a dress + shoes is already a complete
-      // look and a bag is optional. Outside TV, drop the look when no in-budget
-      // bag fits (a dress + shoes with no coordinating bag is a partial outfit).
+      // Handbag — REQUIRED for women. The dress branch only runs OUTSIDE the TV
+      // flow (TV looks are always top+bottom+shoes based, never dress-based), so
+      // a dress + shoes with no coordinating bag is a partial outfit and the look
+      // is dropped when no in-budget bag fits.
       const affordableBags = filterAux(bags.filter((b) => b.price + total <= cap));
       const bag = stylePick(affordableBags);
       if (bag) addPiece(bag);
@@ -2467,8 +2475,9 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     // Completeness gate — no partial outfits ever reach the grid. Men/unisex
     // need top+bottom+shoes; women need (dress | top+bottom)+shoes+bag — except
-    // in the TV Inspiration flow, where the bag requirement is relaxed.
-    if (!isCompleteOutfit(pieces, genderKey, { requireBag: !tvInspiration })) continue;
+    // in the TV Inspiration flow, where the bag is relaxed AND the look must be
+    // top+bottom+shoes (no dress-only).
+    if (!isCompleteOutfit(pieces, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) continue;
 
     // Dedup check — fingerprint by sorted item ids
     const fp = fingerprint(pieces.map((p) => p.id));
@@ -2610,17 +2619,18 @@ export function generateLooks(params: GenerateParams): Look[] {
     // for this gender, push nothing and let the honest empty-state explain
     // rather than surface a half-look.
     if (genderKey === "women") {
-      if (bDress && bShoe) bFb.push(bDress, bShoe);
+      // TV flow forces a top+bottom+shoes core (no dress); other flows may use a dress.
+      if (!tvInspiration && bDress && bShoe) bFb.push(bDress, bShoe);
       else if (bTop && bBottom && bShoe) bFb.push(bTop, bBottom, bShoe);
       if (bFb.length > 0 && bBag) bFb.push(bBag);
       // Outside the TV flow a women's look needs the coordinating bag, so clear
-      // an incomplete core. In TV mode the core alone (dress+shoes or
-      // top+bottom+shoes) is already complete — keep it bagless.
+      // an incomplete core. In TV mode the top+bottom+shoes core is already
+      // complete — keep it bagless.
       else if (!tvInspiration) bFb.length = 0;
     } else if (bTop && bBottom && bShoe) {
       bFb.push(bTop, bBottom, bShoe);
     }
-    if (isCompleteOutfit(bFb, genderKey, { requireBag: !tvInspiration })) {
+    if (isCompleteOutfit(bFb, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) {
       const bStyle = pick(occasionStyles);
       const bPalette = pickPaletteForStyle(bStyle);
       const sigSet = new Set(celebSignatureBrands ?? []);
@@ -2685,16 +2695,17 @@ export function generateLooks(params: GenerateParams): Look[] {
     // the full catalog, so women's bags are available here even though brand-lock
     // above may not have one.
     if (genderKey === "women") {
-      if (anyDress && anyShoe) fallbackItems.push(anyDress, anyShoe);
+      // TV flow forces a top+bottom+shoes core (no dress); other flows may use a dress.
+      if (!tvInspiration && anyDress && anyShoe) fallbackItems.push(anyDress, anyShoe);
       else if (anyTop && anyBottom && anyShoe) fallbackItems.push(anyTop, anyBottom, anyShoe);
       if (fallbackItems.length > 0 && anyBag) fallbackItems.push(anyBag);
-      // TV flow: a women's core (dress+shoes or top+bottom+shoes) is complete
-      // without a bag. Outside TV, clear an incomplete/bagless core.
+      // TV flow: a women's top+bottom+shoes core is complete without a bag.
+      // Outside TV, clear an incomplete/bagless core.
       else if (!tvInspiration) fallbackItems.length = 0;
     } else if (anyTop && anyBottom && anyShoe) {
       fallbackItems.push(anyTop, anyBottom, anyShoe);
     }
-    if (isCompleteOutfit(fallbackItems, genderKey, { requireBag: !tvInspiration })) {
+    if (isCompleteOutfit(fallbackItems, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) {
       const fallbackStyle = pick(occasionStyles);
       const fallbackPalette = pickPaletteForStyle(fallbackStyle);
       // Ultra-fallback ignores every brand filter, so by construction no
@@ -2798,9 +2809,10 @@ export interface ResolveAIPlanParams {
   // Used by the Runway engine so every resolved piece shows a real website photo,
   // never a hotlink-blocked resale CDN image that degrades to a monogram tile.
   requireBrandDirectImage?: boolean;
-  // TV Show Inspirations flow. When true, the women's-bag completeness rule is
-  // relaxed (a TV look is complete at top+bottom+shoes or dress+shoes) and the
-  // AI batch dedups items across every look in the grid (see generateAILooks).
+  // TV Show Inspirations flow. When true: the women's-bag completeness rule is
+  // relaxed AND the look must be top+bottom+shoes based (never dress-only) with
+  // exactly one item per category, and the AI batch dedups items across every
+  // look in the grid (see generateAILooks).
   tvInspiration?: boolean;
 }
 
@@ -2834,8 +2846,10 @@ export function generateLookFromAIPlan(
   const genderKey = params.gender.toLowerCase() as "women" | "men" | "unisex";
   const effectiveSeason = params.season ?? plan.season;
   const { max: budgetMax } = parseBudget(params.budget);
-  // TV Inspiration relaxes the women's-bag requirement for this flow only.
+  // TV Inspiration relaxes the women's-bag requirement AND forces a
+  // top+bottom+shoes core (no dress-only looks) for this flow only.
   const requireBag = !params.tvInspiration;
+  const requireSeparates = !!params.tvInspiration;
 
   const matchesGender = (item: CatalogItem): boolean => {
     if (genderKey === "unisex") return true;
@@ -2923,11 +2937,23 @@ export function generateLookFromAIPlan(
     });
   };
 
+  // TV Inspiration: exactly ONE item per category. The AI plan can return two
+  // slots of the same category (e.g. two "accessories" or two "top" slots);
+  // outside TV that's trusted as-is, but a TV look must never surface two of the
+  // same category (two shirts, two pairs of shoes, two jackets, …), so we skip
+  // any slot whose category is already filled.
+  const usedCategories = new Set<CatalogItem["category"]>();
   for (const slot of plan.slots) {
+    if (params.tvInspiration) {
+      // One item per category, and NO dresses — TV looks are top+bottom+shoes
+      // based, so a dress slot is skipped and its core comes from top + bottom.
+      if (slot.category === "dress" || usedCategories.has(slot.category)) continue;
+    }
     const pool = slotPool(slot).filter((i) => !usedIds.has(i.id));
     const item = rankBySlot(pool, slot);
     if (!item) continue; // catalog gap for this slot — drop honestly
     addResolved(item);
+    usedCategories.add(item.category);
   }
 
   // Completeness backfill — the AI plan can under-specify (omit shoes, a bottom,
@@ -2973,7 +2999,12 @@ export function generateLookFromAIPlan(
   };
 
   const hasCat = (c: CatalogItem["category"]) => pieces.some((p) => p.category === c);
-  if (genderKey === "women") {
+  if (requireSeparates) {
+    // TV Inspiration: always a top+bottom+shoes core (no dress, no bag), any gender.
+    ensureCategory("top");
+    ensureCategory("bottom");
+    ensureCategory("shoes");
+  } else if (genderKey === "women") {
     // Women: complete core (dress OR top+bottom) + shoes + bag.
     if (!hasCat("dress") && !(hasCat("top") && hasCat("bottom"))) {
       if (hasCat("top")) ensureCategory("bottom");
@@ -2984,7 +3015,6 @@ export function generateLookFromAIPlan(
       }
     }
     ensureCategory("shoes");
-    // Bag backfill is skipped in the TV Inspiration flow (bag optional there).
     if (requireBag) ensureCategory("bag");
   } else {
     // Men / unisex: top + bottom + shoes.
@@ -2993,9 +3023,10 @@ export function generateLookFromAIPlan(
     ensureCategory("shoes");
   }
 
-  // No partial outfits — gate on the same completeness contract as generateLooks
-  // (the women's-bag requirement is relaxed in the TV Inspiration flow).
-  if (!isCompleteOutfit(pieces, genderKey, { requireBag })) return null;
+  // No partial outfits — gate on the same completeness contract as generateLooks.
+  // TV Inspiration relaxes the women's-bag requirement and forces a
+  // top+bottom+shoes core (requireSeparates).
+  if (!isCompleteOutfit(pieces, genderKey, { requireBag, requireSeparates })) return null;
 
   // HARD budget cap (parity with generateLooks): the TOTAL of every displayed
   // look must stay within the user's selected budget. Per-slot filtering keeps

@@ -12,9 +12,25 @@ that must be threaded end-to-end.
 
 ## Rule 1 — no required handbag in TV mode
 Default contract: a women's look is only COMPLETE with a coordinating bag
-(`isCompleteOutfit`). In TV mode the core alone is complete: dress+shoes or
-top+bottom+shoes for women; men/unisex unchanged. A bag may still be added if
-one is naturally selected, but it is never required and never drops a look.
+(`isCompleteOutfit`). In TV mode the top+bottom+shoes core alone is complete;
+men/unisex unchanged. A bag may still be added if one is naturally selected, but
+it is never required and never drops a look.
+
+## Rule 1b — TV looks are ALWAYS top+bottom+shoes based, NEVER dress-based
+`isCompleteOutfit(..., { requireSeparates: true })` requires top && bottom &&
+shoes — a dress does NOT satisfy the core in TV mode (it does everywhere else).
+Enforced by: `useDress` forced false in `generateLooks` local path; both
+deterministic fallbacks build the women's core from top+bottom+shoes (dress push
+gated on `!tvInspiration`); AI resolver skips `dress` slots and backfills
+top+bottom+shoes for ALL genders; every completeness gate passes
+`requireSeparates: tvInspiration`.
+
+## Rule 1c — exactly ONE item per category (no two tops/bottoms/shoes/jackets/accessories)
+Local `generateLooks` is one-per-category by construction. The AI resolver
+(`generateLookFromAIPlan`) was the leak: it added an item for EVERY plan slot, so
+an AI plan with two same-category slots produced duplicates. Fixed with a
+`usedCategories` Set (TV-only) that skips a slot whose category is already
+filled; `ensureCategory` backfill already guards against re-adding.
 
 ## Rule 2 — zero duplicate catalog items across the whole grid ("any gender")
 No catalog item id may repeat anywhere in the generated grid. This is STRICTER
