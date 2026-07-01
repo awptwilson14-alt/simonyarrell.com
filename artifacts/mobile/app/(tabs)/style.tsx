@@ -60,6 +60,17 @@ const PROMPT_CHIPS: { label: string; prompt: string }[] = [
   { label: "Yacht in Capri", prompt: "Long lunch on a yacht off Capri, breezy linen and Riviera color" },
   { label: "Front row", prompt: "Front row at Paris Fashion Week — couture-adjacent, photographer bait" },
   { label: "Weekend in Tulum", prompt: "Beach club weekend in Tulum, easy resort linen and gold accents" },
+  // ── Current TikTok fashion trends (refreshed) — these bias the AI stylist
+  //    toward what's viral right now. HARD gender/season/budget filters in the
+  //    engine remain authoritative, so a trend never overrides those rules.
+  { label: "Mob Wife", prompt: "Mob-wife glamour — oversized fur, leopard accents, gold jewelry, dark shades" },
+  { label: "Quiet Luxury", prompt: "Quiet-luxury stealth wealth — no logos, impeccable cashmere and tailoring" },
+  { label: "Coquette", prompt: "Coquette romance — lace, ribbon bows, soft pastels, delicate ballet-flat mood" },
+  { label: "Office Siren", prompt: "Office-siren tailoring — sharp pencil silhouette, sheer layer, sleek and sultry" },
+  { label: "Eclectic Grandpa", prompt: "Eclectic-grandpa layering — cozy knit vest, tweed, vintage loafers, cardigan" },
+  { label: "Cherry Red", prompt: "Cherry-red statement — one bold red hero piece anchoring an all-neutral look" },
+  { label: "Blokecore", prompt: "Blokecore casual — retro sport jersey energy, straight denim, terrace sneakers" },
+  { label: "Butter Yellow", prompt: "Butter-yellow moment — soft pastel-yellow tailoring, fresh and modern" },
 ];
 
 const OCCASIONS: Occasion[] = [

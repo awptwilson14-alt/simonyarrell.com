@@ -221,14 +221,12 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
   "Luxury Streetwear_women": [
     require("../assets/images/looks/luxury_streetwear_icon_women.png"),
     require("../assets/images/trends/luxury_streetwear_women.png"),
-    require("../assets/images/looks/luxury_streetwear_icon_women.png"),
     require("../assets/images/looks/urban_minimalist_women.png"),
     require("../assets/images/looks/urban_architect_women.png"),
   ],
   "Luxury Streetwear_men": [
     require("../assets/images/looks/luxury_streetwear_icon_men.png"),
     require("../assets/images/trends/luxury_streetwear_men.png"),
-    require("../assets/images/streetwear_hero_men.png"),
     require("../assets/images/streetwear_hero_men.png"),
     require("../assets/images/looks/urban_minimalist_men.png"),
     require("../assets/images/looks/urban_architect_men.png"),
@@ -239,11 +237,9 @@ const LOOK_IMAGE_POOLS: Record<string, Array<{ uri: string } | number>> = {
   "Techwear_women": [
     require("../assets/images/trends/techwear_women.png"),
     require("../assets/images/looks/urban_architect_women.png"),
-    require("../assets/images/looks/urban_architect_women.png"),
   ],
   "Techwear_men": [
     require("../assets/images/trends/techwear_men.png"),
-    require("../assets/images/looks/urban_architect_men.png"),
     require("../assets/images/looks/urban_architect_men.png"),
     require("../assets/images/look_techwear.png"),
   ],
@@ -416,7 +412,15 @@ function imageKey(src: { uri: string } | number | unknown): string {
 // Walk a list of looks and guarantee no two share the same hero image.
 // On a collision, advance through the matching pool until a fresh image is found;
 // if the whole pool is exhausted, fall back to default pools, then the original.
-export function assignUniqueLookImages<T extends { id: string; name: string; style: string; image: { uri: string } | number }>(
+export function assignUniqueLookImages<
+  T extends {
+    id: string;
+    name: string;
+    style: string;
+    image: { uri: string } | number;
+    pieces?: Array<{ category?: string; imageUrl?: string; localImage?: number }>;
+  },
+>(
   looks: T[],
   gender: string,
 ): T[] {
@@ -436,6 +440,30 @@ export function assignUniqueLookImages<T extends { id: string; name: string; sty
       if (stylePool) candidatePools.push(stylePool);
     }
     candidatePools.push(LOOK_IMAGE_POOLS[`default_${g}`]!);
+
+    // FINAL uniqueness guarantee — the look's OWN piece product images. The
+    // editorial pools above are finite (a few photos per style), so with 6+
+    // looks per grid + "generate more" they collide/exhaust and two cards end
+    // up on the same photo (the duplicate-image bug). Every look's real pieces
+    // are unique to that outfit AND already gender-correct (they passed the
+    // gender filter during generation), so falling to them before repeating an
+    // editorial makes on-screen duplicate hero images effectively impossible.
+    // Ordered by how well the category represents a whole look on a card.
+    const catRank = (c?: string): number => {
+      const s = (c ?? "").toLowerCase();
+      if (s.includes("dress") || s.includes("gown") || s.includes("jumpsuit")) return 0;
+      if (s.includes("coat") || s.includes("jacket") || s.includes("blazer") || s.includes("outerwear")) return 1;
+      if (s.includes("knit") || s.includes("sweater") || s.includes("top") || s.includes("shirt") || s.includes("blouse")) return 2;
+      if (s.includes("trouser") || s.includes("pant") || s.includes("skirt") || s.includes("jean") || s.includes("bottom")) return 3;
+      if (s.includes("shoe") || s.includes("sneaker") || s.includes("boot") || s.includes("heel")) return 4;
+      return 5;
+    };
+    const pieceImages: Array<{ uri: string } | number> = [];
+    for (const p of [...(look.pieces ?? [])].sort((a, b) => catRank(a.category) - catRank(b.category))) {
+      if (typeof p.localImage === "number") pieceImages.push(p.localImage);
+      else if (p.imageUrl) pieceImages.push({ uri: p.imageUrl });
+    }
+    if (pieceImages.length) candidatePools.push(pieceImages);
 
     let chosen: { uri: string } | number = look.image;
     const originalKey = imageKey(look.image);
