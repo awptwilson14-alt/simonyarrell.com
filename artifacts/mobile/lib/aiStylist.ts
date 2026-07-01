@@ -159,9 +159,14 @@ export async function generateAILooks(
   const plan = await fetchAIPlan(req);
   const out: Look[] = [];
   const seenFingerprints = new Set<string>();
+  // TV Inspiration: share ONE used-id set across every look in this batch so no
+  // catalog item repeats anywhere in the grid ("no duplicates in any gender").
+  // Outside the TV flow this stays undefined and each look dedups only within
+  // itself, preserving the prior behaviour.
+  const usedAcross = resolveParams.tvInspiration ? new Set<string>() : undefined;
   const maxAttempts = count * 4;
   for (let i = 0; i < maxAttempts && out.length < count; i++) {
-    const look = generateLookFromAIPlan(plan, resolveParams);
+    const look = generateLookFromAIPlan(plan, resolveParams, usedAcross);
     if (!look) continue;
     const fp = look.pieces.map((p) => p.id).sort().join("|");
     if (seenFingerprints.has(fp)) continue;

@@ -246,6 +246,11 @@ export default function StyleScreen() {
 
     const effectiveBrand = brandOverride === null ? undefined : (brandOverride ?? activeBrand);
 
+    // TV Show Inspirations flow: when the active muse is a synthetic TV
+    // character, looks must be complete WITHOUT a required handbag and have no
+    // duplicate items across the grid (any gender). See generateLooks.
+    const tvInspiration = !!activeCeleb && isTvMuseId(activeCeleb.id);
+
     // Minimum 1.8s loading for UX — the actual generation is synchronous but
     // we want the "consulting brands" moment to feel intentional
     const [generatedLooks] = await Promise.all([
@@ -264,6 +269,7 @@ export default function StyleScreen() {
           // filter at pool construction so every generated look uses
           // fabrics + silhouettes that read for the user's chosen season.
           season: userProfile.season,
+          tvInspiration,
         })
       ),
       new Promise((r) => setTimeout(r, 1800)),
@@ -317,6 +323,7 @@ export default function StyleScreen() {
           gender: selectedGender,
           budget: selectedBudget,
           season: userProfile.season,
+          tvInspiration: !!activeCeleb && isTvMuseId(activeCeleb.id),
         },
         3,
       );
