@@ -7,6 +7,7 @@
 import type { Look } from "@/constants/data";
 import {
   generateLookFromAIPlan,
+  productKey,
   type AIStylistPlan,
   type ResolveAIPlanParams,
 } from "./outfitEngine";
@@ -168,7 +169,7 @@ export async function generateAILooks(
   for (let i = 0; i < maxAttempts && out.length < count; i++) {
     const look = generateLookFromAIPlan(plan, resolveParams, usedAcross);
     if (!look) continue;
-    const fp = look.pieces.map((p) => p.id).sort().join("|");
+    const fp = look.pieces.map(productKey).sort().join("|");
     if (seenFingerprints.has(fp)) continue;
     seenFingerprints.add(fp);
     out.push(look);

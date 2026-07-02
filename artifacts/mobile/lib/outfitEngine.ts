@@ -178,6 +178,18 @@ function fingerprint(ids: string[]): string {
   return [...ids].sort().join("|");
 }
 
+// Product-level identity for dedup: collapses color / size variant rows of the
+// SAME product (e.g. the three "Pique Logo Standard Tee" colours, or
+// "... 90s Tee - Ivory" vs "... 90s Tee - Black") down to ONE key so a look
+// assembled from the same products can never resurface as a "new" combination
+// just because a variant id differs. Strips a trailing " - <colour/variant>"
+// segment and lowercases brand + name. Exported for the AI batch de-duper in
+// aiStylist.ts so both generation paths dedup on the same identity.
+export function productKey(p: { brand: string; name: string }): string {
+  const base = p.name.toLowerCase().replace(/\s+[-–]\s+[^-–]+$/, "").trim();
+  return `${p.brand.toLowerCase().trim()}|${base}`;
+}
+
 // ─── Deterministic hash — same look always gets same image ───────────────────
 
 function hashStr(str: string): number {
@@ -1641,6 +1653,45 @@ for (const item of CATALOG) {
   }
 }
 
+// ─── Feed category sanitation ───────────────────────────────────────────────
+//
+// The auto-generated Shopify feed occasionally mislabels a garment's slot
+// (observed: tees / shirts / hoodies tagged "bottom", jackets/blazers tagged
+// "bag"), which lets a piece fill the wrong outfit slot — e.g. a t-shirt
+// showing up as the "bottom" of a look. We re-infer the slot from the product
+// NAME for FEED items ONLY (id prefix "sf_"); hand-curated inline rows and
+// CATALOG_EXTRAS are trusted exactly as authored. Strong garment head-nouns
+// (shirt / tee / jacket / …) are matched BEFORE ambiguous fabric / cut words,
+// so "Short-Sleeve Shirt" and "Cargo Shirt" stay tops while "Board Short"
+// stays a bottom. Dress/gown names are left untouched — they collide with the
+// top matcher and aren't a source of the mislabel bug.
+const _CAT_SHOE = /\b(sneakers?|boots?|loafers?|heels?|sandals?|mules?|derbys?|oxfords?|trainers?|pumps?|clogs?|espadrilles?|moccasins?|brogues?|slippers?|footwear)\b/i;
+const _CAT_BAG = /\b(bags?|totes?|clutch|clutches|backpacks?|crossbody|satchels?|pouch|pouches|purses?|hobo|wallets?|holdall|duffels?|duffles?|briefcase|messenger)\b/i;
+const _CAT_DRESSY = /\b(dress|gown)\b/i;
+const _CAT_TOP = /\b(t-?shirts?|tees?|polos?|hoodies?|sweatshirts?|sweaters?|blouses?|henleys?|camis|camisoles?|turtlenecks?|crewnecks?|tanks?|pullovers?|knits?|shirts?|tops?)\b/i;
+const _CAT_OUTER = /\b(jackets?|coats?|blazers?|parkas?|trench|overcoats?|anoraks?|windbreakers?|bombers?|puffers?|peacoats?|raincoats?)\b/i;
+const _CAT_BOTTOM = /\b(jeans?|trousers?|pants?|chinos?|shorts?|skirts?|leggings?|cargos?|sweatpants?|joggers?|slacks?|culottes?|bermudas?)\b/i;
+const _CAT_APPLY = new Set<CatalogItem["category"]>(["top", "bottom", "outerwear", "shoes", "bag"]);
+
+function reinferFeedCategory(
+  name: string,
+  current: CatalogItem["category"],
+): CatalogItem["category"] {
+  if (_CAT_SHOE.test(name)) return "shoes";
+  if (_CAT_BAG.test(name)) return "bag";
+  if (_CAT_DRESSY.test(name)) return current;
+  if (_CAT_TOP.test(name)) return "top";
+  if (_CAT_OUTER.test(name)) return "outerwear";
+  if (_CAT_BOTTOM.test(name)) return "bottom";
+  return current;
+}
+
+for (const item of CATALOG) {
+  if (item.id.startsWith("sf_") && _CAT_APPLY.has(item.category)) {
+    item.category = reinferFeedCategory(item.name, item.category);
+  }
+}
+
 // ─── Occasion Normalization ───────────────────────────────────────────────────
 
 const OCCASION_MAP: Record<string, string[]> = {
@@ -2549,7 +2600,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     if (!isCompleteOutfit(pieces, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) continue;
 
     // Dedup check — fingerprint by sorted item ids
-    const fp = fingerprint(pieces.map((p) => p.id));
+    const fp = fingerprint(pieces.map(productKey));
     if (isShown(fp)) continue;
     markShown(fp);
 
@@ -2719,7 +2770,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         signature: sigSet.has(item.brand),
       }));
       const bTotal = bFb.reduce((s, i) => s + i.price, 0);
-      const bFp = fingerprint(bPieces.map((p) => p.id));
+      const bFp = fingerprint(bPieces.map(productKey));
       const bName = generateLookName(occasion, bStyle);
       // Hard no-duplicate rule: never resurface an already-generated combo.
       if (!isShown(bFp)) {
@@ -2806,7 +2857,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         signature: sigBrandsForFallback.has(item.brand),
       }));
       const total = fallbackItems.reduce((s, i) => s + i.price, 0);
-      const fp = fingerprint(pieces.map((p) => p.id));
+      const fp = fingerprint(pieces.map(productKey));
       // Generate the look name ONCE — passing it through to both the visible
       // name and the image seed. Previously this called generateLookName twice,
       // which (a) burned a second name from _shownNames per fallback look and
@@ -3111,7 +3162,7 @@ export function generateLookFromAIPlan(
   // over-budget outfit. budgetMax === 0 means "no budget selected" → no cap.
   if (budgetMax > 0 && total > budgetMax) return null;
 
-  const fp = fingerprint(pieces.map((p) => p.id));
+  const fp = fingerprint(pieces.map(productKey));
   // Hard no-duplicate rule: never return a combination already generated in any
   // prior batch/session. Combos are only kept by SAVING them, never regenerated.
   if (isShown(fp)) return null;
