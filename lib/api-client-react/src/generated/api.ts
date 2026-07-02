@@ -34,6 +34,8 @@ import type {
   StylistPlanResponse,
   SubscriptionSyncRequest,
   SubscriptionSyncResponse,
+  TryOnComposeRequest,
+  TryOnComposeResponse,
   UpdatePromoCodeRequest,
   UsageTodayResponse
 } from './api.schemas';
@@ -203,6 +205,83 @@ export const useStylistPlan = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getStylistPlanMutationOptions(options));
+    }
+
+export const getTryOnComposeUrl = () => {
+
+
+
+
+  return `/api/tryon/compose`
+}
+
+/**
+ * Takes a base64 photo of the person plus the garment image URLs of a
+look and returns an AI-generated photorealistic image of the person
+wearing the outfit. Uses Gemini native image generation (multi-image
+compositing). The person's face, body proportions and pose are
+preserved; each garment is realistically draped and fitted.
+
+ * @summary Compose a photorealistic virtual try-on image
+ */
+export const tryOnCompose = async (tryOnComposeRequest: TryOnComposeRequest, options?: RequestInit): Promise<TryOnComposeResponse> => {
+
+  return customFetch<TryOnComposeResponse>(getTryOnComposeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tryOnComposeRequest,)
+  }
+);}
+
+
+
+
+export const getTryOnComposeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tryOnCompose>>, TError,{data: BodyType<TryOnComposeRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof tryOnCompose>>, TError,{data: BodyType<TryOnComposeRequest>}, TContext> => {
+
+const mutationKey = ['tryOnCompose'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tryOnCompose>>, {data: BodyType<TryOnComposeRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  tryOnCompose(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TryOnComposeMutationResult = NonNullable<Awaited<ReturnType<typeof tryOnCompose>>>
+    export type TryOnComposeMutationBody = BodyType<TryOnComposeRequest>
+    export type TryOnComposeMutationError = ErrorType<void>
+
+    /**
+ * @summary Compose a photorealistic virtual try-on image
+ */
+export const useTryOnCompose = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tryOnCompose>>, TError,{data: BodyType<TryOnComposeRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof tryOnCompose>>,
+        TError,
+        {data: BodyType<TryOnComposeRequest>},
+        TContext
+      > => {
+      return useMutation(getTryOnComposeMutationOptions(options));
     }
 
 export const getGetUsageTodayUrl = (params: GetUsageTodayParams,) => {

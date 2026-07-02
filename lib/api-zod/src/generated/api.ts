@@ -64,6 +64,39 @@ export const StylistPlanResponse = zod.object({
 
 
 /**
+ * Takes a base64 photo of the person plus the garment image URLs of a
+look and returns an AI-generated photorealistic image of the person
+wearing the outfit. Uses Gemini native image generation (multi-image
+compositing). The person's face, body proportions and pose are
+preserved; each garment is realistically draped and fitted.
+
+ * @summary Compose a photorealistic virtual try-on image
+ */
+
+export const tryOnComposeBodyGarmentImageUrlsMax = 6;
+
+export const tryOnComposeBodyLookNameMax = 120;
+
+export const tryOnComposeBodyNotesMax = 500;
+
+
+
+export const TryOnComposeBody = zod.object({
+  "personImage": zod.string().min(1).describe('Base64-encoded photo of the person (no data URL prefix), JPEG\/PNG\/WebP.'),
+  "personMimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "garmentImageUrls": zod.array(zod.string()).min(1).max(tryOnComposeBodyGarmentImageUrlsMax).describe('Remote image URLs of the garments to composite, in layering order.'),
+  "lookName": zod.string().max(tryOnComposeBodyLookNameMax).optional(),
+  "gender": zod.enum(['Women', 'Men', 'Unisex']).optional(),
+  "notes": zod.string().max(tryOnComposeBodyNotesMax).optional()
+})
+
+export const TryOnComposeResponse = zod.object({
+  "image": zod.string().describe('Base64-encoded generated try-on image (no data URL prefix).'),
+  "mimeType": zod.string()
+})
+
+
+/**
  * @summary Get today's look-generation usage for a user
  */
 export const getUsageTodayQueryUserIdMax = 128;

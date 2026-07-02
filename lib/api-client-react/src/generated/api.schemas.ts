@@ -9,6 +9,50 @@ export interface HealthStatus {
   status: string;
 }
 
+export type TryOnComposeRequestPersonMimeType = typeof TryOnComposeRequestPersonMimeType[keyof typeof TryOnComposeRequestPersonMimeType];
+
+
+export const TryOnComposeRequestPersonMimeType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export type TryOnComposeRequestGender = typeof TryOnComposeRequestGender[keyof typeof TryOnComposeRequestGender];
+
+
+export const TryOnComposeRequestGender = {
+  Women: 'Women',
+  Men: 'Men',
+  Unisex: 'Unisex',
+} as const;
+
+export interface TryOnComposeRequest {
+  /**
+     * Base64-encoded photo of the person (no data URL prefix), JPEG/PNG/WebP.
+     * @minLength 1
+     */
+  personImage: string;
+  personMimeType: TryOnComposeRequestPersonMimeType;
+  /**
+     * Remote image URLs of the garments to composite, in layering order.
+     * @minItems 1
+     * @maxItems 6
+     */
+  garmentImageUrls: string[];
+  /** @maxLength 120 */
+  lookName?: string;
+  gender?: TryOnComposeRequestGender;
+  /** @maxLength 500 */
+  notes?: string;
+}
+
+export interface TryOnComposeResponse {
+  /** Base64-encoded generated try-on image (no data URL prefix). */
+  image: string;
+  mimeType: string;
+}
+
 export type StylistPlanRequestGender = typeof StylistPlanRequestGender[keyof typeof StylistPlanRequestGender];
 
 

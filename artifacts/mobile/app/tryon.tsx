@@ -1,10 +1,12 @@
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { safeBack } from "../lib/nav";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "@/lib/safeWebShims";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   Image,
@@ -21,56 +23,65 @@ import { Feather } from "@expo/vector-icons";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
-import { LOOKS, TRENDS, filterLooksForProfile } from "@/constants/data";
+import { LOOKS, filterLooksForProfile } from "@/constants/data";
 import { SPLASH_HEROES } from "@/constants/heroImages";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
-import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
+import {
+  composeTryOn,
+  TryOnError,
+  type PersonMimeType,
+} from "@/lib/tryOn";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
-// How much of the top of the screen is reserved for the user's face (camera shows through)
-const FACE_ZONE = height * 0.26;
-// How far down from the outfit photo top to crop (removes model's head from photo)
-const PHOTO_FACE_CROP = height * 0.18;
-// Position step per tap
-const POSITION_STEP = 28;
-const POSITION_MIN = -120;
-const POSITION_MAX = 120;
+type Mode = "intro" | "camera" | "styling" | "generating" | "result";
 
-type OpacityLevel = "sheer" | "blend" | "vivid";
-const OPACITY_VALUES: Record<OpacityLevel, number> = { sheer: 0.35, blend: 0.65, vivid: 0.92 };
+interface CapturedPhoto {
+  uri: string;
+  base64: string;
+  mimeType: PersonMimeType;
+}
+
+const GENERATING_LINES = [
+  "Reading your proportions…",
+  "Draping each piece to your frame…",
+  "Matching light and shadow…",
+  "Pressing the final look…",
+];
+
+function inferMime(uri: string, provided?: string | null): PersonMimeType {
+  if (provided === "image/png") return "image/png";
+  if (provided === "image/webp") return "image/webp";
+  if (provided === "image/jpeg") return "image/jpeg";
+  const lower = uri.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  return "image/jpeg";
+}
 
 export default function TryOnScreen() {
   const colors = useColors();
   const { userProfile } = useApp();
   const heroKey: "men" | "women" = userProfile.gender === "Men" ? "men" : "women";
   const editorialBackdrop = SPLASH_HEROES[heroKey];
-  // Brand + trend handoffs for the bottom panel (batch 73). The piece.brand
-  // micro-label under each piece thumb routes to /shop with the brand
-  // filter pre-applied — same primitive used everywhere else (closet,
-  // look-detail, celebrity, ProductCard, home strip batch 72). The
-  // activeLook.style label in the look navigator routes to /style with
-  // trendHint pre-loaded when the style matches a known TREND — same
-  // primitive used by LookCard styleTag (batch 68), look-detail style
-  // pill (52), profile favStyleChips (51), celebrity styleTag (70). Both
-  // are fail-closed: non-catalog brand or non-TREND style stays a flat
-  // muted Text so the camera UI never reveals a broken nav.
-  const { brandCatalog, goShopBrand } = useShopBrandHandoff();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { lookId } = useLocalSearchParams<{ lookId?: string }>();
 
   const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<"front" | "back">("front");
-  const [opacityLevel, setOpacityLevel] = useState<OpacityLevel>("vivid");
-  const [verticalOffset, setVerticalOffset] = useState(0); // px: negative = up, positive = down
 
-  // Carousel pool is profile-filtered — a Men profile can't swipe into a
-  // women's look here. If the deep-linked `lookId` survives the gender filter
-  // we honour it; otherwise we silently land on index 0 of the filtered pool.
-  // Falls back to full LOOKS only if the filter produced nothing (defensive —
-  // shouldn't happen because every static look is gender-tagged).
+  const [mode, setMode] = useState<Mode>("intro");
+  const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
+  const [result, setResult] = useState<string | null>(null); // data URI
+  const [showBefore, setShowBefore] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
+  const [genLine, setGenLine] = useState(0);
+
+  // Gender-filtered look pool — a Men profile can't try on a women's look.
   const availableLooks = (() => {
     const filtered = filterLooksForProfile(LOOKS, userProfile);
     return filtered.length > 0 ? filtered : LOOKS;
@@ -82,361 +93,345 @@ export default function TryOnScreen() {
     }
     return 0;
   });
+  const activeLook = availableLooks[activeLookIdx];
 
   const isNative = Platform.OS !== "web";
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const panelSlide = useRef(new Animated.Value(60)).current;
-  const lookFade = useRef(new Animated.Value(1)).current;
-  const overlayOpacity = useRef(new Animated.Value(OPACITY_VALUES.vivid)).current;
+  const spin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: isNative }),
-      Animated.timing(panelSlide, { toValue: 0, duration: 500, delay: 200, useNativeDriver: isNative }),
-    ]).start();
-  }, []);
+    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: isNative }).start();
+  }, [mode]);
+
+  // Cycle the generating copy + run the ring spinner.
+  useEffect(() => {
+    if (mode !== "generating") return;
+    setGenLine(0);
+    const int = setInterval(() => setGenLine((l) => (l + 1) % GENERATING_LINES.length), 2200);
+    const loop = Animated.loop(
+      Animated.timing(spin, { toValue: 1, duration: 1400, useNativeDriver: isNative }),
+    );
+    loop.start();
+    return () => {
+      clearInterval(int);
+      loop.stop();
+      spin.setValue(0);
+    };
+  }, [mode]);
+
+  const topPad = Platform.OS === "web" ? 56 : insets.top;
+
+  // ── Photo sources ──────────────────────────────────────────────────
+  const pickFromLibrary = async () => {
+    Haptics.selectionAsync();
+    setErrorMsg(null);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted && perm.canAskAgain === false) {
+        setErrorMsg("Photo library access is turned off. Enable it in Settings to upload a photo.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.6,
+        base64: true,
+      });
+      if (res.canceled || !res.assets?.[0]?.base64) return;
+      const asset = res.assets[0];
+      setPhoto({
+        uri: asset.uri,
+        base64: asset.base64!,
+        mimeType: inferMime(asset.uri, asset.mimeType),
+      });
+      setResult(null);
+      setMode("styling");
+    } catch {
+      setErrorMsg("Couldn't open your photo library. Please try again.");
+    }
+  };
+
+  const openCamera = async () => {
+    Haptics.selectionAsync();
+    setErrorMsg(null);
+    if (!permission?.granted) {
+      const req = await requestPermission();
+      if (!req.granted) return;
+    }
+    setMode("camera");
+  };
+
+  const capturePhoto = async () => {
+    if (!cameraRef.current || capturing) return;
+    setCapturing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const shot = await cameraRef.current.takePictureAsync({ quality: 0.6, base64: true });
+      if (shot?.base64) {
+        setPhoto({ uri: shot.uri, base64: shot.base64, mimeType: "image/jpeg" });
+        setResult(null);
+        setMode("styling");
+      }
+    } catch {
+      setErrorMsg("Couldn't capture the photo. Try uploading one instead.");
+      setMode("intro");
+    } finally {
+      setCapturing(false);
+    }
+  };
+
+  // ── Generate ───────────────────────────────────────────────────────
+  const garmentUrls = activeLook.pieces
+    .map((p) => p.imageUrl)
+    .filter((u): u is string => typeof u === "string" && u.length > 0)
+    .slice(0, 6);
+
+  const runTryOn = async () => {
+    if (!photo || garmentUrls.length === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setErrorMsg(null);
+    setMode("generating");
+    try {
+      const out = await composeTryOn({
+        personImage: photo.base64,
+        personMimeType: photo.mimeType,
+        garmentImageUrls: garmentUrls,
+        lookName: activeLook.name,
+        gender: userProfile.gender === "Men" ? "Men" : userProfile.gender === "Women" ? "Women" : "Unisex",
+      });
+      setResult(out.dataUri);
+      setShowBefore(false);
+      setMode("result");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      const msg =
+        err instanceof TryOnError
+          ? err.message
+          : "Something went wrong composing your try-on.";
+      setErrorMsg(msg);
+      setMode("styling");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  };
 
   const switchLook = (dir: "prev" | "next") => {
     Haptics.selectionAsync();
-    Animated.sequence([
-      Animated.timing(lookFade, { toValue: 0, duration: 110, useNativeDriver: isNative }),
-      Animated.timing(lookFade, { toValue: 1, duration: 200, useNativeDriver: isNative }),
-    ]).start();
-    setActiveLookIdx((i) => (dir === "next" ? (i + 1) % availableLooks.length : (i - 1 + availableLooks.length) % availableLooks.length));
+    setActiveLookIdx((i) =>
+      dir === "next"
+        ? (i + 1) % availableLooks.length
+        : (i - 1 + availableLooks.length) % availableLooks.length,
+    );
   };
 
-  const changeOpacity = (level: OpacityLevel) => {
-    Haptics.selectionAsync();
-    setOpacityLevel(level);
-    Animated.timing(overlayOpacity, { toValue: OPACITY_VALUES[level], duration: 220, useNativeDriver: isNative }).start();
-  };
-
-  const nudge = (dir: "up" | "down") => {
-    Haptics.selectionAsync();
-    setVerticalOffset((v) => {
-      const next = dir === "up" ? v - POSITION_STEP : v + POSITION_STEP;
-      return Math.max(POSITION_MIN, Math.min(POSITION_MAX, next));
-    });
-  };
-
-  const flipCamera = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setFacing((f) => (f === "front" ? "back" : "front"));
-  };
-
-  const shareStyleCard = async () => {
+  const shareResult = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const look = availableLooks[activeLookIdx];
     try {
       await Share.share({
-        message: `✨ Styled myself in the "${look.name}" look on Simon Yarrell!\n\nPieces: ${look.pieces.map((p) => `${p.name} by ${p.brand}`).join(", ")}\n\nTotal: $${look.estimatedPrice?.toLocaleString() ?? "—"}\n\n#SimonYarrell #VirtualTryOn #LuxuryFashion`,
-        title: `Simon Yarrell — ${look.name}`,
+        message: `✨ I tried on the "${activeLook.name}" look on Maison Simon.\n\n${activeLook.pieces
+          .map((p) => `${p.name} — ${p.brand}`)
+          .join("\n")}\n\nTotal: $${activeLook.estimatedPrice?.toLocaleString() ?? "—"}\n\n#MaisonSimon #VirtualTryOn`,
+        title: `Maison Simon — ${activeLook.name}`,
       });
-    } catch { /* dismissed */ }
+    } catch {
+      /* dismissed */
+    }
   };
 
-  const activeLook = availableLooks[activeLookIdx];
-  const topPad = Platform.OS === "web" ? 56 : insets.top;
+  const spinDeg = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
 
-  // ── PERMISSION SCREEN ─────────────────────────────────────────────────
-  if (permission && !permission.granted) {
+  // ── Shared top bar ─────────────────────────────────────────────────
+  const TopBar = ({ onClose }: { onClose: () => void }) => (
+    <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
+      <BrandWordmark style={{ opacity: 0.95 }} />
+      <Pressable onPress={onClose} hitSlop={12} style={[s.iconBtn, { borderColor: colors.border }]}>
+        <Feather name="x" size={16} color="#F5F5F0" />
+      </Pressable>
+    </View>
+  );
+
+  // ── CAMERA MODE ────────────────────────────────────────────────────
+  if (mode === "camera") {
     return (
-      <View style={[s.screen, { backgroundColor: colors.background }]}>
-        <LinearGradient colors={["rgba(198,167,94,0.08)", "transparent"]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-        <View style={[s.topBar, { paddingTop: topPad + 8 }]}>
-          <BrandWordmark />
-          <Pressable onPress={() => safeBack()} hitSlop={12} style={[s.iconBtn, { borderColor: colors.border }]}>
-            <Feather name="x" size={16} color={colors.foreground} />
-          </Pressable>
+      <View style={s.screen}>
+        {isNative || Platform.OS === "web" ? (
+          <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} />
+        ) : null}
+        <LinearGradient
+          colors={["rgba(5,5,6,0.7)", "transparent"]}
+          style={s.topScrim}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={["transparent", "rgba(5,5,6,0.85)"]}
+          style={s.bottomScrim}
+          pointerEvents="none"
+        />
+        <TopBar onClose={() => setMode("intro")} />
+
+        {/* Framing guide */}
+        <View style={s.frameGuide} pointerEvents="none">
+          <Text style={s.frameGuideText}>Stand back so your full body is in frame</Text>
         </View>
-        <View style={s.permBodyWrap}>
-          {/* Gendered editorial backdrop — turns the camera-permission gate
-              from a stark text screen into a moment that previews the kind
-              of look the user will see modeled on themselves once they
-              grant access. Opacity 0.32 + heavy 3-stop dark gradient keeps
-              the gold camera circle + Playfair headline as the focal point. */}
-          <Image
-            source={editorialBackdrop}
-            style={s.permBackdrop}
-            resizeMode="cover"
-          />
-          <LinearGradient
-            colors={["rgba(11,11,12,0.62)", "rgba(11,11,12,0.86)", "rgba(11,11,12,0.96)"]}
-            locations={[0, 0.55, 1]}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={s.permBody}>
-            <View style={[s.permCircle, { backgroundColor: colors.card, borderColor: colors.gold }]}>
-              <Feather name="camera" size={40} color={colors.gold} />
-            </View>
-            <Text style={[s.permTitle, { color: colors.foreground }]}>Camera Access Needed</Text>
-            {/* Gold rule (batch 124) — extends the editorial motif into the
-                camera permission gate, the only remaining first-impression
-                hero moment without it. permBody has alignItems:'center' so
-                the View is centered horizontally by the parent. Tighter
-                negative marginTop pulls the rule up into the gap:20 rhythm
-                so it sits close to the Playfair title (matching the
-                title-flourish reading of partners/membership/privacy heroes
-                where rule and title visually pair). */}
-            <TitleRule width={32} style={{ marginTop: -12 }} />
-            <Text style={[s.permSub, { color: colors.mutedForeground }]}>
-              Simon Yarrell uses your camera to show outfits on your body in real time — nothing is recorded or stored.
-            </Text>
-            <Pressable onPress={requestPermission} style={[s.goldBtn, { backgroundColor: colors.gold }]}>
-              <Feather name="camera" size={15} color="#0B0B0C" />
-              <Text style={s.goldBtnText}>ALLOW CAMERA</Text>
-            </Pressable>
-            <Pressable onPress={() => safeBack()} style={s.ghostBtn}>
-              <Text style={[s.ghostBtnText, { color: colors.mutedForeground }]}>Not now</Text>
-            </Pressable>
-          </View>
+
+        {/* Shutter row */}
+        <View style={[s.cameraControls, { paddingBottom: insets.bottom + 28 }]}>
+          <Pressable onPress={() => setFacing((f) => (f === "front" ? "back" : "front"))} style={s.circleBtn}>
+            <Feather name="refresh-cw" size={18} color="#F5F5F0" />
+          </Pressable>
+          <Pressable onPress={capturePhoto} style={s.shutter} disabled={capturing}>
+            {capturing ? (
+              <ActivityIndicator color="#0B0B0C" />
+            ) : (
+              <View style={s.shutterInner} />
+            )}
+          </Pressable>
+          <Pressable onPress={pickFromLibrary} style={s.circleBtn}>
+            <Feather name="image" size={18} color="#F5F5F0" />
+          </Pressable>
         </View>
       </View>
     );
   }
 
-  // ── LIVE AR TRY-ON ────────────────────────────────────────────────────
-  return (
-    <View style={s.screen}>
+  // ── GENERATING MODE ────────────────────────────────────────────────
+  if (mode === "generating") {
+    return (
+      <View style={[s.screen, { backgroundColor: colors.background }]}>
+        <Image source={editorialBackdrop} style={s.introBackdrop} resizeMode="cover" />
+        <LinearGradient
+          colors={["rgba(11,11,12,0.82)", "rgba(11,11,12,0.94)", "rgba(11,11,12,0.98)"]}
+          style={StyleSheet.absoluteFill}
+        />
+        <TopBar onClose={() => setMode("styling")} />
+        <View style={s.centerBody}>
+          <Animated.View style={[s.genRing, { transform: [{ rotate: spinDeg }] }]}>
+            <View style={s.genRingDot} />
+          </Animated.View>
+          <Text style={[s.genTitle, { color: colors.foreground }]}>Tailoring your look</Text>
+          <TitleRule width={32} style={{ marginTop: 2 }} />
+          <Text style={[s.genLine, { color: colors.mutedForeground }]}>{GENERATING_LINES[genLine]}</Text>
+          <Text style={s.genHint}>This can take up to a minute — couture takes patience.</Text>
+        </View>
+      </View>
+    );
+  }
 
-      {/* ── LAYER 1: Live camera — full screen ── */}
-      {isNative ? (
-        <CameraView style={StyleSheet.absoluteFill} facing={facing} />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, s.webFallback]}>
-          {/* Web has no camera — surface a gendered editorial still so the
-              try-on surface still feels like the luxury app rather than a
-              dead grey box. Opacity 0.45 (higher than mobile permission
-              gate since this is a permanent state, not a one-tap dismissal). */}
+  // ── RESULT MODE ────────────────────────────────────────────────────
+  if (mode === "result" && result) {
+    return (
+      <View style={[s.screen, { backgroundColor: "#050506" }]}>
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
           <Image
-            source={editorialBackdrop}
-            style={s.webFallbackBackdrop}
-            resizeMode="cover"
-          />
-          <LinearGradient
-            colors={["rgba(11,11,12,0.58)", "rgba(11,11,12,0.84)", "rgba(11,11,12,0.94)"]}
-            locations={[0, 0.55, 1]}
+            source={{ uri: showBefore && photo ? photo.uri : result }}
             style={StyleSheet.absoluteFill}
+            resizeMode="contain"
           />
-          <View style={s.webFallbackContent}>
-            <Feather name="camera" size={48} color="rgba(198,167,94,0.5)" />
-            <Text style={s.webFallbackText}>Live camera preview on device</Text>
-          </View>
-        </View>
-      )}
-
-      {/*
-       * ── LAYER 2: Outfit overlay ──
-       *
-       * The outfit photo is a full-body shot (face + clothes + shoes).
-       * We clip to a window that starts below the user's face zone so only
-       * the CLOTHING portion of the photo is visible — the user sees their
-       * own face through the live camera at the top.
-       *
-       * Inside the clip container the image is shifted up by PHOTO_FACE_CROP
-       * so the model's face (top of the photo) is scrolled out of view and
-       * only the shirt / pants / shoes portion is rendered.
-       *
-       * verticalOffset lets the user slide the clothes up/down to align
-       * with their own body.
-       */}
-      <Animated.View
-        style={[
-          s.outfitClipWindow,
-          { top: FACE_ZONE + verticalOffset, opacity: Animated.multiply(lookFade, overlayOpacity) },
-        ]}
-        pointerEvents="none"
-      >
-        {(() => {
-          const pieces = activeLook.pieces;
-          const dress = pieces.find((p) => p.category === "Dress");
-          const outer = pieces.find((p) => p.category === "Outerwear");
-          const top = pieces.find((p) => p.category === "Top");
-          const bottom = pieces.find((p) => p.category === "Bottom");
-          const shoes = pieces.find((p) => p.category === "Shoes");
-          const torso = dress ?? outer ?? top;
-          return (
-            <View style={s.garmentStack}>
-              {torso?.imageUrl && (
-                <Image
-                  source={{ uri: torso.imageUrl }}
-                  style={[s.garmentLayer, dress ? s.garmentDress : s.garmentTop]}
-                  resizeMode="contain"
-                />
-              )}
-              {!dress && bottom?.imageUrl && (
-                <Image
-                  source={{ uri: bottom.imageUrl }}
-                  style={[s.garmentLayer, s.garmentBottom]}
-                  resizeMode="contain"
-                />
-              )}
-              {shoes?.imageUrl && (
-                <Image
-                  source={{ uri: shoes.imageUrl }}
-                  style={[s.garmentLayer, s.garmentShoes]}
-                  resizeMode="contain"
-                />
-              )}
-            </View>
-          );
-        })()}
-      </Animated.View>
-
-      {/* ── LAYER 3: Subtle gradient scrim at face/clothes boundary ── */}
-      <LinearGradient
-        colors={["rgba(5,5,6,0.0)", "rgba(5,5,6,0.0)", "rgba(5,5,6,0.0)"]}
-        style={[s.boundaryFade, { top: FACE_ZONE - 24 + verticalOffset }]}
-        pointerEvents="none"
-      />
-
-      {/* ── LAYER 4: Top & bottom scrims ── */}
-      <LinearGradient
-        colors={["rgba(5,5,6,0.75)", "rgba(5,5,6,0.15)", "transparent"]}
-        locations={[0, 0.3, 1]}
-        style={s.topScrim}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={["transparent", "rgba(5,5,6,0.6)", "rgba(5,5,6,0.97)"]}
-        locations={[0, 0.3, 1]}
-        style={s.bottomScrim}
-        pointerEvents="none"
-      />
-
-      {/* ── LAYER 5: UI chrome ── */}
-
-      {/* Top bar */}
-      <Animated.View style={[s.topBar, { paddingTop: topPad + 8, opacity: fadeAnim }]}>
-        <BrandWordmark style={{ opacity: 0.95 }} />
-        <View style={s.topActions}>
-          <Pressable onPress={flipCamera} hitSlop={10} style={s.iconBtn}>
-            <Feather name="refresh-cw" size={15} color="#F5F5F0" />
-          </Pressable>
-          <Pressable onPress={() => safeBack()} hitSlop={10} style={s.iconBtn}>
-            <Feather name="x" size={15} color="#F5F5F0" />
-          </Pressable>
-        </View>
-      </Animated.View>
-
-      {/* LIVE badge — bottom left of face zone */}
-      <Animated.View style={[s.liveBadge, { top: topPad + 62 }, { opacity: fadeAnim }]}>
-        <View style={s.liveDot} />
-        <Text style={s.liveBadgeText}>LIVE</Text>
-      </Animated.View>
-
-      {/* Right-side controls: opacity + position nudge */}
-      <Animated.View style={[s.sideControls, { top: topPad + 55 }, { opacity: fadeAnim }]}>
-        {/* Opacity levels */}
-        <View style={s.sideGroup}>
-          {(["vivid", "blend", "sheer"] as OpacityLevel[]).map((lvl) => (
-            <Pressable
-              key={lvl}
-              onPress={() => changeOpacity(lvl)}
-              style={[s.sideBtn, opacityLevel === lvl && s.sideBtnActive]}
-            >
-              <Text style={[s.sideBtnText, opacityLevel === lvl && s.sideBtnTextActive]}>
-                {lvl === "vivid" ? "100%" : lvl === "blend" ? "65%" : "35%"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Spacer */}
-        <View style={{ height: 12 }} />
-
-        {/* Position nudge — move outfit up/down */}
-        <View style={s.sideGroup}>
-          <Pressable onPress={() => nudge("up")} style={s.sideBtn} hitSlop={6}>
-            <Feather name="chevron-up" size={13} color="rgba(245,245,240,0.7)" />
-          </Pressable>
-          <View style={s.sideDivider} />
-          <Pressable onPress={() => nudge("down")} style={s.sideBtn} hitSlop={6}>
-            <Feather name="chevron-down" size={13} color="rgba(245,245,240,0.7)" />
-          </Pressable>
-        </View>
-      </Animated.View>
-
-      {/* Alignment hint — shows when user hasn't nudged yet */}
-      {verticalOffset === 0 && (
-        <Animated.View
-          style={[s.alignHint, { top: FACE_ZONE - 2 }, { opacity: fadeAnim }]}
+        </Animated.View>
+        <LinearGradient
+          colors={["rgba(5,5,6,0.8)", "transparent"]}
+          style={s.topScrim}
           pointerEvents="none"
-        >
-          <View style={s.alignLine} />
-          <Text style={s.alignHintText}>Align clothes to your body using ↑ ↓</Text>
-          <View style={s.alignLine} />
-        </Animated.View>
-      )}
+        />
+        <LinearGradient
+          colors={["transparent", "rgba(5,5,6,0.5)", "rgba(5,5,6,0.96)"]}
+          locations={[0, 0.4, 1]}
+          style={s.resultBottomScrim}
+          pointerEvents="none"
+        />
+        <TopBar onClose={() => safeBack()} />
 
-      {/* ── Bottom panel ── */}
-      <Animated.View style={[s.panel, { opacity: fadeAnim, transform: [{ translateY: panelSlide }] }]}>
-
-        {/* Look navigator */}
-        <Animated.View style={[s.lookNav, { opacity: lookFade }]}>
-          <Pressable onPress={() => switchLook("prev")} style={s.navArrow}>
-            <Feather name="chevron-left" size={20} color="#F5F5F0" />
+        {/* Before / After toggle */}
+        {photo && (
+          <Pressable
+            onPressIn={() => setShowBefore(true)}
+            onPressOut={() => setShowBefore(false)}
+            style={[s.beforePill, { top: topPad + 58 }]}
+          >
+            <Feather name="eye" size={12} color="#0B0B0C" />
+            <Text style={s.beforePillText}>{showBefore ? "ORIGINAL" : "HOLD TO COMPARE"}</Text>
           </Pressable>
-          <View style={s.lookMeta}>
-            <Text style={s.lookNavName} numberOfLines={1}>{activeLook.name}</Text>
-            {/* Style label is tappable when it matches a known TREND →
-                /style with trendHint pre-loaded (batch 73). Fail-closed:
-                if the look's style isn't in TRENDS (legacy/free-form
-                strings), it stays a flat Text — same mesh contract as
-                LookCard styleTag (batch 68) and look-detail style pill. */}
-            {TRENDS.some((t) => t.name === activeLook.style) ? (
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  router.push({ pathname: "/(tabs)/style", params: { trendHint: activeLook.style } });
-                }}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel={`Explore ${activeLook.style} trend`}
-                style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
-              >
-                <Text style={[s.lookNavStyle, { color: "rgba(245,245,240,0.85)" }]}>
-                  {activeLook.style}
-                </Text>
-              </Pressable>
-            ) : (
-              <Text style={s.lookNavStyle}>{activeLook.style}</Text>
-            )}
+        )}
+
+        {/* Bottom panel */}
+        <View style={[s.resultPanel, { paddingBottom: insets.bottom + 18 }]}>
+          <Text style={s.resultLookName} numberOfLines={1}>{activeLook.name}</Text>
+          <Text style={s.resultTotal}>
+            ${activeLook.estimatedPrice?.toLocaleString() ?? "—"}
+          </Text>
+          <View style={s.resultActions}>
+            <Pressable onPress={() => { Haptics.selectionAsync(); setResult(null); setMode("styling"); }} style={s.outlineBtn}>
+              <Feather name="grid" size={14} color="rgba(245,245,240,0.8)" />
+              <Text style={s.outlineBtnText}>ANOTHER LOOK</Text>
+            </Pressable>
+            <Pressable onPress={shareResult} style={s.goldBtn}>
+              <Feather name="share-2" size={14} color="#0B0B0C" />
+              <Text style={s.goldBtnText}>SHARE</Text>
+            </Pressable>
           </View>
-          <Pressable onPress={() => switchLook("next")} style={s.navArrow}>
-            <Feather name="chevron-right" size={20} color="#F5F5F0" />
+          <Pressable onPress={() => { Haptics.selectionAsync(); setResult(null); setPhoto(null); setMode("intro"); }} style={s.ghostRow}>
+            <Feather name="camera" size={12} color="rgba(245,245,240,0.5)" />
+            <Text style={s.ghostRowText}>New photo</Text>
           </Pressable>
-        </Animated.View>
-
-        {/* Dot indicators */}
-        <View style={s.dots}>
-          {availableLooks.map((_, i) => (
-            <Pressable
-              key={i}
-              onPress={() => { Haptics.selectionAsync(); setActiveLookIdx(i); }}
-              style={[
-                s.dot,
-                { backgroundColor: i === activeLookIdx ? "#C6A75E" : "rgba(245,245,240,0.2)" },
-                i === activeLookIdx && { width: 20 },
-              ]}
-            />
-          ))}
         </View>
+      </View>
+    );
+  }
 
-        {/* Pieces strip */}
-        <Animated.View style={{ opacity: lookFade }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pieces}>
-            {activeLook.pieces.map((piece) => {
-              // Brand micro-label is tappable when in catalog → shop with
-              // brand filter (batch 73). Fail-closed: out-of-catalog brand
-              // stays a flat muted Text — never a broken nav from the
-              // camera UI. Brightness shift (0.45 → 0.85) + pressed
-              // opacity is the affordance signal; no chevron because the
-              // pieces strip is dense and chrome would crowd it.
-              const shoppable = brandCatalog.has(piece.brand.toLowerCase());
-              return (
+  // ── STYLING MODE ───────────────────────────────────────────────────
+  if (mode === "styling" && photo) {
+    const canGenerate = garmentUrls.length > 0;
+    return (
+      <View style={[s.screen, { backgroundColor: colors.background }]}>
+        <TopBar onClose={() => safeBack()} />
+        <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 140 }} showsVerticalScrollIndicator={false}>
+          {/* Photo hero */}
+          <View style={s.photoHeroWrap}>
+            <Image source={{ uri: photo.uri }} style={s.photoHero} resizeMode="cover" />
+            <LinearGradient colors={["transparent", "rgba(11,11,12,0.9)"]} style={s.photoHeroFade} pointerEvents="none" />
+            <Pressable onPress={() => { setPhoto(null); setMode("intro"); }} style={s.retakeChip}>
+              <Feather name="refresh-cw" size={12} color="#F5F5F0" />
+              <Text style={s.retakeChipText}>Change photo</Text>
+            </Pressable>
+          </View>
+
+          <View style={s.stylingBody}>
+            <Text style={[s.sectionKicker, { color: colors.gold }]}>CHOOSE A LOOK</Text>
+            <TitleRule width={28} style={{ marginTop: 4, marginBottom: 14 }} />
+
+            {/* Look navigator */}
+            <View style={s.lookNav}>
+              <Pressable onPress={() => switchLook("prev")} style={s.navArrow}>
+                <Feather name="chevron-left" size={22} color={colors.foreground} />
+              </Pressable>
+              <View style={s.lookMeta}>
+                <Text style={[s.lookName, { color: colors.foreground }]} numberOfLines={1}>{activeLook.name}</Text>
+                <Text style={[s.lookStyle, { color: colors.mutedForeground }]}>{activeLook.style}</Text>
+              </View>
+              <Pressable onPress={() => switchLook("next")} style={s.navArrow}>
+                <Feather name="chevron-right" size={22} color={colors.foreground} />
+              </Pressable>
+            </View>
+
+            {/* Dots */}
+            <View style={s.dots}>
+              {availableLooks.map((_, i) => (
+                <Pressable
+                  key={i}
+                  onPress={() => { Haptics.selectionAsync(); setActiveLookIdx(i); }}
+                  style={[
+                    s.dot,
+                    { backgroundColor: i === activeLookIdx ? colors.gold : "rgba(245,245,240,0.2)" },
+                    i === activeLookIdx && { width: 20 },
+                  ]}
+                />
+              ))}
+            </View>
+
+            {/* Pieces strip */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pieces}>
+              {activeLook.pieces.map((piece) => (
                 <View key={piece.id} style={s.piece}>
-                  <View style={s.pieceThumb}>
+                  <View style={[s.pieceThumb, { borderColor: colors.border }]}>
                     {piece.localImage ? (
                       <Image source={piece.localImage} style={s.pieceImg} resizeMode="cover" />
                     ) : piece.imageUrl ? (
@@ -445,47 +440,79 @@ export default function TryOnScreen() {
                       <Feather name="tag" size={14} color="rgba(245,245,240,0.3)" />
                     )}
                   </View>
-                  <Text style={s.pieceName} numberOfLines={2}>{piece.name}</Text>
-                  {shoppable ? (
-                    <Pressable
-                      onPress={() => goShopBrand(piece.brand)}
-                      hitSlop={6}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Shop ${piece.brand}`}
-                      style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
-                    >
-                      <Text style={[s.pieceBrand, { color: "rgba(245,245,240,0.85)" }]} numberOfLines={1}>
-                        {piece.brand}
-                      </Text>
-                    </Pressable>
-                  ) : (
-                    <Text style={s.pieceBrand} numberOfLines={1}>{piece.brand}</Text>
-                  )}
+                  <Text style={[s.pieceName, { color: colors.foreground }]} numberOfLines={2}>{piece.name}</Text>
+                  <Text style={[s.pieceBrand, { color: colors.mutedForeground }]} numberOfLines={1}>{piece.brand}</Text>
                 </View>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
+              ))}
+            </ScrollView>
 
-        {/* Price row */}
-        <View style={s.priceRow}>
-          <Text style={s.priceLabel}>LOOK TOTAL</Text>
-          <Animated.Text style={[s.priceValue, { opacity: lookFade }]}>
-            ${activeLook.estimatedPrice?.toLocaleString() ?? "—"}
-          </Animated.Text>
+            {errorMsg && (
+              <View style={[s.errorBox, { borderColor: "rgba(198,167,94,0.4)" }]}>
+                <Feather name="alert-circle" size={13} color={colors.gold} />
+                <Text style={[s.errorText, { color: colors.foreground }]}>{errorMsg}</Text>
+              </View>
+            )}
+            {!canGenerate && (
+              <Text style={[s.noGarmentNote, { color: colors.mutedForeground }]}>
+                This look doesn't have shoppable images to try on. Pick another look.
+              </Text>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Sticky CTA */}
+        <View style={[s.ctaBar, { paddingBottom: insets.bottom + 14, backgroundColor: colors.background, borderTopColor: colors.border }]}>
+          <Pressable
+            onPress={runTryOn}
+            disabled={!canGenerate}
+            style={[s.goldBtnLg, { backgroundColor: colors.gold }, !canGenerate && { opacity: 0.4 }]}
+          >
+            <Feather name="zap" size={16} color="#0B0B0C" />
+            <Text style={s.goldBtnLgText}>CREATE MY TRY-ON</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ── INTRO MODE (default) ───────────────────────────────────────────
+  return (
+    <View style={[s.screen, { backgroundColor: colors.background }]}>
+      <Image source={editorialBackdrop} style={s.introBackdrop} resizeMode="cover" />
+      <LinearGradient
+        colors={["rgba(11,11,12,0.55)", "rgba(11,11,12,0.86)", "rgba(11,11,12,0.97)"]}
+        locations={[0, 0.55, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      <TopBar onClose={() => safeBack()} />
+      <Animated.View style={[s.introBody, { opacity: fadeAnim, paddingBottom: insets.bottom + 24 }]}>
+        <View style={[s.introCircle, { borderColor: colors.gold, backgroundColor: colors.card }]}>
+          <Feather name="user" size={38} color={colors.gold} />
+        </View>
+        <Text style={[s.introTitle, { color: colors.foreground }]}>Virtual Try-On</Text>
+        <TitleRule width={36} style={{ marginTop: -6 }} />
+        <Text style={[s.introSub, { color: colors.mutedForeground }]}>
+          Take or upload a full-body photo and our AI atelier will drape any look onto you —
+          realistic fit, fabric, and light. Your photo is used only to render this image.
+        </Text>
+
+        <View style={s.introActions}>
+          <Pressable onPress={openCamera} style={[s.goldBtnLg, { backgroundColor: colors.gold }]}>
+            <Feather name="camera" size={16} color="#0B0B0C" />
+            <Text style={s.goldBtnLgText}>TAKE A PHOTO</Text>
+          </Pressable>
+          <Pressable onPress={pickFromLibrary} style={[s.outlineBtnLg, { borderColor: colors.border }]}>
+            <Feather name="upload" size={15} color={colors.foreground} />
+            <Text style={[s.outlineBtnLgText, { color: colors.foreground }]}>UPLOAD A PHOTO</Text>
+          </Pressable>
         </View>
 
-        {/* Actions */}
-        <View style={[s.actions, { paddingBottom: insets.bottom + 16 }]}>
-          <Pressable onPress={flipCamera} style={s.outlineBtn}>
-            <Feather name="refresh-cw" size={14} color="rgba(245,245,240,0.7)" />
-            <Text style={s.outlineBtnText}>FLIP</Text>
-          </Pressable>
-          <Pressable onPress={shareStyleCard} style={s.goldBtn2}>
-            <Feather name="share-2" size={14} color="#0B0B0C" />
-            <Text style={s.goldBtnText2}>SHARE LOOK</Text>
-          </Pressable>
-        </View>
+        {errorMsg && (
+          <View style={[s.errorBox, { borderColor: "rgba(198,167,94,0.4)" }]}>
+            <Feather name="alert-circle" size={13} color={colors.gold} />
+            <Text style={[s.errorText, { color: colors.foreground }]}>{errorMsg}</Text>
+          </View>
+        )}
       </Animated.View>
     </View>
   );
@@ -494,354 +521,247 @@ export default function TryOnScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#050506" },
 
-  webFallback: {
-    backgroundColor: "#0B0B0C",
-    overflow: "hidden",
-  },
-  webFallbackBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-    opacity: 0.45,
-  },
-  webFallbackContent: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-  },
-  webFallbackText: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(245,245,240,0.55)",
-    letterSpacing: 0.5,
-  },
-
-  // ── Outfit overlay ─────────────────────────────────────────────────
-  // Clipping window — only the clothing zone is visible, face zone stays clear
-  outfitClipWindow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: "hidden",
-  },
-  // The actual outfit photo — shifted up inside the clip window to crop model's face
-  outfitImage: {
-    position: "absolute",
-    left: 0,
-    width: "100%",
-  },
-
-  // ── Garment stack (product photos composed over body) ─────────────
-  garmentStack: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  garmentLayer: {
-    position: "absolute",
-    left: "10%",
-    right: "10%",
-    width: "80%",
-  },
-  garmentTop: {
-    top: "2%",
-    height: "38%",
-  },
-  garmentBottom: {
-    top: "38%",
-    height: "42%",
-  },
-  garmentDress: {
-    top: "2%",
-    height: "78%",
-  },
-  garmentShoes: {
-    left: "22%",
-    right: "22%",
-    width: "56%",
-    bottom: "2%",
-    height: "16%",
-  },
-
-  // Thin gradient at the face/clothes boundary to smooth the transition
-  boundaryFade: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 48,
-    zIndex: 3,
-  },
-
-  // Scrims
-  topScrim: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 180,
-    zIndex: 4,
-  },
-  bottomScrim: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: height * 0.62,
-    zIndex: 4,
-  },
-
-  // ── Top bar ────────────────────────────────────────────────────────
+  // Top bar
   topBar: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
+    zIndex: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 12,
   },
-  topActions: { flexDirection: "row", gap: 8 },
   iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(5,5,6,0.5)",
-    borderWidth: 0.5,
-    borderColor: "rgba(245,245,240,0.2)",
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(0,0,0,0.35)",
     alignItems: "center",
     justifyContent: "center",
   },
 
-  // ── LIVE badge ─────────────────────────────────────────────────────
-  liveBadge: {
-    position: "absolute",
-    left: 20,
-    zIndex: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(5,5,6,0.5)",
-    borderWidth: 0.5,
-    borderColor: "rgba(245,245,240,0.15)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#C6A75E" },
-  liveBadgeText: { fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#C6A75E" },
+  topScrim: { position: "absolute", top: 0, left: 0, right: 0, height: 150, zIndex: 5 },
+  bottomScrim: { position: "absolute", bottom: 0, left: 0, right: 0, height: 220, zIndex: 5 },
 
-  // ── Side controls (right rail) ─────────────────────────────────────
-  sideControls: {
-    position: "absolute",
-    right: 14,
-    zIndex: 10,
-    gap: 0,
-    alignItems: "center",
-  },
-  sideGroup: {
-    backgroundColor: "rgba(5,5,6,0.55)",
-    borderWidth: 0.5,
-    borderColor: "rgba(245,245,240,0.15)",
-    borderRadius: 20,
-    overflow: "hidden",
-    alignItems: "center",
-  },
-  sideBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+  // Intro
+  introBackdrop: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", opacity: 0.5 },
+  introBody: { flex: 1, alignItems: "center", justifyContent: "flex-end", paddingHorizontal: 28, gap: 16 },
+  introCircle: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 44,
+    marginBottom: 4,
   },
-  sideBtnActive: {
-    backgroundColor: "rgba(198,167,94,0.2)",
-  },
-  sideBtnText: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.5,
-    color: "rgba(245,245,240,0.45)",
-  },
-  sideBtnTextActive: { color: "#C6A75E" },
-  sideDivider: {
-    height: 0.5,
-    width: 28,
-    backgroundColor: "rgba(245,245,240,0.12)",
-  },
-
-  // ── Alignment hint ─────────────────────────────────────────────────
-  alignHint: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    zIndex: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    gap: 10,
-  },
-  alignLine: {
-    flex: 1,
-    height: 0.5,
-    backgroundColor: "rgba(198,167,94,0.4)",
-  },
-  alignHintText: {
-    fontSize: 9,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(198,167,94,0.7)",
-    letterSpacing: 0.5,
+  introTitle: { fontSize: 34, fontFamily: "PlayfairDisplay_700Bold", textAlign: "center" },
+  introSub: {
+    fontSize: 13.5,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 21,
     textAlign: "center",
+    maxWidth: 340,
+    marginTop: 2,
   },
+  introActions: { width: "100%", gap: 12, marginTop: 12 },
 
-  // ── Bottom panel ───────────────────────────────────────────────────
-  panel: {
+  // Buttons
+  goldBtnLg: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    height: 54,
+    borderRadius: 27,
+  },
+  goldBtnLgText: { fontSize: 13, fontFamily: "Inter_700Bold", letterSpacing: 1.5, color: "#0B0B0C" },
+  outlineBtnLg: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1,
+  },
+  outlineBtnLgText: { fontSize: 13, fontFamily: "Inter_600SemiBold", letterSpacing: 1.5 },
+
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 6,
+  },
+  errorText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+
+  // Camera
+  frameGuide: { position: "absolute", top: height * 0.16, left: 0, right: 0, alignItems: "center", zIndex: 10 },
+  frameGuideText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(245,245,240,0.85)",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    letterSpacing: 0.3,
+  },
+  cameraControls: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     zIndex: 10,
-    gap: 14,
-    paddingTop: 16,
-  },
-  lookNav: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 10,
+    justifyContent: "space-around",
+    paddingHorizontal: 40,
   },
-  navArrow: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "rgba(5,5,6,0.45)",
-    borderWidth: 0.5,
-    borderColor: "rgba(245,245,240,0.15)",
+  circleBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(0,0,0,0.4)",
     alignItems: "center",
     justifyContent: "center",
   },
-  lookMeta: { flex: 1, alignItems: "center", gap: 3 },
-  lookNavName: {
-    fontSize: 22,
-    fontFamily: "PlayfairDisplay_700Bold",
-    color: "#F5F5F0",
-    textAlign: "center",
-    letterSpacing: 0.2,
-  },
-  lookNavStyle: {
-    fontSize: 10,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(245,245,240,0.5)",
-    letterSpacing: 1.5,
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-  dots: {
-    flexDirection: "row",
+  shutter: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: "#C6A75E",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
+    borderWidth: 4,
+    borderColor: "rgba(255,255,255,0.5)",
   },
-  dot: { height: 4, width: 4, borderRadius: 2 },
-  pieces: { paddingHorizontal: 16, gap: 10 },
-  piece: { width: 80, gap: 5 },
+  shutterInner: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#C6A75E" },
+
+  // Generating
+  centerBody: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 14 },
+  genRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 2,
+    borderColor: "rgba(198,167,94,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+  },
+  genRingDot: { position: "absolute", top: -3, width: 8, height: 8, borderRadius: 4, backgroundColor: "#C6A75E" },
+  genTitle: { fontSize: 26, fontFamily: "PlayfairDisplay_700Bold" },
+  genLine: { fontSize: 14, fontFamily: "Inter_500Medium", marginTop: 8, textAlign: "center" },
+  genHint: { fontSize: 11.5, fontFamily: "Inter_400Regular", color: "rgba(245,245,240,0.4)", marginTop: 4, textAlign: "center" },
+
+  // Styling
+  photoHeroWrap: { width: "100%", height: height * 0.42, backgroundColor: "#111" },
+  photoHero: { width: "100%", height: "100%" },
+  photoHeroFade: { position: "absolute", bottom: 0, left: 0, right: 0, height: 120 },
+  retakeChip: {
+    position: "absolute",
+    bottom: 14,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 18,
+  },
+  retakeChipText: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#F5F5F0" },
+  stylingBody: { paddingHorizontal: 20, paddingTop: 20 },
+  sectionKicker: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 2.5 },
+
+  lookNav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  navArrow: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  lookMeta: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  lookName: { fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", textAlign: "center" },
+  lookStyle: { fontSize: 11, fontFamily: "Inter_500Medium", letterSpacing: 1, marginTop: 2 },
+
+  dots: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 14 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+
+  pieces: { gap: 14, paddingVertical: 20, paddingHorizontal: 2 },
+  piece: { width: 74, alignItems: "center", gap: 5 },
   pieceThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 2,
-    backgroundColor: "rgba(245,245,240,0.08)",
+    width: 74,
+    height: 90,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 0.5,
-    borderColor: "rgba(245,245,240,0.12)",
+    backgroundColor: "rgba(255,255,255,0.03)",
   },
   pieceImg: { width: "100%", height: "100%" },
-  pieceName: { fontSize: 9, fontFamily: "Inter_500Medium", color: "#F5F5F0", lineHeight: 13 },
-  pieceBrand: { fontSize: 8, fontFamily: "Inter_400Regular", color: "rgba(245,245,240,0.45)" },
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  pieceName: { fontSize: 9, fontFamily: "Inter_500Medium", textAlign: "center", lineHeight: 12 },
+  pieceBrand: { fontSize: 8, fontFamily: "Inter_400Regular", textAlign: "center" },
+
+  noGarmentNote: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", marginTop: 12, lineHeight: 18 },
+
+  ctaBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: "rgba(245,245,240,0.1)",
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  priceLabel: { fontSize: 9, fontFamily: "Inter_600SemiBold", color: "rgba(245,245,240,0.4)", letterSpacing: 2 },
-  priceValue: { fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", color: "#C6A75E" },
-  actions: { flexDirection: "row", gap: 10, paddingHorizontal: 16 },
+
+  // Result
+  resultBottomScrim: { position: "absolute", bottom: 0, left: 0, right: 0, height: 280, zIndex: 5 },
+  beforePill: {
+    position: "absolute",
+    alignSelf: "center",
+    zIndex: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#C6A75E",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+  },
+  beforePillText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.5, color: "#0B0B0C" },
+  resultPanel: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 20, alignItems: "center", gap: 6 },
+  resultLookName: { fontSize: 24, fontFamily: "PlayfairDisplay_700Bold", color: "#F5F5F0", textAlign: "center" },
+  resultTotal: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#C6A75E", marginBottom: 8 },
+  resultActions: { flexDirection: "row", gap: 12, width: "100%" },
   outlineBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 2,
-    borderWidth: 0.5,
-    borderColor: "rgba(245,245,240,0.2)",
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: "rgba(245,245,240,0.25)",
   },
-  outlineBtnText: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "rgba(245,245,240,0.7)", letterSpacing: 1.5 },
-  goldBtn2: {
-    flex: 2.5,
+  outlineBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold", letterSpacing: 1, color: "rgba(245,245,240,0.85)" },
+  goldBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 2,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#C6A75E",
   },
-  goldBtnText2: { fontSize: 11, fontFamily: "Inter_700Bold", color: "#0B0B0C", letterSpacing: 1.5 },
-
-  // ── Permission screen ──────────────────────────────────────────────
-  permBodyWrap: {
-    flex: 1,
-    overflow: "hidden",
-  },
-  permBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-    opacity: 0.32,
-  },
-  permBody: {
-    flex: 1,
-    paddingHorizontal: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 20,
-  },
-  permCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  permTitle: { fontSize: 24, fontFamily: "PlayfairDisplay_700Bold", textAlign: "center" },
-  permSub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 22 },
-  goldBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 2,
-    width: "100%",
-    marginTop: 8,
-  },
-  goldBtnText: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 2, color: "#0B0B0C" },
-  ghostBtn: { paddingVertical: 12 },
-  ghostBtnText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  goldBtnText: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 1.5, color: "#0B0B0C" },
+  ghostRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12, paddingVertical: 4 },
+  ghostRowText: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(245,245,240,0.5)" },
 });

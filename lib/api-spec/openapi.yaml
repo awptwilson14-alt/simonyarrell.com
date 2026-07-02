@@ -18,6 +18,8 @@ tags:
     description: User subscription tier sync (mirrors RevenueCat entitlements server-side)
   - name: promo
     description: Promo / comp code lookup (public) and admin-managed code CRUD
+  - name: tryon
+    description: Virtual try-on — AI photorealistic garment compositing
 paths:
   /healthz:
     get:
@@ -60,6 +62,36 @@ paths:
           description: Invalid request body
         "502":
           description: Upstream AI provider error
+  /tryon/compose:
+    post:
+      operationId: tryOnCompose
+      tags: [tryon]
+      summary: Compose a photorealistic virtual try-on image
+      description: |
+        Takes a base64 photo of the person plus the garment image URLs of a
+        look and returns an AI-generated photorealistic image of the person
+        wearing the outfit. Uses Gemini native image generation (multi-image
+        compositing). The person's face, body proportions and pose are
+        preserved; each garment is realistically draped and fitted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TryOnComposeRequest"
+      responses:
+        "200":
+          description: Try-on image generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TryOnComposeResponse"
+        "400":
+          description: Invalid request body
+        "502":
+          description: Upstream AI provider error
+        "503":
+          description: AI try-on not configured on this server
   /usage/today:
     get:
       operationId: getUsageToday
@@ -271,6 +303,47 @@ components:
           type: string
       required:
         - status
+    TryOnComposeRequest:
+      type: object
+      properties:
+        personImage:
+          type: string
+          description: Base64-encoded photo of the person (no data URL prefix), JPEG/PNG/WebP.
+          minLength: 1
+        personMimeType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+        garmentImageUrls:
+          type: array
+          description: Remote image URLs of the garments to composite, in layering order.
+          items:
+            type: string
+          minItems: 1
+          maxItems: 6
+        lookName:
+          type: string
+          maxLength: 120
+        gender:
+          type: string
+          enum: [Women, Men, Unisex]
+        notes:
+          type: string
+          maxLength: 500
+      required:
+        - personImage
+        - personMimeType
+        - garmentImageUrls
+    TryOnComposeResponse:
+      type: object
+      properties:
+        image:
+          type: string
+          description: Base64-encoded generated try-on image (no data URL prefix).
+        mimeType:
+          type: string
+      required:
+        - image
+        - mimeType
     StylistPlanRequest:
       type: object
       properties:
