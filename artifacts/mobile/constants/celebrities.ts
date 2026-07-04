@@ -21,6 +21,7 @@ const PHOTOS = {
   nas:         require("../assets/images/celebrities/nas.jpg"),
   kim:         require("../assets/images/celebrities/kim_kardashian.jpeg"),
   maryjblige:  require("../assets/images/celebrities/mary_j_blige.png"),
+  taylor:      require("../assets/images/celebrities/taylor_swift.jpeg"),
 };
 
 export interface CelebLook {
@@ -631,6 +632,34 @@ export const CELEBS: CelebFull[] = [
       { name: "Hollywood Premiere", pieces: [{ item: "Velvet Cape Gown", brand: "Elie Saab" }, { item: "Crystal Clutch", brand: "Judith Leiber" }, { item: "Stiletto", brand: "Stuart Weitzman" }] },
       { name: "Just Fine", pieces: [{ item: "Cropped Leather Jacket", brand: "Saint Laurent" }, { item: "Wide-Leg Trouser", brand: "The Row" }, { item: "Block-Heel Boot", brand: "Bottega Veneta" }] },
       { name: "Diva Carpet", pieces: [{ item: "Plunging Column Gown", brand: "Roberto Cavalli" }, { item: "Statement Necklace", brand: "Bulgari" }, { item: "Ankle-Strap Sandal", brand: "Giuseppe Zanotti" }] },
+    ],
+  },
+  {
+    id: "taylor",
+    name: "Taylor Swift",
+    title: "The Era-Defining Style Chameleon",
+    style: "Romantic Reinvention",
+    description: "Every album is a new wardrobe. From cottagecore knits to sequinned Eras Tour bodysuits, Taylor rebuilds her aesthetic era by era — vintage-inspired dresses, sharp tailoring, and glitter that reads as narrative, not decoration.",
+    image: PHOTOS.taylor,
+    accentColor: "#C9B8D8",
+    era: "2006–Present",
+    knownFor: "The Eras Tour, red-carpet reinvention, vintage romance",
+    signatureBrands: ["Reformation", "Oscar de la Renta", "Roberto Cavalli", "Christian Louboutin", "Etro"],
+    keyPieces: ["Sequinned bodysuit", "Vintage tea dress", "High-waist short suit", "Cardigan knit", "Red lip statement heel"],
+    vibes: ["Romantic", "Vintage Glamour", "Sparkle"],
+    looks: [
+      { name: "Eras Opening", pieces: [{ item: "Crystal Fringe Bodysuit", brand: "Roberto Cavalli" }, { item: "Fishnet Tight", brand: "Wolford" }, { item: "Sparkle Ankle Boot", brand: "Christian Louboutin" }] },
+      { name: "Lover House", pieces: [{ item: "Pastel Sequin Blazer", brand: "Etro" }, { item: "High-Waist Short", brand: "Zimmermann" }, { item: "Platform Sandal", brand: "Aquazzura" }] },
+      { name: "Folklore Cottage", pieces: [{ item: "Chunky Cable Cardigan", brand: "Reformation" }, { item: "Prairie Midi Dress", brand: "Doen" }, { item: "Suede Ankle Boot", brand: "Isabel Marant" }] },
+      { name: "Red Scarf", pieces: [{ item: "Wool Overcoat", brand: "Max Mara" }, { item: "Fair Isle Knit", brand: "Ralph Lauren" }, { item: "Riding Boot", brand: "Stuart Weitzman" }] },
+      { name: "Midnights Muse", pieces: [{ item: "Midnight-Blue Slip Gown", brand: "Oscar de la Renta" }, { item: "Crystal Drop Earring", brand: "Lorraine Schwartz" }, { item: "Satin Stiletto", brand: "Jimmy Choo" }] },
+      { name: "1989 Polaroid", pieces: [{ item: "Crop Top & Skirt Set", brand: "Reformation" }, { item: "Structured Mini Skirt", brand: "Self-Portrait" }, { item: "Pointed Pump", brand: "Manolo Blahnik" }] },
+      { name: "Reputation Noir", pieces: [{ item: "Black Sequin Bodysuit", brand: "Balmain" }, { item: "Sheer Tight", brand: "Falke" }, { item: "Thigh-High Boot", brand: "Christian Louboutin" }] },
+      { name: "Grammy Romance", pieces: [{ item: "Floral Column Gown", brand: "Oscar de la Renta" }, { item: "Statement Earring", brand: "Ana Khouri" }, { item: "Crystal Sandal", brand: "Aquazzura" }] },
+      { name: "Speak Now Violet", pieces: [{ item: "Lilac Tulle Gown", brand: "Etro" }, { item: "Opera Glove", brand: "Fownes" }, { item: "Embellished Heel", brand: "René Caovilla" }] },
+      { name: "City Off-Duty", pieces: [{ item: "Cropped Tweed Jacket", brand: "Sandro" }, { item: "High-Waist Trouser", brand: "Toteme" }, { item: "Kitten-Heel Pump", brand: "The Row" }] },
+      { name: "Evermore Woods", pieces: [{ item: "Plaid Wool Cape", brand: "Burberry" }, { item: "Ribbed Turtleneck", brand: "Reformation" }, { item: "Lace-Up Boot", brand: "Isabel Marant" }] },
+      { name: "Red Carpet Sparkle", pieces: [{ item: "Sequin Mini Dress", brand: "Zuhair Murad" }, { item: "Crystal Clutch", brand: "Judith Leiber" }, { item: "Ankle-Strap Sandal", brand: "Christian Louboutin" }] },
     ],
   },
 ];
