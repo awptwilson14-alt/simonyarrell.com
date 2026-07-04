@@ -14,7 +14,7 @@ import type { CelebFull, CelebLook } from "@/constants/celebrities";
 //     `buildMuseFromCharId`, so the style screen's existing `activeCeleb`
 //     brand-bias + INSPIRED-BY plumbing works with no engine changes.
 //   - The visible top-10 ROTATES weekly (deterministic ISO-week offset over a
-//     14-show pool), keeping a fixed 3 urban / 1 western / 3 contemporary /
+//     15-show pool), keeping a fixed 3 urban / 1 western / 3 contemporary /
 //     3 formal quota. No backend — fully offline.
 
 export type ShowCategory = "urban" | "western" | "contemporary" | "formal";
@@ -55,7 +55,7 @@ export interface TVShow {
 }
 
 export const TV_SHOWS: TVShow[] = [
-  // ════════════════════════════ URBAN (pool of 4) ════════════════════════════
+  // ════════════════════════════ URBAN (pool of 5) ════════════════════════════
   {
     id: "power",
     name: "Power",
@@ -727,6 +727,175 @@ export const TV_SHOWS: TVShow[] = [
             { item: "Ribbed knit top", brand: "Aritzia" },
             { item: "Tailored trousers", brand: "Maje" },
             { item: "Leather sneakers", brand: "Veja" },
+          ]},
+        ],
+      },
+    ],
+  },
+  {
+    id: "nemesis",
+    name: "Nemesis",
+    network: "Netflix",
+    category: "urban",
+    era: "2020s",
+    tagline: "Two sides of the same coin",
+    description:
+      "Courtney A. Kemp's LA heist thriller pits an obsessive LAPD detective against the master thief he's sworn to catch. The wardrobe splits the city in two — sharp, functional law-enforcement tailoring versus sleek, all-black criminal luxury.",
+    accentColor: "#8892A0",
+    vibes: ["Stealth Luxe", "Boss Tailoring", "Power Glam"],
+    characters: [
+      {
+        id: "isaiah",
+        name: "Isaiah Stiles",
+        actor: "Matthew Law",
+        gender: "men",
+        role: "LAPD Robbery-Homicide Lieutenant",
+        style: "Detective Sharp",
+        description:
+          "Working-detective polish — tailored blazers over knit polos, functional trousers, and leather shoes built for a stakeout. Elevated but never flashy.",
+        accentColor: "#4A6274",
+        signatureBrands: ["Theory", "Hugo Boss", "Todd Snyder", "Ralph Lauren", "Cole Haan"],
+        keyPieces: ["Navy tailored blazer", "Knit polo", "Slim chinos", "Leather derbies"],
+        vibes: ["Detective Sharp", "Smart Casual", "Quiet Luxury"],
+        looks: [
+          { name: "Robbery-Homicide", pieces: [
+            { item: "Navy tailored blazer", brand: "Theory" },
+            { item: "Tailored trousers", brand: "Hugo Boss" },
+            { item: "Leather derbies", brand: "Cole Haan" },
+          ]},
+          { name: "Stakeout Casual", pieces: [
+            { item: "Knit polo", brand: "Todd Snyder" },
+            { item: "Slim chinos", brand: "Ralph Lauren" },
+            { item: "Suede sneakers", brand: "Common Projects" },
+          ]},
+          { name: "Courthouse Testimony", pieces: [
+            { item: "Charcoal two-piece suit", brand: "Hugo Boss" },
+            { item: "White dress shirt", brand: "Charvet" },
+            { item: "Leather Oxfords", brand: "Cole Haan" },
+          ]},
+        ],
+      },
+      {
+        id: "coltrane",
+        name: "Coltrane Wilder",
+        actor: "Y'lan Noel",
+        gender: "men",
+        role: "Master thief",
+        style: "Stealth Luxe",
+        description:
+          "All-black, sleek, and built for mobility — quiet luxury with a criminal edge. Technical outerwear, merino knits, and boots that move without a sound.",
+        accentColor: "#9BA0A8",
+        signatureBrands: ["Tom Ford", "Rick Owens", "Bottega Veneta", "Saint Laurent", "Amiri"],
+        keyPieces: ["Black technical bomber", "Merino roll-neck", "Tapered trousers", "Leather sneakers"],
+        vibes: ["Stealth Luxe", "Monochrome", "Luxury Streetwear"],
+        looks: [
+          { name: "The Heist", pieces: [
+            { item: "Black technical bomber", brand: "Saint Laurent" },
+            { item: "Tapered trousers", brand: "Rick Owens" },
+            { item: "Leather sneakers", brand: "Bottega Veneta" },
+          ]},
+          { name: "Ghost Protocol", pieces: [
+            { item: "Merino roll-neck", brand: "Tom Ford" },
+            { item: "Slim black jeans", brand: "Amiri" },
+            { item: "Chelsea boots", brand: "Bottega Veneta" },
+          ]},
+          { name: "After Dark Score", pieces: [
+            { item: "Leather overshirt", brand: "Rick Owens" },
+            { item: "Black tee", brand: "Saint Laurent" },
+            { item: "Combat boots", brand: "Rick Owens" },
+          ]},
+        ],
+      },
+      {
+        id: "candice",
+        name: "Dr. Candice Stiles",
+        actor: "Gabrielle Dennis",
+        gender: "women",
+        role: "Therapist; Isaiah's wife",
+        style: "Refined Professional",
+        description:
+          "Polished, warm, and elegant workwear — camel coats, silk blouses, and tailored trousers. Soft power dressing that reads as calm authority.",
+        accentColor: "#C6A57A",
+        signatureBrands: ["Max Mara", "The Row", "Chloé", "Khaite", "Aquazzura"],
+        keyPieces: ["Camel wrap coat", "Silk blouse", "Tailored trousers", "Pointed pumps"],
+        vibes: ["Refined Professional", "Quiet Luxury", "Soft Power"],
+        looks: [
+          { name: "Private Practice", pieces: [
+            { item: "Silk blouse", brand: "Chloé" },
+            { item: "Tailored trousers", brand: "Max Mara" },
+            { item: "Pointed pumps", brand: "Aquazzura" },
+          ]},
+          { name: "Camel & Cashmere", pieces: [
+            { item: "Camel wrap coat", brand: "Max Mara" },
+            { item: "Cashmere knit", brand: "The Row" },
+            { item: "Wide-leg trousers", brand: "Khaite" },
+          ]},
+          { name: "Evening Reservation", pieces: [
+            { item: "Slip midi dress", brand: "Khaite" },
+            { item: "Structured clutch", brand: "The Row" },
+            { item: "Strappy heel", brand: "Aquazzura" },
+          ]},
+        ],
+      },
+      {
+        id: "ebony",
+        name: "Ebony Wilder",
+        actor: "Cleopatra Coleman",
+        gender: "women",
+        role: "Coltrane's wife and accomplice",
+        style: "Femme Fatale Glam",
+        description:
+          "Dangerous elegance — leather bodysuits, sculptural gowns, and stiletto boots. Every look is a getaway plan dressed as glamour.",
+        accentColor: "#9E3B4B",
+        signatureBrands: ["Alaïa", "Saint Laurent", "Mugler", "Balmain", "Christian Louboutin"],
+        keyPieces: ["Leather bodysuit", "Column gown", "Tailored catsuit", "Stiletto boots"],
+        vibes: ["Femme Fatale Glam", "Power Dressing", "Street Couture"],
+        looks: [
+          { name: "Getaway Driver", pieces: [
+            { item: "Leather bodysuit", brand: "Alaïa" },
+            { item: "Tailored trousers", brand: "Saint Laurent" },
+            { item: "Stiletto boots", brand: "Christian Louboutin" },
+          ]},
+          { name: "Red Carpet Cover", pieces: [
+            { item: "Sculptural column gown", brand: "Mugler" },
+            { item: "Crystal clutch", brand: "Balmain" },
+            { item: "Strappy heel", brand: "Christian Louboutin" },
+          ]},
+          { name: "Night Job", pieces: [
+            { item: "Tailored catsuit", brand: "Mugler" },
+            { item: "Cropped blazer", brand: "Balmain" },
+            { item: "Ankle boots", brand: "Saint Laurent" },
+          ]},
+        ],
+      },
+      {
+        id: "yvette",
+        name: "Detective Yvette Cruz",
+        actor: "Ariana Guerra",
+        gender: "women",
+        role: "Isaiah's LAPD partner",
+        style: "Tactical Tailoring",
+        description:
+          "Functional-cool and tomboy-tailored — utility jackets, fitted knits, and straight-leg denim. Practical pieces that still read sharp on the job.",
+        accentColor: "#7E7F5B",
+        signatureBrands: ["Rag & Bone", "Toteme", "Frame", "Isabel Marant", "Common Projects"],
+        keyPieces: ["Utility jacket", "Fitted knit", "Straight-leg jeans", "Leather sneakers"],
+        vibes: ["Tactical Tailoring", "Minimal", "Utility Cool"],
+        looks: [
+          { name: "On Patrol", pieces: [
+            { item: "Utility jacket", brand: "Rag & Bone" },
+            { item: "Straight-leg jeans", brand: "Frame" },
+            { item: "Leather sneakers", brand: "Common Projects" },
+          ]},
+          { name: "Desk Detective", pieces: [
+            { item: "Relaxed blazer", brand: "Toteme" },
+            { item: "Ribbed knit top", brand: "Frame" },
+            { item: "Tapered trousers", brand: "Isabel Marant" },
+          ]},
+          { name: "Undercover", pieces: [
+            { item: "Leather moto jacket", brand: "Isabel Marant" },
+            { item: "Black tee", brand: "Rag & Bone" },
+            { item: "Ankle boots", brand: "Isabel Marant" },
           ]},
         ],
       },
@@ -2431,7 +2600,7 @@ export const TV_SHOWS: TVShow[] = [
 ];
 
 // ── Weekly rotation ─────────────────────────────────────────────────────────
-// The visible top-10 rotates each ISO week over the 14-show pool, holding a
+// The visible top-10 rotates each ISO week over the 15-show pool, holding a
 // fixed 3 urban / 1 western / 3 contemporary / 3 formal quota. Deterministic
 // (same week → same list everywhere) and fully offline.
 
