@@ -1879,6 +1879,42 @@ function matchesSeason(item: CatalogItem, season: string): boolean {
   return inferItemSeasons(item).includes(season as SeasonTag);
 }
 
+// ─── Intra-look season coherence ─────────────────────────────────────────────
+// A single look must be wearable as ONE unit: every clothing/outerwear/shoe
+// piece has to share at least one common season, so an outfit never mixes a
+// wool/winter piece with a linen/summer piece. When the user pins a specific
+// season the pool filter already guarantees this; the check only bites in
+// "All Season" mode (the user opted into a varied GRID, but each individual
+// look must still be season-coherent). Season-neutral items (accessories / bag
+// / jewelry return EVERY_SEASON from inferItemSeasons) never shrink the window.
+function isSeasonCoherent(
+  pieces: ReadonlyArray<{ name: string; category: string }>,
+): boolean {
+  let acc: SeasonTag[] | null = null;
+  for (const p of pieces) {
+    const seasons = inferItemSeasons(p as CatalogItem);
+    acc = acc === null ? seasons : acc.filter((s) => seasons.includes(s));
+    if (acc.length === 0) return false;
+  }
+  return true;
+}
+
+// ─── One-item-per-category guarantee ─────────────────────────────────────────
+// A look must never surface two items of the same category (two tops, two
+// pairs of shoes, two jackets/coats — both are `outerwear`, so only one lands).
+// The builders already pick one item per slot, so this is a defensive assertion
+// used to DROP any look that somehow violated the rule rather than render it.
+function hasDuplicateCategory(
+  pieces: ReadonlyArray<{ category: string }>,
+): boolean {
+  const seen = new Set<string>();
+  for (const p of pieces) {
+    if (seen.has(p.category)) return true;
+    seen.add(p.category);
+  }
+  return false;
+}
+
 // ─── Outfit completeness contract ────────────────────────────────────────────
 // Single source of truth for "is this a complete, wearable outfit?" — enforced
 // identically by generateLooks (rule-based) and generateLookFromAIPlan (AI).
@@ -2013,24 +2049,33 @@ export function generateLooks(params: GenerateParams): Look[] {
   const usedPrimaryIds = new Set<string>();    // top OR dress
   const usedPrimaryBrands = new Set<string>(); // top OR dress brand
   const usedBottomIds = new Set<string>();
+  // TV Inspiration: reserve the normalized ARTICLE identity (brand|name, variant
+  // suffix stripped) of every placed piece so a color/variant row of the same
+  // article can never resurface as "a different image of the same garment" in a
+  // sibling look. Stronger than id-only dedup (same id ⇒ same productKey), and
+  // kept as HARD as id uniqueness across the whole TV grid.
+  const usedProductKeys = new Set<string>();
+  const articleTaken = (i: CatalogItem): boolean =>
+    tvInspiration && usedProductKeys.has(productKey(i));
   const filterByUnique = <T extends CatalogItem>(
     pool_: T[],
     ids: Set<string>,
     brands?: Set<string>,
   ): T[] => {
     if (!enforceUniquePerLook) return pool_;
+    const notRepeat = (i: T) => !ids.has(i.id) && !articleTaken(i);
     const strict = pool_.filter(
-      (i) => !ids.has(i.id) && (!brands || !brands.has(i.brand)),
+      (i) => notRepeat(i) && (!brands || !brands.has(i.brand)),
     );
     if (strict.length > 0) return strict;
     // Brand pool exhausted (≥N looks committed where N = unique brands
-    // available). Relax brand uniqueness but keep id uniqueness so the
-    // exact same item never repeats.
-    const idOnly = pool_.filter((i) => !ids.has(i.id));
+    // available). Relax brand uniqueness but keep id + article uniqueness so the
+    // exact same item — or a variant of it — never repeats.
+    const idOnly = pool_.filter(notRepeat);
     if (idOnly.length > 0) return idOnly;
-    // TV Inspiration: never reuse an item id — return empty so the attempt
-    // fails honestly (fewer looks) rather than surfacing a duplicate. Formal
-    // Remix keeps the relaxed fallback (it only needs whole-outfit uniqueness).
+    // TV Inspiration: never reuse an item id / article — return empty so the
+    // attempt fails honestly (fewer looks) rather than surfacing a duplicate.
+    // Formal Remix keeps the relaxed fallback (only whole-outfit uniqueness).
     return tvInspiration ? idOnly : pool_;
   };
   // TV Inspiration full-batch dedup for AUXILIARY categories (outerwear / bag /
@@ -2042,10 +2087,10 @@ export function generateLooks(params: GenerateParams): Look[] {
   const usedAuxIds = new Set<string>();
   const filterAux = <T extends CatalogItem>(pool_: T[]): T[] => {
     if (!tvInspiration) return pool_;
-    // Strict: never reuse an item already placed in a sibling look. Every aux
-    // category is optional, so an emptied pool simply skips that slot — it can
-    // never block a complete core look.
-    return pool_.filter((i) => !usedAuxIds.has(i.id));
+    // Strict: never reuse an item — or a variant of the same article — already
+    // placed in a sibling look. Every aux category is optional, so an emptied
+    // pool simply skips that slot — it can never block a complete core look.
+    return pool_.filter((i) => !usedAuxIds.has(i.id) && !articleTaken(i));
   };
 
   function runPass(opts: PassOpts): void {
@@ -2599,6 +2644,16 @@ export function generateLooks(params: GenerateParams): Look[] {
     // top+bottom+shoes (no dress-only).
     if (!isCompleteOutfit(pieces, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) continue;
 
+    // TV Inspiration constraints (per the styling spec):
+    //   • one item per category — never two tops / bottoms / shoes / outerwear
+    //     (a jacket AND a coat are both `outerwear`, so only one may land).
+    //   • season coherence — every piece shares a common season, so a look
+    //     never mixes a wool/winter piece with a linen/summer piece. When a
+    //     specific season is selected pool() already guarantees this; the check
+    //     only bites in All-Season mode. Incoherent / duplicated combos are
+    //     dropped and the tiered retry loop fills the slot with a clean one.
+    if (tvInspiration && (hasDuplicateCategory(pieces) || !isSeasonCoherent(pieces))) continue;
+
     // Dedup check — fingerprint by sorted item ids
     const fp = fingerprint(pieces.map(productKey));
     if (isShown(fp)) continue;
@@ -2626,7 +2681,10 @@ export function generateLooks(params: GenerateParams): Look[] {
     // shoes are already reserved above; usedAuxIds catches outerwear / bag /
     // accessories / jewelry via filterAux on the next look.
     if (tvInspiration) {
-      for (const p of pieces) usedAuxIds.add(p.id);
+      for (const p of pieces) {
+        usedAuxIds.add(p.id);
+        usedProductKeys.add(productKey(p));
+      }
     }
 
     // Build the Look — use fp as image seed so each unique outfit gets a unique, consistent photo
@@ -2988,6 +3046,27 @@ export function generateLookFromAIPlan(
     return matchesSeason(item, effectiveSeason);
   };
 
+  // Intra-look season coherence for TV Inspiration in "All Season" mode: each
+  // look must stay season-coherent (never a wool/winter piece with a linen/
+  // summer piece) even when the user hasn't pinned a season. We keep a running
+  // intersection of the seasons of the pieces placed so far and constrain every
+  // subsequent pool to it. When a specific season IS selected, seasonOk already
+  // pins every item, so this stays a no-op. Season-neutral items (accessories /
+  // bag / jewelry return EVERY_SEASON) never shrink the window.
+  const coherentSeasons =
+    !!params.tvInspiration && (!effectiveSeason || effectiveSeason === "All Season");
+  let lookSeasons: SeasonTag[] | null = null;
+  const seasonCoherentOk = (item: CatalogItem): boolean => {
+    if (!coherentSeasons || lookSeasons === null) return true;
+    return inferItemSeasons(item).some((s) => lookSeasons!.includes(s));
+  };
+  const noteSeasons = (item: CatalogItem): void => {
+    if (!coherentSeasons) return;
+    const seasons = inferItemSeasons(item);
+    lookSeasons =
+      lookSeasons === null ? seasons : lookSeasons.filter((s) => seasons.includes(s));
+  };
+
   // HARD when requested by the caller (Runway): the item must carry a reliable,
   // brand-direct product image. Kept HARD through every fallback so a starved
   // slot never reintroduces a hotlink-blocked/placeholder image.
@@ -3001,6 +3080,7 @@ export function generateLookFromAIPlan(
         item.category === slot.category &&
         matchesGender(item) &&
         seasonOk(item) &&
+        seasonCoherentOk(item) &&
         isBagAppropriateForGender(item, genderKey) &&
         imageOk(item) &&
         item.price <= budgetMax,
@@ -3012,6 +3092,7 @@ export function generateLookFromAIPlan(
           item.category === slot.category &&
           matchesGender(item) &&
           seasonOk(item) &&
+          seasonCoherentOk(item) &&
           isBagAppropriateForGender(item, genderKey) &&
           imageOk(item),
       );
@@ -3044,11 +3125,24 @@ export function generateLookFromAIPlan(
   const pieces: OutfitPiece[] = [];
   // Seed from the cross-look set (TV batch) so no item already placed in a
   // sibling look in this grid can be reused here — "no duplicates in any gender".
-  const usedIds = new Set<string>(usedAcross ?? []);
+  const usedIds = new Set<string>();
+  // Cross-look ARTICLE dedup (TV batch): usedAcross carries normalized
+  // productKeys (brand|name, variant suffix stripped) so a color/variant row of
+  // an article already placed in a sibling look can't resurface as "a different
+  // image of the same garment". Stronger than id dedup (same id ⇒ same key).
+  // Local seed from the shared cross-look set (which holds committed article
+  // keys) so a dropped look never poisons the batch — THIS look's article keys
+  // are committed back to usedAcross only at the very end, after every gate.
+  const usedArticles = new Set<string>(usedAcross ?? []);
+  const articleUsed = (item: CatalogItem): boolean =>
+    usedIds.has(item.id) ||
+    (!!params.tvInspiration && usedArticles.has(productKey(item)));
   let total = 0;
 
   const addResolved = (item: CatalogItem): void => {
     usedIds.add(item.id);
+    if (params.tvInspiration) usedArticles.add(productKey(item));
+    noteSeasons(item);
     total += item.price;
     pieces.push({
       id: item.id,
@@ -3076,7 +3170,7 @@ export function generateLookFromAIPlan(
       // based, so a dress slot is skipped and its core comes from top + bottom.
       if (slot.category === "dress" || usedCategories.has(slot.category)) continue;
     }
-    const pool = slotPool(slot).filter((i) => !usedIds.has(i.id));
+    const pool = slotPool(slot).filter((i) => !articleUsed(i));
     const item = rankBySlot(pool, slot);
     if (!item) continue; // catalog gap for this slot — drop honestly
     addResolved(item);
@@ -3097,9 +3191,10 @@ export function generateLookFromAIPlan(
         item.category === category &&
         matchesGender(item) &&
         seasonOk(item) &&
+        seasonCoherentOk(item) &&
         isBagAppropriateForGender(item, genderKey) &&
         imageOk(item) &&
-        !usedIds.has(item.id) &&
+        !articleUsed(item) &&
         (budgetMax === 0 || item.price + total <= budgetMax),
     );
     // Keep gender + season + image HARD; only relax the budget headroom if needed
@@ -3112,9 +3207,10 @@ export function generateLookFromAIPlan(
               item.category === category &&
               matchesGender(item) &&
               seasonOk(item) &&
+              seasonCoherentOk(item) &&
               isBagAppropriateForGender(item, genderKey) &&
               imageOk(item) &&
-              !usedIds.has(item.id),
+              !articleUsed(item),
           );
     if (pool.length === 0) return;
     const ranked = [...pool].sort(
@@ -3155,6 +3251,12 @@ export function generateLookFromAIPlan(
   // top+bottom+shoes core (requireSeparates).
   if (!isCompleteOutfit(pieces, genderKey, { requireBag, requireSeparates })) return null;
 
+  // TV Inspiration: assert one item per category (never two tops / bottoms /
+  // shoes / outerwear — a jacket AND a coat are both `outerwear`). The slot loop
+  // and ensureCategory already prevent duplicates; this is the honest drop if
+  // one ever slipped through, matching the generateLooks guard.
+  if (params.tvInspiration && hasDuplicateCategory(pieces)) return null;
+
   // HARD budget cap (parity with generateLooks): the TOTAL of every displayed
   // look must stay within the user's selected budget. Per-slot filtering keeps
   // individual pieces in budget, but a starved slot drops the price ceiling and
@@ -3167,9 +3269,11 @@ export function generateLookFromAIPlan(
   // prior batch/session. Combos are only kept by SAVING them, never regenerated.
   if (isShown(fp)) return null;
 
-  // Commit this look's pieces to the cross-look set ONLY now that it passed
-  // every gate, so a dropped (null) look never poisons the dedup pool.
-  if (usedAcross) for (const p of pieces) usedAcross.add(p.id);
+  // Commit this look's ARTICLE keys to the cross-look set ONLY now that it
+  // passed every gate, so a dropped (null) look never poisons the dedup pool.
+  // Article-level (productKey) so a variant row of the same garment can't
+  // resurface in a sibling look — matches the seeding above and generateLooks.
+  if (usedAcross) for (const p of pieces) usedAcross.add(productKey(p));
   markShown(fp);
 
   return {

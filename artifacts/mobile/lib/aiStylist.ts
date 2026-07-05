@@ -160,8 +160,10 @@ export async function generateAILooks(
   const plan = await fetchAIPlan(req);
   const out: Look[] = [];
   const seenFingerprints = new Set<string>();
-  // TV Inspiration: share ONE used-id set across every look in this batch so no
-  // catalog item repeats anywhere in the grid ("no duplicates in any gender").
+  // TV Inspiration: share ONE used-ARTICLE-key set across every look in this
+  // batch (normalized brand|name productKeys, not raw ids) so no catalog article
+  // repeats anywhere in the grid — not even a color/variant row of the same
+  // garment ("no duplicates, no two images of the same article, any gender").
   // Outside the TV flow this stays undefined and each look dedups only within
   // itself, preserving the prior behaviour.
   const usedAcross = resolveParams.tvInspiration ? new Set<string>() : undefined;
