@@ -837,6 +837,63 @@ function preferredShoeTypes(occasion: string): Array<NonNullable<CatalogItem["sh
   }
 }
 
+// ─── Formal Remix: garment whitelist ────────────────────────────────────────
+// Formal Remix must surface ONLY formalwear (styled with sneakers). Catalog
+// items carry no garment-subtype field, so the clothing pools are gated by a
+// name whitelist per gender. Shoes are exempt (locked to sneakers elsewhere);
+// bags / jewelry / accessories are not garments and pass through untouched.
+//   MEN:   suits, tuxedos, sport(s) jackets/coats & blazers, trench coats,
+//          overcoats (incl. cashmere), top/dress/pea coats, button-up & dress
+//          shirts, dress/tailored trousers, sweaters/knitwear.
+//   WOMEN: pant(s) suits & suit jackets/blazers, gowns (incl. ball/evening),
+//          dresses, skirts, tailored trousers, blouses/shirts.
+const FORMAL_REMIX_DENY =
+  /(t-?shirt|\btee\b|hoodie|sweatshirt|sweat ?pant|jogger|track ?pant|tracksuit|\bcargo\b|\bdenim\b|\bjean(s)?\b|\btank\b|\bpolo\b|\bshort(s)?\b|legging|graphic|bomber|windbreaker|puffer|parka|anorak|raincoat|\bgilet\b|utility)/i;
+const FORMAL_REMIX_MEN_ALLOW =
+  /(tuxedo|\btux\b|\bsuit\b|blazer|sport ?coat|sports? ?jacket|trench|overcoat|top ?coat|pea ?coat|dress coat|chesterfield|button.?up|button.?down|dress shirt|poplin shirt|oxford shirt|trouser|dress pant|suit pant|tailored pant|\bslack(s)?\b|\bsweater\b|cashmere|\bknit\b|turtleneck|cardigan|merino|\bcoat\b)/i;
+const FORMAL_REMIX_WOMEN_ALLOW =
+  /(pant ?suit|pants suit|trouser suit|\bsuit\b|\bgown\b|ball ?gown|evening gown|\bdress\b|\bskirt\b|blazer|suit jacket|tuxedo|\bblouse\b|\bshirt\b|sheath|\btrouser|dress pant|tailored pant|\bcoat\b)/i;
+
+// True when an item is an allowed Formal Remix GARMENT for this gender. Only
+// gates the clothing categories (top / bottom / dress / outerwear); every other
+// category returns true so shoes / bags / jewelry / accessories flow through.
+function isFormalRemixGarment(
+  item: { name: string; category: string },
+  genderKey: "men" | "women" | "unisex",
+): boolean {
+  if (
+    item.category !== "top" &&
+    item.category !== "bottom" &&
+    item.category !== "dress" &&
+    item.category !== "outerwear"
+  ) {
+    return true;
+  }
+  const n = item.name;
+  if (FORMAL_REMIX_DENY.test(n)) return false;
+  // Unisex requests: allow if EITHER gender's formal vocabulary matches.
+  if (genderKey === "unisex") {
+    return FORMAL_REMIX_MEN_ALLOW.test(n) || FORMAL_REMIX_WOMEN_ALLOW.test(n);
+  }
+  return (genderKey === "women" ? FORMAL_REMIX_WOMEN_ALLOW : FORMAL_REMIX_MEN_ALLOW).test(n);
+}
+
+// HARD single-color-scheme invariant for a Formal Remix look: a look may carry
+// at most ONE non-neutral accent color family (plus any number of neutrals),
+// so every piece reads as one cohesive tonal scheme. Neutrals always harmonize
+// and are ignored; the remaining accents must all belong to one family (every
+// accent fuzzy-matches the first via substring, the same rule the picker uses).
+// Applied as a drop-and-retry gate on EVERY generation branch (main loop +
+// both deterministic fallbacks) so cohesion can't be bypassed.
+function isFormalRemixColorCohesive(pieces: ReadonlyArray<{ color: string }>): boolean {
+  const accents = pieces
+    .map((p) => (p.color || "").toLowerCase())
+    .filter((c) => c && !NEUTRAL_COLOR_RE.test(c));
+  if (accents.length <= 1) return true;
+  const anchor = accents[0];
+  return accents.every((a) => a.includes(anchor) || anchor.includes(a));
+}
+
 // ─── Formal Remix: sneaker alternative ──────────────────────────────────────
 // Every Formal Remix look already pairs tailoring with a statement sneaker; on
 // top of that we surface a second "sneaker alternative" the user could swap in.
@@ -2301,7 +2358,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     }
 
     function pool(cat: CatalogItem["category"]): CatalogItem[] {
-      const base = CATALOG.filter(
+      let base = CATALOG.filter(
         (item) =>
           item.category === cat &&
           matchesGenderLocal(item) &&
@@ -2313,6 +2370,13 @@ export function generateLooks(params: GenerateParams): Look[] {
           // occasion, or gender are loosened.
           (!brandLock || item.brand === brandLock)
       );
+      // Formal Remix: HARD garment whitelist — only formalwear survives into
+      // the clothing pools. Shoes stay sneaker-locked (matchesOccasionLocal +
+      // pickShoe); bags / jewelry / accessories pass through untouched. A thin
+      // formal pool legitimately yields fewer looks (honest empty-state).
+      if (occasion === "Formal Remix") {
+        base = base.filter((item) => isFormalRemixGarment(item, genderKey));
+      }
       // Season filter (HARDENED): when the user picks a specific season,
       // every clothing/outerwear/shoe item MUST be season-appropriate. No
       // <3-item bypass — wool cashmere never lands in a Summer look, linen
@@ -2443,6 +2507,30 @@ export function generateLooks(params: GenerateParams): Look[] {
         const next = f(pool_);
         if (next.length > 0) pool_ = next;
       };
+
+      // ─── Formal Remix: single cohesive color scheme per look ──────────────
+      // Spec: every Formal Remix look must read as ONE color scheme + flow —
+      // a single accent color family plus neutrals across every piece (tonal
+      // / monochrome). Once a non-neutral color is placed, restrict further
+      // picks to that family or neutrals (neutrals always harmonize, so an
+      // all-black / all-cream tonal look is valid). Runs regardless of the
+      // editorial bypass below; soft `narrow` keeps the pool from starving.
+      if (occasion === "Formal Remix" && pieces.length > 0) {
+        const accentsPlaced = pieces
+          .map((p) => p.color.toLowerCase())
+          .filter((c) => c && !NEUTRAL_COLOR_RE.test(c));
+        if (accentsPlaced.length > 0) {
+          narrow((arr) =>
+            arr.filter((i) =>
+              i.colors.some((c) => {
+                const lc = c.toLowerCase();
+                if (NEUTRAL_COLOR_RE.test(lc)) return true;
+                return accentsPlaced.some((a) => lc.includes(a) || a.includes(lc));
+              }),
+            ),
+          );
+        }
+      }
 
       // ─── Rule 1: Color — ≤3 dominant colors unless editorial ──────────────
       // Once 3 distinct color buckets are placed, restrict new picks to
@@ -2816,6 +2904,13 @@ export function generateLooks(params: GenerateParams): Look[] {
     // combo is dropped and the tiered retry loop assembles a clean one.
     if (!isSeasonallyConsistent(pieces)) continue;
 
+    // Formal Remix: HARD single-color-scheme invariant. The stylePick narrow
+    // steers each pick toward one accent family + neutrals; here we DROP any
+    // combo that still slipped through (e.g. the soft narrow reverted on a thin
+    // pool) and let the retry loop assemble a tonal one. Guarantees cohesion on
+    // this branch rather than merely biasing toward it.
+    if (occasion === "Formal Remix" && !isFormalRemixColorCohesive(pieces)) continue;
+
     // TV Inspiration constraint: one item per category — never two tops /
     // bottoms / shoes / outerwear (a jacket AND a coat are both `outerwear`, so
     // only one may land). Duplicated combos are dropped and the retry loop
@@ -2951,16 +3046,21 @@ export function generateLooks(params: GenerateParams): Look[] {
     const brandPool = (season && season !== "All Season")
       ? brandPoolBase.filter((i) => matchesSeason(i, season))
       : brandPoolBase;
-    const bTop = brandPool.find((i) => i.category === "top");
-    const bBottom = brandPool.find((i) => i.category === "bottom");
+    // Formal Remix: even this brand-lock safety net must ship formalwear only
+    // (non-garment categories pass through isFormalRemixGarment untouched).
+    const brandPoolFR = occasion === "Formal Remix"
+      ? brandPool.filter((i) => isFormalRemixGarment(i, genderKey))
+      : brandPool;
+    const bTop = brandPoolFR.find((i) => i.category === "top");
+    const bBottom = brandPoolFR.find((i) => i.category === "bottom");
     // Formal Remix safety-net: brand-lock fallback must respect the sneaker
     // lock too. Without this, a Brioni-only "Formal Remix" look would surface
     // an oxford because Brioni has more dress shoes than sneakers in catalog.
     const bShoe = occasion === "Formal Remix"
-      ? brandPool.find((i) => i.category === "shoes" && inferShoeType(i) === "sneakers")
-      : brandPool.find((i) => i.category === "shoes");
-    const bDress = brandPool.find((i) => i.category === "dress");
-    const bBag = brandPool.find((i) => i.category === "bag");
+      ? brandPoolFR.find((i) => i.category === "shoes" && inferShoeType(i) === "sneakers")
+      : brandPoolFR.find((i) => i.category === "shoes");
+    const bDress = brandPoolFR.find((i) => i.category === "dress");
+    const bBag = brandPoolFR.find((i) => i.category === "bag");
     const bFb: CatalogItem[] = [];
     // Even this last-resort brand-lock safety net must ship a COMPLETE outfit
     // — no partial cards. Assemble a complete core (dress | top+bottom) + shoes,
@@ -3000,7 +3100,10 @@ export function generateLooks(params: GenerateParams): Look[] {
       const bFp = fingerprint(bPieces.map(productKey));
       const bName = generateLookName(occasion, bStyle);
       // Hard no-duplicate rule: never resurface an already-generated combo.
-      if (!isShown(bFp)) {
+      // Formal Remix: also enforce the single-color-scheme invariant here — the
+      // fallback assigns colors via pickPaletteColor (palette-biased, not hard),
+      // so drop a non-cohesive fallback rather than ship a clashing look.
+      if (!isShown(bFp) && (occasion !== "Formal Remix" || isFormalRemixColorCohesive(bPieces))) {
       markShown(bFp);
       looks.push({
         id: `gen_brandlock_fb_${Date.now()}`,
@@ -3035,11 +3138,17 @@ export function generateLooks(params: GenerateParams): Look[] {
     const gPool = (season && season !== "All Season")
       ? gPoolBase.filter((i) => matchesSeason(i, season))
       : gPoolBase;
-    const anyTop = gPool.find((i) => i.category === "top");
-    const anyBottom = gPool.find((i) => i.category === "bottom");
-    const anyShoe = gPool.find((i) => i.category === "shoes");
-    const anyDress = gPool.find((i) => i.category === "dress");
-    const anyBag = gPool.find((i) => i.category === "bag");
+    // Formal Remix: ultra-fallback must also ship formalwear only + a sneaker.
+    const gPoolFR = occasion === "Formal Remix"
+      ? gPool.filter((i) => isFormalRemixGarment(i, genderKey))
+      : gPool;
+    const anyTop = gPoolFR.find((i) => i.category === "top");
+    const anyBottom = gPoolFR.find((i) => i.category === "bottom");
+    const anyShoe = occasion === "Formal Remix"
+      ? gPoolFR.find((i) => i.category === "shoes" && inferShoeType(i) === "sneakers")
+      : gPoolFR.find((i) => i.category === "shoes");
+    const anyDress = gPoolFR.find((i) => i.category === "dress");
+    const anyBag = gPoolFR.find((i) => i.category === "bag");
     const fallbackItems: CatalogItem[] = [];
     // Ultra-fallback must still be a COMPLETE outfit — never a 2-piece partial.
     // Women need (dress | top+bottom) + shoes + a bag (REQUIRED outside the TV
@@ -3091,7 +3200,10 @@ export function generateLooks(params: GenerateParams): Look[] {
       // (b) seeded the image with a name unrelated to the one shown on the card.
       const fallbackName = generateLookName(occasion, fallbackStyle);
       // Hard no-duplicate rule: never resurface an already-generated combo.
-      if (!isShown(fp)) {
+      // Formal Remix: enforce the single-color-scheme invariant on the ultra-
+      // fallback output too (colors here come from pickPaletteColor, palette-
+      // biased but not hard) — drop a non-cohesive look rather than ship it.
+      if (!isShown(fp) && (occasion !== "Formal Remix" || isFormalRemixColorCohesive(pieces))) {
       markShown(fp);
       looks.push({
         id: `gen_fallback_${Date.now()}`,
