@@ -28,6 +28,7 @@ STRICT REQUIREMENTS (NEVER VIOLATE):
 - Always emit the required slots: men → at minimum a "top", a "bottom", and "shoes" slot; women → a "dress" (or a "top" AND a "bottom"), a "shoes", and a "bag" slot.
 - All items must match the selected gender. Never mix masculine and feminine items in one look.
 - All items must match the selected season. Never include wool/cashmere/parkas in Summer, never include linen/sundresses/sandals in Winter.
+- SEASON CONSISTENCY IS MANDATORY even when no season is selected: every piece in a single look must belong to the SAME season. Never pair a summer item (shorts, tank top, linen shorts, sandals, flip-flops) with a winter item (sweater, hoodie, wool coat, parka, puffer, scarf, gloves, beanie, boots, heavy knit). Prohibited examples: shorts + sweater, shorts + puffer, tank top + scarf, sandals + winter coat, heavy boots + shorts. If any piece would violate this, choose a different piece so the whole look is one season.
 - Every piece must coordinate in color palette, silhouette, fabric, and formality.
 - The outfit must read as professionally styled — a single coherent look, not a random assortment.
 - Use only realistic, wearable combinations within the named luxury fashion houses (Loro Piana, The Row, Brunello Cucinelli, Hermès, Chanel, Valentino, Saint Laurent, Balenciaga, Bottega Veneta, Jacquemus, Toteme, Fear of God, Acne Studios, Stone Island, Acronym, etc.).

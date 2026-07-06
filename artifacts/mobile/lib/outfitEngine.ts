@@ -2014,6 +2014,58 @@ function isSeasonCoherent(
   return true;
 }
 
+// ─── Mandatory season consistency (never mix summer + winter) ─────────────────
+// Product rule: every outfit must be seasonally consistent. A clearly-SUMMER
+// piece (shorts, tank, sandals, flip-flops, linen shorts…) must NEVER share a
+// look with a clearly-WINTER piece (sweater, hoodie, wool coat, parka, puffer,
+// scarf, gloves, beanie, boots, heavy knit…). Enforced on EVERY look — all
+// occasions, all builders — not only when the user pins a season.
+//
+// `isSeasonCoherent` above rejects most mixes via season-tag intersection, but
+// it treats accessories (scarf / gloves / beanie) as season-neutral, so
+// "tank top + scarf" would slip through. This second pass classifies by NAME
+// regardless of category, so accessory-driven violations are caught too. Items
+// with no strong seasonal signal (t-shirts, jeans, sneakers, loafers, blazers…)
+// stay flexible and pair with anything — the rule only bites on genuine
+// summer↔winter conflicts.
+const STRONG_SUMMER_RE =
+  /(tank\s*top|sleeveless|\bshorts?\b|sandals?|\bslides?\b|flip[\s-]?flops?|espadrilles?|sundress|linen\s*shorts?|swim(?:suit|wear|\s*trunks?)|camisole|halter|seersucker)/i;
+const STRONG_WINTER_RE =
+  /(sweater|hoodie|turtleneck|wool\s*(?:coat|trousers?|pants?)|parka|puffer|down\s*(?:jacket|coat|vest)|shearling|sherpa|fleece|thermal|scarf|gloves?|beanie|\bboots?\b|\bbootie\b|flannel|cashmere|merino|cable\s*knit|chunky\s*knit|quilted|teddy\s*coat|\bfur\b)/i;
+
+// null = season-neutral / flexible. A name matching BOTH is treated as neutral
+// (ambiguous — trust neither signal) so it never triggers a false conflict.
+function nameSeasonBucket(name: string): "summer" | "winter" | null {
+  const s = STRONG_SUMMER_RE.test(name);
+  const w = STRONG_WINTER_RE.test(name);
+  if (s && !w) return "summer";
+  if (w && !s) return "winter";
+  return null;
+}
+
+// True when a look pairs a clearly-summer piece with a clearly-winter one.
+function hasSeasonConflict(pieces: ReadonlyArray<{ name: string }>): boolean {
+  let summer = false;
+  let winter = false;
+  for (const p of pieces) {
+    const b = nameSeasonBucket(p.name);
+    if (b === "summer") summer = true;
+    else if (b === "winter") winter = true;
+    if (summer && winter) return true;
+  }
+  return false;
+}
+
+// Single MANDATORY gate every look-builder runs. A look must BOTH (a) share a
+// common inferred season across its pieces and (b) never pair summer + winter
+// items. A look that fails is dropped and the tiered retry loop assembles a
+// clean one in its place — i.e. the outfit is regenerated, per the spec.
+function isSeasonallyConsistent(
+  pieces: ReadonlyArray<{ name: string; category: string }>,
+): boolean {
+  return isSeasonCoherent(pieces) && !hasSeasonConflict(pieces);
+}
+
 // ─── One-item-per-category guarantee ─────────────────────────────────────────
 // A look must never surface two items of the same category (two tops, two
 // pairs of shoes, two jackets/coats — both are `outerwear`, so only one lands).
@@ -2759,15 +2811,17 @@ export function generateLooks(params: GenerateParams): Look[] {
     // top+bottom+shoes (no dress-only).
     if (!isCompleteOutfit(pieces, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) continue;
 
-    // TV Inspiration constraints (per the styling spec):
-    //   • one item per category — never two tops / bottoms / shoes / outerwear
-    //     (a jacket AND a coat are both `outerwear`, so only one may land).
-    //   • season coherence — every piece shares a common season, so a look
-    //     never mixes a wool/winter piece with a linen/summer piece. When a
-    //     specific season is selected pool() already guarantees this; the check
-    //     only bites in All-Season mode. Incoherent / duplicated combos are
-    //     dropped and the tiered retry loop fills the slot with a clean one.
-    if (tvInspiration && (hasDuplicateCategory(pieces) || !isSeasonCoherent(pieces))) continue;
+    // MANDATORY season consistency — never mix summer + winter pieces. Applies
+    // to EVERY look regardless of occasion or selected season. A conflicting
+    // combo is dropped and the tiered retry loop assembles a clean one.
+    if (!isSeasonallyConsistent(pieces)) continue;
+
+    // TV Inspiration constraint: one item per category — never two tops /
+    // bottoms / shoes / outerwear (a jacket AND a coat are both `outerwear`, so
+    // only one may land). Duplicated combos are dropped and the retry loop
+    // fills the slot with a clean one. (Season coherence is already enforced
+    // above for all flows.)
+    if (tvInspiration && hasDuplicateCategory(pieces)) continue;
 
     // Dedup check — fingerprint by sorted item ids
     const fp = fingerprint(pieces.map(productKey));
@@ -2926,7 +2980,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     } else if (bTop && bBottom && bShoe) {
       bFb.push(bTop, bBottom, bShoe);
     }
-    if (isCompleteOutfit(bFb, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) {
+    if (isCompleteOutfit(bFb, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration }) && isSeasonallyConsistent(bFb)) {
       const bStyle = pick(occasionStyles);
       const bPalette = pickPaletteForStyle(bStyle);
       const sigSet = new Set(celebSignatureBrands ?? []);
@@ -3003,7 +3057,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     } else if (anyTop && anyBottom && anyShoe) {
       fallbackItems.push(anyTop, anyBottom, anyShoe);
     }
-    if (isCompleteOutfit(fallbackItems, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration })) {
+    if (isCompleteOutfit(fallbackItems, genderKey, { requireBag: !tvInspiration, requireSeparates: tvInspiration }) && isSeasonallyConsistent(fallbackItems)) {
       const fallbackStyle = pick(occasionStyles);
       const fallbackPalette = pickPaletteForStyle(fallbackStyle);
       // Ultra-fallback ignores every brand filter, so by construction no
@@ -3378,6 +3432,11 @@ export function generateLookFromAIPlan(
   // TV Inspiration relaxes the women's-bag requirement and forces a
   // top+bottom+shoes core (requireSeparates).
   if (!isCompleteOutfit(pieces, genderKey, { requireBag, requireSeparates })) return null;
+
+  // MANDATORY season consistency — an AI plan can propose cross-season slots
+  // (e.g. a wool coat over linen shorts); drop any look that mixes summer +
+  // winter pieces so the same rule holds on the AI path as the rule-based one.
+  if (!isSeasonallyConsistent(pieces)) return null;
 
   // TV Inspiration: assert one item per category (never two tops / bottoms /
   // shoes / outerwear — a jacket AND a coat are both `outerwear`). The slot loop
