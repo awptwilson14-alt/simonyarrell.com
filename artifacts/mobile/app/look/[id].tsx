@@ -19,6 +19,7 @@ import { Feather } from "@expo/vector-icons";
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
 import { ResilientImage } from "@/components/ResilientImage";
+import { ZoomableImage } from "@/components/ZoomableImage";
 import { LOOKS, TRENDS, filterLooksForProfile } from "@/constants/data";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
@@ -405,18 +406,23 @@ export default function LookDetailScreen() {
                 key={piece.id}
                 style={[styles.pieceRow, { borderBottomColor: colors.border }, idx === look.pieces.length - 1 && { borderBottomWidth: 0 }]}
               >
-                {/* Piece image */}
-                <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
-                  <ResilientImage
-                    uri={piece.imageUrl}
-                    localSource={piece.localImage}
-                    style={styles.pieceThumbImg}
-                    fallbackColor={categoryColor(piece.category)}
-                    brand={piece.brand}
-                    category={piece.category}
-                    color={piece.color}
-                  />
-                </View>
+                {/* Piece image — tap to enlarge, tap again to shrink. */}
+                <ZoomableImage
+                  source={piece.localImage ? piece.localImage : piece.imageUrl ? { uri: piece.imageUrl } : null}
+                  accessibilityLabel={`${piece.brand} ${piece.name}`}
+                >
+                  <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
+                    <ResilientImage
+                      uri={piece.imageUrl}
+                      localSource={piece.localImage}
+                      style={styles.pieceThumbImg}
+                      fallbackColor={categoryColor(piece.category)}
+                      brand={piece.brand}
+                      category={piece.category}
+                      color={piece.color}
+                    />
+                  </View>
+                </ZoomableImage>
                 <View style={styles.pieceInfo}>
                   {brandCatalog.has(piece.brand.toLowerCase()) ? (
                     <Pressable
@@ -463,17 +469,22 @@ export default function LookDetailScreen() {
                   onPress={() => look.sneakerAlt?.purchaseUrl && openExternalUrl(look.sneakerAlt.purchaseUrl)}
                   style={({ pressed }) => [styles.pieceRow, { borderBottomWidth: 0, opacity: pressed ? 0.75 : 1 }]}
                 >
-                  <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
-                    <ResilientImage
-                      uri={look.sneakerAlt.imageUrl}
-                      localSource={look.sneakerAlt.localImage}
-                      style={styles.pieceThumbImg}
-                      fallbackColor={categoryColor("shoes")}
-                      brand={look.sneakerAlt.brand}
-                      category="shoes"
-                      color={look.sneakerAlt.color}
-                    />
-                  </View>
+                  <ZoomableImage
+                    source={look.sneakerAlt.localImage ? look.sneakerAlt.localImage : look.sneakerAlt.imageUrl ? { uri: look.sneakerAlt.imageUrl } : null}
+                    accessibilityLabel={`${look.sneakerAlt.brand} ${look.sneakerAlt.name}`}
+                  >
+                    <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
+                      <ResilientImage
+                        uri={look.sneakerAlt.imageUrl}
+                        localSource={look.sneakerAlt.localImage}
+                        style={styles.pieceThumbImg}
+                        fallbackColor={categoryColor("shoes")}
+                        brand={look.sneakerAlt.brand}
+                        category="shoes"
+                        color={look.sneakerAlt.color}
+                      />
+                    </View>
+                  </ZoomableImage>
                   <View style={styles.pieceInfo}>
                     <Text style={[styles.pieceBrand, { color: colors.gold }]}>{look.sneakerAlt.brand.toUpperCase()}</Text>
                     <Text style={[styles.pieceName, { color: colors.foreground }]}>{look.sneakerAlt.name}</Text>
