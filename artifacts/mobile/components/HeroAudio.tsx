@@ -1,8 +1,8 @@
 import * as Haptics from "expo-haptics";
 import { useAudioPlayer } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useState } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 // NOTE: AsyncStorage key intentionally retains the legacy "maisonSimon"
@@ -139,6 +139,25 @@ function HeroAudioInner({
     }
   }, [player, defaultMuted]);
 
+  // Gentle attention pulse while MUTED, so the control reads as an invitation
+  // to turn music on rather than a passive icon. Stops once the user unmutes.
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!muted) {
+      pulse.setValue(0);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 950, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 950, useNativeDriver: true }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [muted, pulse]);
+  const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
+
   const toggle = () => {
     if (Platform.OS !== "web") {
       Haptics.selectionAsync();
@@ -163,22 +182,28 @@ function HeroAudioInner({
 
   return (
     <View style={[styles.wrap, { top }]} pointerEvents="box-none">
-      <Pressable
-        onPress={toggle}
-        hitSlop={10}
-        style={({ pressed }) => [
-          styles.btn,
-          { opacity: pressed ? 0.7 : 0.9 },
-        ]}
-        accessibilityLabel={muted ? "Unmute hero audio" : "Mute hero audio"}
-        accessibilityRole="button"
-      >
-        <Feather
-          name={muted ? "volume-x" : "volume-2"}
-          size={14}
-          color="#F5F5F0"
-        />
-      </Pressable>
+      <Animated.View style={{ transform: [{ scale: pulseScale }] }}>
+        <Pressable
+          onPress={toggle}
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.btn,
+            muted ? styles.btnMuted : styles.btnPlaying,
+            { opacity: pressed ? 0.8 : 1 },
+          ]}
+          accessibilityLabel={muted ? "Unmute hero audio" : "Mute hero audio"}
+          accessibilityRole="button"
+        >
+          <Feather
+            name={muted ? "volume-x" : "volume-2"}
+            size={18}
+            color={muted ? "#0B0B0C" : "#C6A75E"}
+          />
+          <Text style={[styles.label, muted ? styles.labelMuted : styles.labelPlaying]}>
+            {muted ? "Play Music" : "Mute"}
+          </Text>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -186,17 +211,40 @@ function HeroAudioInner({
 const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
-    right: 20,
+    right: 16,
     zIndex: 10,
   },
   btn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "rgba(11,11,12,0.55)",
-    borderWidth: 0.5,
-    borderColor: "rgba(198,167,94,0.5)",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 7,
+    height: 40,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    borderWidth: 1,
+    boxShadow: "0px 3px 12px rgba(198,167,94,0.4)",
+    elevation: 5,
+  },
+  // Muted = the eye-catching state: solid gold fill so it clearly invites a tap.
+  btnMuted: {
+    backgroundColor: "#C6A75E",
+    borderColor: "#C6A75E",
+  },
+  // Playing = calmer state: dark pill with a gold outline (still clearly visible).
+  btnPlaying: {
+    backgroundColor: "rgba(11,11,12,0.8)",
+    borderColor: "rgba(198,167,94,0.9)",
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  labelMuted: {
+    color: "#0B0B0C",
+  },
+  labelPlaying: {
+    color: "#C6A75E",
   },
 });
