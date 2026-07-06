@@ -83,16 +83,15 @@ class HeroAudioBoundary extends React.Component<
 }
 
 export function HeroAudio(props: HeroAudioProps) {
-  // DIAGNOSTIC (Round 8): the home-tab desktop-web crash has persisted
-  // across many rounds and the most recently-added home-only component
-  // is HeroAudio (expo-audio web shim). Disable on web to confirm or
-  // rule out as the cause. Native iOS/Android behavior is unchanged.
-  // If web stops crashing after this deploy, we know the culprit and
-  // can either upgrade expo-audio, swap to an <audio> element, or ship
-  // a permanent web fallback. If web still crashes, we've ruled it out
-  // and the next round disables the next suspect (LinearGradient with
-  // locations array, then BlurView, etc).
-  if (Platform.OS === "web") return null;
+  // Rendered on WEB too, so the (now prominent) mute/play control is visible in
+  // the web preview — not just on native. The previous web-disable here was a
+  // stale Round-8 diagnostic hunting the desktop-web crash; that crash was later
+  // root-caused to an expo-router `<Link asChild>` style-array leak (since fixed),
+  // NOT this component. HeroAudioBoundary still wraps the inner as a safety net:
+  // if the expo-audio web shim ever throws during render, we degrade to "no
+  // button" instead of taking the screen down. Web autoplay policy keeps sound
+  // muted until the user taps the button (a real gesture) — which is exactly
+  // what this control is for.
   return (
     <HeroAudioBoundary>
       <HeroAudioInner {...props} />
@@ -147,10 +146,14 @@ function HeroAudioInner({
       pulse.setValue(0);
       return;
     }
+    // Native driver isn't supported by RN-Web's Animated (it warns + falls back
+    // to the JS driver); gate it off on web so the console stays clean and the
+    // scale pulse still runs smoothly there.
+    const nativeDriver = Platform.OS !== "web";
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 950, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 950, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 950, useNativeDriver: nativeDriver }),
+        Animated.timing(pulse, { toValue: 0, duration: 950, useNativeDriver: nativeDriver }),
       ]),
     );
     anim.start();
