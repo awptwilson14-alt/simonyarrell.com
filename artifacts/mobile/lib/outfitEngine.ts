@@ -837,6 +837,121 @@ function preferredShoeTypes(occasion: string): Array<NonNullable<CatalogItem["sh
   }
 }
 
+// ─── Formal Remix: sneaker alternative ──────────────────────────────────────
+// Every Formal Remix look already pairs tailoring with a statement sneaker; on
+// top of that we surface a second "sneaker alternative" the user could swap in.
+// It is colour-matched to the outfit, priced within the SAME budget (as a swap
+// for the look's existing shoe), and scaled UP with the budget so a bigger
+// budget surfaces pricier, high-end / limited-edition pairs. Additive only —
+// never mutates the look's pieces or estimatedPrice.
+
+// Neutrals pair with anything, so a neutral sneaker always "matches" the look.
+const NEUTRAL_COLOR_RE =
+  /(black|white|grey|gray|cream|ivory|bone|beige|tan|nude|silver|off.?white)/i;
+
+// Name signals that a sneaker is a limited / collectible drop.
+const LIMITED_EDITION_RE =
+  /(limited|numbered|1 of|one of|collab|collaboration|exclusive|special edition|anniversary|artist series|capsule)/i;
+
+// Houses whose sneakers read as high-end / collectible in the luxury context.
+const HIGH_END_SNEAKER_BRANDS = [
+  "balenciaga", "rick owens", "maison margiela", "margiela", "golden goose",
+  "common projects", "amiri", "dior", "louis vuitton", "gucci", "prada",
+  "saint laurent", "bottega veneta", "lanvin", "valentino", "off-white",
+  "alexander mcqueen", "christian louboutin", "berluti", "tom ford", "fendi",
+  "givenchy", "jordan", "air jordan", "yeezy", "loro piana", "brunello cucinelli",
+  "burberry", "celine", "loewe", "moncler",
+];
+
+// Higher = more coveted. Combines brand prestige with a limited-edition signal.
+function sneakerPrestige(item: CatalogItem): number {
+  let score = 0;
+  const brand = item.brand.toLowerCase();
+  if (HIGH_END_SNEAKER_BRANDS.some((b) => brand.includes(b))) score += 2;
+  if (LIMITED_EDITION_RE.test(item.name)) score += 3;
+  return score;
+}
+
+// Pick a colour + budget-matched sneaker to suggest as an alternative for a
+// Formal Remix look's shoe. Returns undefined when the catalog can't supply one
+// within budget (honest — the UI just omits the alternative for that card).
+function pickSneakerAlternative(opts: {
+  look: Look;
+  genderKey: "men" | "women" | "unisex";
+  season?: string;
+  budgetMax: number; // 0 = no cap
+  excludeKeys: Set<string>; // productKeys already used as an alternative in this grid
+}): OutfitPiece | undefined {
+  const { look, genderKey, season, budgetMax, excludeKeys } = opts;
+
+  // The alternative SWAPS the look's current shoe, so its price headroom is the
+  // budget minus every NON-shoe piece already in the look. This keeps the
+  // swapped-in total within the same budget the user picked.
+  const nonShoeTotal = look.pieces
+    .filter((p) => p.category !== "shoes")
+    .reduce((s, p) => s + p.price, 0);
+  const headroom = budgetMax > 0 ? budgetMax - nonShoeTotal : Infinity;
+  if (headroom <= 0) return undefined;
+
+  // Colours already in the look (fuzzy buckets, same matching as stylePick Rule 1).
+  const lookColors = look.pieces.map((p) => p.color.toLowerCase()).filter(Boolean);
+  const colorMatches = (item: CatalogItem): boolean => {
+    if (item.colors.some((c) => NEUTRAL_COLOR_RE.test(c))) return true;
+    return item.colors.some((c) => {
+      const lc = c.toLowerCase();
+      return lookColors.some((u) => lc.includes(u) || u.includes(lc));
+    });
+  };
+
+  const existingKeys = new Set(look.pieces.map((p) => productKey(p)));
+  const base = CATALOG.filter(
+    (i) =>
+      i.category === "shoes" &&
+      inferShoeType(i) === "sneakers" &&
+      itemMatchesGender(i, genderKey) &&
+      (!season || season === "All Season" || matchesSeason(i, season)) &&
+      (budgetMax === 0 || i.price <= headroom) &&
+      !existingKeys.has(productKey(i)) &&
+      !excludeKeys.has(productKey(i)),
+  );
+  // Prefer colour-coherent sneakers; only if none fit budget do we relax the
+  // colour rule so the look still gets an alternative rather than nothing.
+  const colored = base.filter(colorMatches);
+  const candidates = colored.length > 0 ? colored : base;
+  if (candidates.length === 0) return undefined;
+
+  // Rank so BOTH product rules hold: the priciest pair that fits wins (higher
+  // budget ⇒ more expensive alternative), and high-end / limited-edition pairs
+  // get a fixed bonus so they surface whenever they're affordable.
+  const PRESTIGE_BONUS = 500;
+  const score = (i: CatalogItem) => i.price + sneakerPrestige(i) * PRESTIGE_BONUS;
+  const chosen = [...candidates].sort((a, b) => {
+    const d = score(b) - score(a);
+    if (d !== 0) return d;
+    // Tie-break: prefer a real brand-direct product photo over an editorial tile.
+    return (b.productImageUrl ? 1 : 0) - (a.productImageUrl ? 1 : 0);
+  })[0];
+  if (!chosen) return undefined;
+
+  excludeKeys.add(productKey(chosen));
+  const matchColor =
+    chosen.colors.find((c) =>
+      lookColors.some((u) => c.toLowerCase().includes(u) || u.includes(c.toLowerCase())),
+    ) ?? chosen.colors[0] ?? "";
+  return {
+    id: chosen.id,
+    name: chosen.name,
+    brand: chosen.brand,
+    price: chosen.price,
+    category: chosen.category,
+    color: matchColor,
+    imageUrl: chosen.productImageUrl ?? getPieceImage(chosen.category, chosen.id),
+    localImage: chosen.localProductImage,
+    purchaseUrl: chosen.directProductUrl ?? buildPurchaseUrl(chosen),
+    signature: false,
+  };
+}
+
 // ─── Outfit-level formality coherence ──────────────────────────────────────
 // Infer how dressed-up a piece is from its name + category. Used to keep an
 // outfit visually uniform — jeans + tee should never land a dress oxford,
@@ -2959,6 +3074,19 @@ export function generateLooks(params: GenerateParams): Look[] {
   const withinBudget = budgetMax > 0
     ? looks.filter((l) => l.estimatedPrice <= budgetMax)
     : looks;
+
+  // Formal Remix: attach a colour + budget-matched sneaker ALTERNATIVE to every
+  // look (additive — never touches the look's pieces or price). Deduped across
+  // the grid so each card suggests a distinct pair; biased toward pricier,
+  // high-end / limited-edition sneakers as the budget climbs.
+  if (occasion === "Formal Remix") {
+    const usedAltKeys = new Set<string>();
+    for (const look of withinBudget) {
+      const alt = pickSneakerAlternative({ look, genderKey, season, budgetMax, excludeKeys: usedAltKeys });
+      if (alt) look.sneakerAlt = alt;
+    }
+  }
+
   return shuffle(withinBudget);
 }
 

@@ -447,6 +447,46 @@ export default function LookDetailScreen() {
                 ${look.estimatedPrice.toLocaleString()}
               </Text>
             </View>
+
+            {/* Formal Remix sneaker alternative — colour + budget-matched pair
+                the user can swap in for the look's shoe. Tap to shop it. */}
+            {look.sneakerAlt ? (
+              <View style={[styles.altSection, { borderColor: colors.border }]}>
+                <View style={styles.altHeaderRow}>
+                  <Feather name="refresh-cw" size={12} color={colors.gold} />
+                  <Text style={[styles.altHeader, { color: colors.gold }]}>SNEAKER ALTERNATIVE</Text>
+                </View>
+                <Text style={[styles.altHint, { color: colors.mutedForeground }]}>
+                  A colour-matched pair to swap in — same budget, elevated edge.
+                </Text>
+                <Pressable
+                  onPress={() => look.sneakerAlt?.purchaseUrl && openExternalUrl(look.sneakerAlt.purchaseUrl)}
+                  style={({ pressed }) => [styles.pieceRow, { borderBottomWidth: 0, opacity: pressed ? 0.75 : 1 }]}
+                >
+                  <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
+                    <ResilientImage
+                      uri={look.sneakerAlt.imageUrl}
+                      localSource={look.sneakerAlt.localImage}
+                      style={styles.pieceThumbImg}
+                      fallbackColor={categoryColor("shoes")}
+                      brand={look.sneakerAlt.brand}
+                      category="shoes"
+                      color={look.sneakerAlt.color}
+                    />
+                  </View>
+                  <View style={styles.pieceInfo}>
+                    <Text style={[styles.pieceBrand, { color: colors.gold }]}>{look.sneakerAlt.brand.toUpperCase()}</Text>
+                    <Text style={[styles.pieceName, { color: colors.foreground }]}>{look.sneakerAlt.name}</Text>
+                    <Text style={[styles.pieceCategory, { color: colors.mutedForeground }]}>
+                      sneakers<GoldDot />{look.sneakerAlt.color}
+                    </Text>
+                  </View>
+                  <Text style={[styles.piecePrice, { color: colors.foreground }]}>
+                    ${look.sneakerAlt.price.toLocaleString()}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         )}
 
@@ -803,6 +843,10 @@ const styles = StyleSheet.create({
   relatedTitleBlock: { flexShrink: 1 },
   sectionMeta: { fontSize: 12, fontFamily: "Inter_400Regular", letterSpacing: 0.3, marginBottom: 20 },
   pieceRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderBottomWidth: 0.5 },
+  altSection: { marginTop: 20, borderWidth: 0.5, borderRadius: 8, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 },
+  altHeaderRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  altHeader: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  altHint: { fontSize: 12, fontFamily: "Inter_400Regular", letterSpacing: 0.2, marginTop: 4 },
   pieceThumb: { width: 60, height: 60, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   pieceThumbImg: { width: "100%", height: "100%" },
   pieceDot: { width: 18, height: 18, borderRadius: 9 },

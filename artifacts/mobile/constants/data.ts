@@ -50,6 +50,11 @@ export interface Look {
   // palette, not just its name. Only set for AI Stylist looks; values are
   // validated as #RRGGBB at render time so a malformed entry can't crash RN.
   paletteColors?: string[];
+  // Formal Remix only: a colour + budget-matched sneaker the user could swap
+  // in for the look's existing shoe. Priced within the same budget headroom and
+  // biased toward pricier, high-end / limited-edition pairs as the budget
+  // climbs. Additive suggestion — never part of `pieces` or `estimatedPrice`.
+  sneakerAlt?: OutfitPiece;
 }
 
 export interface Celebrity {
