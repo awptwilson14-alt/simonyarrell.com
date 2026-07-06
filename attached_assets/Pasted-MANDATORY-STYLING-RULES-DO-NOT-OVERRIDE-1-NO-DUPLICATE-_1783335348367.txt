@@ -1,0 +1,92 @@
+MANDATORY STYLING RULES — DO NOT OVERRIDE
+
+1. NO DUPLICATE LOOKS
+Never generate duplicate looks.
+A look is considered duplicate if it has the same or nearly identical combination of:
+- top
+- bottom
+- outerwear
+- shoes
+- accessory
+- color palette
+- designer/brand
+- aesthetic
+
+Before showing a new look, compare it against all looks already generated in the session and saved looks from the past 7 days.
+
+If the look is the same or too similar, reject it and generate a new combination.
+
+2. GENDER CONSISTENCY
+Never mix male and female clothing in the same look.
+
+If the user selects male:
+- Generate only men’s clothing.
+- Use only men’s accessories.
+
+If the user selects female:
+- Generate only women’s clothing.
+- Use only women’s accessories.
+
+If gender is not selected, ask the user to choose male, female, or unisex before generating looks.
+
+3. ACCESSORY RULE
+Generate exactly ONE accessory per look.
+
+For women:
+- Always include one purse, handbag, clutch, tote, or shoulder bag.
+
+For men:
+- Always include one appropriate luxury accessory based on the look:
+  - designer briefcase
+  - backpack
+  - duffel bag
+  - men’s crossbody bag
+  - designer wallet
+
+Do not generate more than one accessory.
+
+4. SHOP LUXURY DESIGNER RULE
+When a designer is selected in Shop Luxury, only generate items from that selected designer.
+
+Example:
+If the user selects Gucci, every item must be Gucci.
+If the user selects Prada, every item must be Prada.
+If the user selects Louis Vuitton, every item must be Louis Vuitton.
+
+Do not mix designers unless the user specifically selects “Mix Luxury Shops.”
+
+5. MIX LUXURY SHOPS RULE
+Only mix designers when the user selects “Mix Luxury Shops.”
+
+If “Mix Luxury Shops” is not selected:
+- All clothing
+- Shoes
+- Accessories
+
+must come from the single selected designer.
+
+6. SAVED LOOK RULE
+Generated looks should not repeat.
+
+A generated look may only be saved by the user for 7 consecutive days.
+
+After 7 days, the saved look should expire unless the user saves or updates it again.
+
+No exceptions.
+
+7. LOOK MEMORY RULE
+Once a look has been generated, store a unique look signature using:
+- gender
+- season
+- aesthetic
+- designer/brand
+- top
+- bottom
+- outerwear
+- shoes
+- accessory
+- colors
+
+Before generating a new look, check the signature history.
+
+If the signature already exists or is too similar, regenerate the look.

@@ -35,6 +35,10 @@ export interface Look {
   pieces: OutfitPiece[];
   style: string;
   tags: string[];
+  // When the user saved this look (ISO 8601). Saved looks expire 7 days after
+  // this timestamp unless the user saves/updates them again (which refreshes
+  // it). Only set once a look is saved; absent on generated / static looks.
+  savedAt?: string;
   // Named color palette this look was composed around (e.g. "Bougainvillea",
   // "Executive Suite"). Surfaced to users on the look-detail page to make the
   // trifecta — style × palette × season — visible. Optional because the

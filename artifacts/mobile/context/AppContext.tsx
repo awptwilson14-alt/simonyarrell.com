@@ -56,6 +56,11 @@ interface AppContextType {
   findLook: (id: string) => Look | undefined;
 }
 
+// Saved looks expire 7 days after they were saved, unless the user saves /
+// updates them again (which refreshes the timestamp). Per the styling spec's
+// saved-look rule. Enforced by pruning on every app load.
+const SAVED_LOOK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 const DEFAULT_PROFILE: UserProfile = {
   name: "",
   gender: "Women",
@@ -98,7 +103,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.getItem("savedCelebrityIds"),
         AsyncStorage.getItem("userProfile"),
       ]);
-      if (looks) setSavedLooks(JSON.parse(looks));
+      if (looks) {
+        const now = Date.now();
+        const parsed: Look[] = JSON.parse(looks);
+        // Legacy entries saved before `savedAt` existed get stamped with "now"
+        // so they inherit a fresh 7-day window rather than vanishing instantly;
+        // everything past its 7-day TTL is dropped (expired).
+        const kept = parsed
+          .map((l) => (l.savedAt ? l : { ...l, savedAt: new Date(now).toISOString() }))
+          .filter((l) => now - new Date(l.savedAt as string).getTime() < SAVED_LOOK_TTL_MS);
+        setSavedLooks(kept);
+        if (kept.length !== parsed.length || kept.some((l, i) => l !== parsed[i])) {
+          AsyncStorage.setItem("savedLooks", JSON.stringify(kept));
+        }
+      }
       if (products) setSavedProducts(JSON.parse(products));
       if (closet) setClosetItems(JSON.parse(closet));
       if (celebs) setSavedCelebrityIds(JSON.parse(celebs));
@@ -111,7 +129,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const saveLook = useCallback((look: Look) => {
     setSavedLooks((prev) => {
-      const updated = prev.some((l) => l.id === look.id) ? prev : [look, ...prev];
+      // Stamp (or refresh) savedAt so re-saving an existing look resets its
+      // 7-day expiry window, per the saved-look rule. Dedup by id and surface
+      // the freshly-saved look at the front of the list.
+      const stamped: Look = { ...look, savedAt: new Date().toISOString() };
+      const updated = [stamped, ...prev.filter((l) => l.id !== look.id)];
       AsyncStorage.setItem("savedLooks", JSON.stringify(updated));
       return updated;
     });
