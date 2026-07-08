@@ -165,19 +165,21 @@ export default function OnboardingScreen() {
           style={splash.heroImage}
           resizeMode="cover"
         />
-        {/* Editorial framing gradient — solid dark at the very top so the
-            brand lockup reads on near-black, clears in the middle band so
-            the hero models are fully visible, then deepens to solid #0B0B0C
-            at the bottom so the gold CTA sits on a clean dark plate. */}
+        {/* Editorial framing gradient — dark at the very top so the brand
+            lockup reads on near-black, FULLY clear through the middle band so
+            the hero models are actually visible (the photo is already dark;
+            any veil here blacks them out — that was the invisible-models
+            bug), then deepens to solid #0B0B0C only at the very bottom so
+            the gold CTA sits on a clean dark plate. */}
         <LinearGradient
           colors={[
-            "rgba(11,11,12,0.96)",
-            "rgba(11,11,12,0.78)",
-            "rgba(11,11,12,0.10)",
-            "rgba(11,11,12,0.55)",
+            "rgba(11,11,12,0.92)",
+            "rgba(11,11,12,0.45)",
+            "rgba(11,11,12,0)",
+            "rgba(11,11,12,0)",
             "#0B0B0C",
           ]}
-          locations={[0, 0.22, 0.45, 0.78, 1]}
+          locations={[0, 0.16, 0.32, 0.74, 1]}
           style={StyleSheet.absoluteFill}
         />
 

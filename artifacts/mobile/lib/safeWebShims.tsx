@@ -9,10 +9,13 @@
  * visual regression on the native app.
  *
  * Web fallbacks:
- *   - LinearGradient → View with the first color in `colors` as a solid
- *     background. The vast majority of usages stack a dark gradient over
- *     a dark background, so the visual difference is minor (no fade, but
- *     no crash).
+ *   - LinearGradient → View with a real CSS `linear-gradient(...)` painted
+ *     via `backgroundImage`. Still a plain View (no expo-linear-gradient on
+ *     web, so the crash-safety of this shim is unchanged), but the actual
+ *     gradient renders. The previous fallback painted the FIRST color as a
+ *     SOLID background, which turned the onboarding splash's framing
+ *     gradient into an opaque near-black veil that hid the hero models
+ *     entirely.
  *   - BlurView → View with a translucent dark backdrop (rgba(11,11,12,0.7))
  *     which is the only place BlurView is used in this app (tab bar).
  *
@@ -33,16 +36,52 @@ const IS_WEB = Platform.OS === "web";
 
 export function LinearGradient(props: LinearGradientProps) {
   if (IS_WEB) {
-    const { colors, style, children, ...rest } = props;
-    const fallback =
-      Array.isArray(colors) && colors.length > 0
-        ? (colors[0] as string)
-        : "transparent";
+    const { colors, locations, start, end, style, children, ...rest } = props;
+    const colorList = Array.isArray(colors) ? (colors as string[]) : [];
+
+    let webStyle: ViewStyle;
+    if (colorList.length >= 2) {
+      // CSS angle: 0deg = to top, measured clockwise. RN start/end are in
+      // a unit square with y pointing DOWN; direction (dx, dy) maps to
+      // θ = atan2(dx, -dy). Defaults (0.5,0)→(0.5,1) give 180deg (top→bottom).
+      // LinearGradientPoint can be {x, y} or a [x, y] tuple — normalize.
+      const toXY = (
+        p: LinearGradientProps["start"],
+        fx: number,
+        fy: number
+      ): [number, number] => {
+        if (Array.isArray(p)) return [p[0] ?? fx, p[1] ?? fy];
+        if (p && typeof p === "object") return [p.x ?? fx, p.y ?? fy];
+        return [fx, fy];
+      };
+      const [sx, sy] = toXY(start, 0.5, 0);
+      const [ex, ey] = toXY(end, 0.5, 1);
+      const dx = ex - sx;
+      const dy = ey - sy;
+      const angle =
+        dx === 0 && dy === 0
+          ? 180
+          : Math.round((Math.atan2(dx, -dy) * 180) / Math.PI);
+      const stops = colorList
+        .map((c, i) => {
+          const loc =
+            locations && locations[i] != null
+              ? (locations[i] as number)
+              : i / (colorList.length - 1);
+          return `${c} ${(loc * 100).toFixed(2)}%`;
+        })
+        .join(", ");
+      webStyle = {
+        backgroundImage: `linear-gradient(${angle}deg, ${stops})`,
+      } as ViewStyle;
+    } else {
+      webStyle = {
+        backgroundColor: colorList.length === 1 ? colorList[0] : "transparent",
+      };
+    }
+
     return (
-      <View
-        {...rest}
-        style={[{ backgroundColor: fallback }, style as StyleProp<ViewStyle>]}
-      >
+      <View {...rest} style={[webStyle, style as StyleProp<ViewStyle>]}>
         {children}
       </View>
     );
