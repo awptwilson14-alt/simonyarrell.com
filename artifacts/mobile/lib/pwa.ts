@@ -30,8 +30,12 @@ const TAGS: TagSpec[] = [
   { tag: "meta", attrs: { name: "mobile-web-app-capable", content: "yes" }, key: "name=mobile-web-app-capable" },
   { tag: "meta", attrs: { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" }, key: "name=apple-mobile-web-app-status-bar-style" },
   { tag: "meta", attrs: { name: "apple-mobile-web-app-title", content: "Simon Yarrell" }, key: "name=apple-mobile-web-app-title" },
-  { tag: "meta", attrs: { name: "description", content: "Simon Yarrell — Luxury Styling, Powered by Intelligence. AI-generated outfits from a 3,000+ item real-product catalog." }, key: "name=description" },
+  { tag: "meta", attrs: { name: "description", content: "Discover luxury fashion with AI-powered styling. Shop authentic designer clothing, handbags, shoes and accessories from trusted premium retailers." }, key: "name=description" },
 ];
+
+// SEO homepage title — applied at runtime because dev preview uses Metro's
+// default HTML template (see +html.tsx note below).
+const SEO_TITLE = "Simon Yarrell | AI Luxury Fashion Styling & Shopping";
 
 // Track whether init has already run this page-load so we don't reflow the
 // head on every hot reload or layout remount.
@@ -44,6 +48,10 @@ export function initPWA(): void {
 
   const head = document.head;
   if (!head) return;
+
+  // Homepage SEO title (static export already bakes it via +html.tsx; this
+  // makes the dev preview match).
+  document.title = SEO_TITLE;
 
   // Only mark init complete once we've confirmed the DOM is usable —
   // otherwise an early call (before <head> exists) would permanently lock

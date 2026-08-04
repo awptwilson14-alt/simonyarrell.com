@@ -12,10 +12,12 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandWordmark } from "@/components/BrandWordmark";
+import { LandingSections } from "@/components/LandingSections";
 import { GoldButton } from "@/components/GoldButton";
 import { OrnamentRule } from "@/components/OrnamentRule";
 import { TitleRule } from "@/components/TitleRule";
@@ -48,6 +50,9 @@ export default function OnboardingScreen() {
   // tablet keep the original full-bleed phone layout untouched.
   const { isDesktop, isTablet } = useResponsive();
   const isDesktopWeb = isDesktop && Platform.OS === "web";
+  // Live viewport height so the splash hero fills exactly one screen and
+  // the landing sections (web only) begin immediately below the fold.
+  const { height: viewportH } = useWindowDimensions();
 
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -85,7 +90,12 @@ export default function OnboardingScreen() {
     // luxury-site feel requested.
     if (isDesktopWeb) {
       return (
-        <View style={[splash.container, { backgroundColor: "#0B0B0C" }]}>
+        <ScrollView
+          style={{ flex: 1, backgroundColor: "#0B0B0C" }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Hero — fills exactly one viewport; landing sections follow. */}
+          <View style={[splash.container, { backgroundColor: "#0B0B0C", height: viewportH }]}>
           <View style={splashDesktop.outer}>
             <View style={splashDesktop.shell}>
               {/* LEFT column — brand, eyebrow, CTA, guest link. */}
@@ -154,12 +164,22 @@ export default function OnboardingScreen() {
               </View>
             </View>
           </View>
-        </View>
+          </View>
+          <LandingSections onGetStarted={next} />
+        </ScrollView>
       );
     }
 
-    return (
-      <View style={[splash.container, { backgroundColor: "#0B0B0C" }]}>
+    // Mobile / tablet. On WEB the landing sections scroll below the
+    // full-viewport hero; on native the splash stays a single screen.
+    const heroBlock = (
+      <View
+        style={[
+          splash.container,
+          { backgroundColor: "#0B0B0C" },
+          Platform.OS === "web" && { height: viewportH },
+        ]}
+      >
         <Image
           source={require("../assets/images/splash_hero.png")}
           style={splash.heroImage}
@@ -208,6 +228,20 @@ export default function OnboardingScreen() {
         </View>
       </View>
     );
+
+    if (Platform.OS === "web") {
+      return (
+        <ScrollView
+          style={{ flex: 1, backgroundColor: "#0B0B0C" }}
+          showsVerticalScrollIndicator={false}
+        >
+          {heroBlock}
+          <LandingSections onGetStarted={next} />
+        </ScrollView>
+      );
+    }
+
+    return heroBlock;
   }
 
   // ── Steps 1–4 — Profile setup (gender, styles, size, budget) ──────

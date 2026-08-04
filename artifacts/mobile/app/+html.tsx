@@ -41,9 +41,10 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
 
         {/* SEO basics */}
+        <title>Simon Yarrell | AI Luxury Fashion Styling & Shopping</title>
         <meta
           name="description"
-          content="Simon Yarrell — Luxury Styling, Powered by Intelligence. AI-generated outfits from a 3,000+ item real-product catalog."
+          content="Discover luxury fashion with AI-powered styling. Shop authentic designer clothing, handbags, shoes and accessories from trusted premium retailers."
         />
 
         <ScrollViewStyleReset />

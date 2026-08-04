@@ -1,0 +1,139 @@
+Add a "Trusted Luxury Brands" Section
+Immediately below the hero.
+Headline:
+Shop Authentic Luxury Brands
+Subheading:
+Discover curated fashion from the world's most respected designers and retailers.
+Display premium brand logos.
+Examples:
+Gucci
+Prada
+Dior
+Tom Ford
+Saint Laurent
+Balenciaga
+Ralph Lauren
+Burberry
+Versace
+Nike
+Adidas
+New Balance
+Use grayscale logos that become gold on hover.
+3. Add "How Simon Yarrell Works"
+Luxury cards.
+Step 1
+Tell us your style
+Step 2
+AI creates personalized luxury outfits
+Step 3
+Compare products from trusted retailers
+Step 4
+Shop your look
+Use elegant icons.
+4. Show Real Outfit Cards
+Create a luxury carousel.
+Each card contains:
+Luxury image
+Outfit name
+Estimated price
+Brands included
+Button
+Shop This Look
+Examples:
+Business Elite
+Modern Gentleman
+Old Money
+Luxury Streetwear
+Weekend Escape
+Black Tie
+Vacation Resort
+5. AI Feature Section
+Headline
+Powered by Simon AI
+Explain:
+The AI builds complete outfits using:
+Real products
+Real prices
+Real luxury retailers
+Budget awareness
+Season awareness
+Color matching
+Dress code intelligence
+Occasion intelligence
+6. Luxury Categories
+Large cards.
+Men
+Women
+Shoes
+Bags
+Jewelry
+Accessories
+Watches
+Travel
+Beauty
+Each opens shopping.
+7. Price Comparison Section
+Headline
+Never Overpay
+Show example:
+Tom Ford Sunglasses
+
+Nordstrom $495
+
+Saks $495
+
+SSENSE $449
+
+Best Price ✓
+8. Why Simon Yarrell
+Luxury icon cards.
+Authentic products
+AI styling
+Luxury expertise
+Price comparison
+Personal closet
+Luxury recommendations
+Trusted retailers
+Premium shopping
+9. Testimonials
+Luxury cards.
+Fashion professionals
+Luxury shoppers
+Creators
+Business executives
+(Use clearly labeled sample testimonials until you have real customer feedback.)
+10. About Simon Yarrell
+Small section.
+Explain:
+Luxury Styling.
+Powered by Intelligence.
+Simon Yarrell combines artificial intelligence with luxury fashion expertise to help people discover timeless style using authentic products from trusted retailers.
+11. Footer
+Professional footer.
+Links:
+About
+Contact
+Careers
+Privacy Policy
+Terms of Service
+Cookie Policy
+Affiliate Disclosure
+Accessibility
+Press
+Support
+FAQ
+12. Add Trust Signals
+Footer icons.
+SSL Secure
+Privacy Protected
+Secure Checkout Partners
+AI Powered
+Luxury Retail Partners
+13. Add Newsletter
+Stay Ahead of Luxury Fashion
+Collect email.
+14. Improve SEO
+Homepage title:
+Simon Yarrell | AI Luxury Fashion Styling & Shopping
+Meta description:
+Discover luxury fashion with AI-powered styling. Shop authentic designer clothing, handbags, shoes and accessories from trusted premium retailers.
