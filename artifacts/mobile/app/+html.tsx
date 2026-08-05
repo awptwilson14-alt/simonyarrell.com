@@ -54,7 +54,14 @@ export default function Root({ children }: PropsWithChildren) {
             inline a second register() here — duplicating it would just
             schedule two no-op registrations and muddy debugging. */}
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Skimlinks affiliate script — must load just before </body> */}
+        <script
+          type="text/javascript"
+          src="https://s.skimresources.com/js/307240X1795519.skimlinks.js"
+        ></script>
+      </body>
     </html>
   );
 }
