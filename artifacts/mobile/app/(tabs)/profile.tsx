@@ -732,6 +732,11 @@ export default function ProfileScreen() {
             <Feather name="link-2" size={11} color={colors.mutedForeground} />
             <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Affiliate Settings</Text>
           </Pressable>
+          <View style={[styles.footerDot, { backgroundColor: colors.border }]} />
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/admin-promos"); }} style={styles.footerLink}>
+            <Feather name="sliders" size={11} color={colors.mutedForeground} />
+            <Text style={[styles.footerLinkText, { color: colors.mutedForeground }]}>Tier Testing</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
