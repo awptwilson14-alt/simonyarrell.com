@@ -47,6 +47,7 @@ import {
   type TierId,
 } from "@/lib/tiers";
 import {
+  applyAdminTierOverride,
   clearPromoCode,
   getPromoState,
   loadPromoConfig,
@@ -93,6 +94,12 @@ interface EntitlementsValue {
   redeemPromo: (raw: string) => Promise<RedeemResult>;
   /** Remove the active promo (reverts discount / granted tier). */
   clearPromo: () => Promise<void>;
+  /**
+   * Admin test mode: force this device onto a tier for test runs. `basic`
+   * clears any override (reverting to the real RC tier). Server daily-cap
+   * mirror is kept in sync so caps behave exactly like a real member's.
+   */
+  applyTierOverride: (tier: TierId) => Promise<void>;
 }
 
 const Ctx = createContext<EntitlementsValue | null>(null);
@@ -112,12 +119,16 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
   // The RC entitlements are the base tier; a redeemed comp code can override
   // UP to a higher tier (never down). Highest of the two wins.
   const rcTier = useMemo(() => deriveTierFromCustomerInfo(customerInfo), [customerInfo]);
+  const adminTestMode = promo.code?.startsWith("ADMINTEST-") ?? false;
   const tier = useMemo<TierId>(() => {
+    // Admin test mode pins the EXACT tier (up OR down) so the owner can do
+    // test runs of any tier regardless of their real RC entitlement.
+    if (adminTestMode && promo.grantedTier) return promo.grantedTier;
     if (promo.grantedTier && tierRank(promo.grantedTier) > tierRank(rcTier)) {
       return promo.grantedTier;
     }
     return rcTier;
-  }, [rcTier, promo.grantedTier]);
+  }, [rcTier, promo.grantedTier, adminTestMode]);
 
   // Server-tracked daily usage. Only queried when we have a stable appUserId
   // (RC anonymous ID hydrates on mount). Free tier needs this for the cap;
@@ -211,6 +222,18 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
     if (hadGrant) await syncTier(rcTier);
   }, [promo.grantedTier, rcTier, syncTier]);
 
+  // Admin test mode — pin this device to an exact tier (up or down) for test
+  // runs. Persists a synthetic ADMINTEST override + mirrors it to the server
+  // so daily caps behave like a real member's. Replaces any active promo on
+  // this device (admin-only, local). `clearPromo` ends test mode.
+  const applyTierOverride = useCallback(
+    async (target: TierId) => {
+      await applyAdminTierOverride(target, TIER_DEFINITIONS[target].name);
+      await syncTier(target);
+    },
+    [syncTier],
+  );
+
   const requireFeature = useCallback(
     (feature: Feature, options?: RequireFeatureOptions): boolean => {
       if (tierIncludes(tier, feature)) return true;
@@ -243,6 +266,7 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
       promoLabel: promo.label,
       redeemPromo,
       clearPromo,
+      applyTierOverride,
     }),
     [
       tier,
@@ -260,6 +284,7 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
       promo.label,
       redeemPromo,
       clearPromo,
+      applyTierOverride,
     ],
   );
 

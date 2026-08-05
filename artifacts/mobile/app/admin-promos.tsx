@@ -25,6 +25,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GoldButton } from "@/components/GoldButton";
+import { useEntitlements } from "@/context/EntitlementsContext";
 import { OrnamentRule } from "@/components/OrnamentRule";
 import { useColors } from "@/hooks/useColors";
 import { safeBack } from "@/lib/nav";
@@ -45,6 +46,7 @@ import {
 import { TIER_DEFINITIONS, type TierId } from "@/lib/tiers";
 
 const GRANTABLE_TIERS: TierId[] = ["premium", "pro", "vip", "diamond"];
+const TEST_TIERS: TierId[] = ["basic", "premium", "pro", "vip", "diamond"];
 
 function effectSummary(
   kind: PromoKind,
@@ -81,6 +83,22 @@ export default function AdminPromosScreen() {
   const [formMsg, setFormMsg] = useState<string | null>(null);
 
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+
+  // Tier test mode — switch this device onto any tier for admin test runs.
+  const { tier, applyTierOverride, promoCode, clearPromo } = useEntitlements();
+  const testModeActive = promoCode?.startsWith("ADMINTEST-") ?? false;
+  const [switchingTier, setSwitchingTier] = useState<TierId | null>(null);
+  const onTestTier = async (t: TierId) => {
+    if (switchingTier) return;
+    Haptics.selectionAsync();
+    setSwitchingTier(t);
+    try {
+      await applyTierOverride(t);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } finally {
+      setSwitchingTier(null);
+    }
+  };
 
   const refresh = async (key: string) => {
     const rows = await listPromoCodes(key);
@@ -317,6 +335,60 @@ export default function AdminPromosScreen() {
               Codes you create here work for every customer. Percent-off codes restyle the
               in-app prices; grant codes hand the customer a complimentary tier.
             </Text>
+
+            {/* ── Tier test mode (this device only) ── */}
+            <OrnamentRule style={{ marginVertical: 22 }} />
+            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+              Test tiers on this device
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground, marginTop: 6 }]}>
+              Switch this device to any membership tier to do a test run of its features.
+              Only affects you — customers are untouched. Note: entering test mode replaces
+              any promo code active on this device.
+            </Text>
+            <View style={styles.tierRow}>
+              {TEST_TIERS.map((t) => {
+                const active = tier === t;
+                return (
+                  <Pressable
+                    key={t}
+                    disabled={switchingTier !== null}
+                    onPress={() => onTestTier(t)}
+                    style={[
+                      styles.tierChip,
+                      {
+                        borderColor: active ? colors.gold : colors.border,
+                        backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                        opacity: switchingTier !== null && switchingTier !== t ? 0.5 : 1,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.tierLabel, { color: active ? colors.gold : colors.foreground }]}>
+                      {switchingTier === t ? "…" : TIER_DEFINITIONS[t].name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={[styles.codeLabel, { color: colors.mutedForeground, marginTop: 8 }]}>
+              {testModeActive
+                ? `Test mode ON — running as ${TIER_DEFINITIONS[tier].name}`
+                : `Test mode off — your real tier is ${TIER_DEFINITIONS[tier].name}`}
+            </Text>
+            {testModeActive && (
+              <Pressable
+                onPress={async () => {
+                  Haptics.selectionAsync();
+                  await clearPromo();
+                }}
+                hitSlop={8}
+                style={{ marginTop: 10, alignSelf: "flex-start" }}
+              >
+                <Text style={[styles.codeActionText, { color: colors.gold }]}>
+                  End test mode (restore my real membership)
+                </Text>
+              </Pressable>
+            )}
 
             {/* ── Create / edit form ── */}
             <OrnamentRule style={{ marginVertical: 22 }} />

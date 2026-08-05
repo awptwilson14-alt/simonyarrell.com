@@ -171,6 +171,25 @@ export async function redeemPromoCode(raw: string): Promise<RedeemResult> {
   return { ok: false, reason: "invalid" };
 }
 
+/**
+ * Admin-only: apply a local tier override for test runs on this device.
+ * Reuses the promo-override channel (a synthetic `ADMINTEST` code with a
+ * persisted snapshot) so the whole app — gating, paywall, server daily-cap
+ * mirror — behaves exactly as it would for a real member of that tier.
+ */
+export async function applyAdminTierOverride(tier: TierId, tierName: string): Promise<PromoState> {
+  cached = {
+    code: `ADMINTEST-${tier.toUpperCase()}`,
+    discountPercent: 0,
+    grantedTier: tier,
+    label: `Admin test mode — ${tierName} tier`,
+  };
+  loaded = true;
+  await persist({ code: cached.code!, snapshot: snapshotOf(cached) });
+  notify();
+  return cached;
+}
+
 /** Remove any active promo (reverts to no discount / no grant). */
 export async function clearPromoCode(): Promise<void> {
   cached = EMPTY;
