@@ -120,8 +120,11 @@ export default function OnboardingScreen() {
 
                 <View style={splashDesktop.ctaBlock}>
                   <View style={splashDesktop.ctaWrap}>
-                    <GoldButton label="GET STARTED" onPress={next} />
+                    <GoldButton label="EXPLORE LUXURY LOOKS" onPress={next} />
                   </View>
+                  <Text style={splash.availabilityText}>
+                    Available for iPhone, Android &amp; Web
+                  </Text>
                   <OrnamentRule
                     width={160}
                     diamondSize={6}
@@ -219,7 +222,10 @@ export default function OnboardingScreen() {
               ornament, then the serif-italic "Continue as guest" link.
               Mirrors the splash reference exactly. */}
           <View style={splash.footer}>
-            <GoldButton label="GET STARTED" onPress={next} />
+            <GoldButton label="EXPLORE LUXURY LOOKS" onPress={next} />
+            <Text style={splash.availabilityText}>
+              Available for iPhone, Android &amp; Web
+            </Text>
             <OrnamentRule width={140} diamondSize={6} style={splash.footerOrnament} />
             <Pressable onPress={skip} style={splash.guestBtn} hitSlop={8}>
               <Text style={splash.guestText}>Continue as guest</Text>
@@ -492,7 +498,7 @@ const splashDesktop = StyleSheet.create({
   // Constrains GoldButton to elegant desktop width — phone build kept the
   // full-bleed treatment via splash.footer (alignItems:"stretch").
   ctaWrap: {
-    width: 260,
+    width: 320,
   },
   ornament: {
     alignSelf: "flex-start",
@@ -540,6 +546,16 @@ const splash = StyleSheet.create({
     fontFamily: "PlayfairDisplay_400Regular_Italic",
     color: "rgba(245,240,225,0.85)",
     letterSpacing: 0.3,
+  },
+  // Availability note under the primary CTA — quiet, tracked-out caps.
+  availabilityText: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(245,240,225,0.55)",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    textAlign: "center",
+    marginTop: -4,
   },
 });
 

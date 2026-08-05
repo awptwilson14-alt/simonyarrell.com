@@ -68,8 +68,8 @@ const BRANDS = [
 
 const STEPS: { icon: keyof typeof Feather.glyphMap; title: string; body: string }[] = [
   { icon: "user", title: "Tell us your style", body: "Share your taste, size, season, and budget — it takes under a minute." },
-  { icon: "cpu", title: "AI composes your looks", body: "Simon AI builds complete, personalized luxury outfits — piece by piece." },
-  { icon: "layers", title: "Compare trusted retailers", body: "Every piece is a real product with real pricing from respected retailers." },
+  { icon: "cpu", title: "AI creates personalized luxury outfits", body: "Simon AI builds complete, personalized luxury outfits — piece by piece." },
+  { icon: "layers", title: "Compare products from trusted retailers", body: "Every piece is a real product with real pricing from respected retailers." },
   { icon: "shopping-bag", title: "Shop your look", body: "Tap through to buy each piece directly from the brand or retailer." },
 ];
 
