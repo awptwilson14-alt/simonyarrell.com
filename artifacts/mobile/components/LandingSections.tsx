@@ -130,6 +130,18 @@ const WHY: { icon: keyof typeof Feather.glyphMap; label: string }[] = [
   { icon: "gift", label: "Premium shopping" },
 ];
 
+// What the house stands for — shown in About. Written for affiliate-network
+// reviewers as much as customers: original content, honest discovery, real
+// retailers, zero counterfeits.
+const COMMITMENTS: { icon: keyof typeof Feather.glyphMap; label: string }[] = [
+  { icon: "edit-3", label: "Publishes original fashion & style content" },
+  { icon: "cpu", label: "Uses AI to curate complete outfits" },
+  { icon: "search", label: "Helps users discover real products" },
+  { icon: "link", label: "Connects shoppers with legitimate retailers" },
+  { icon: "shield", label: "Never sells counterfeit products" },
+  { icon: "book-open", label: "Provides educational style guidance & shopping recommendations" },
+];
+
 const TESTIMONIALS = [
   { quote: "The outfits feel like they came from a personal stylist who has known me for years — except they arrive in seconds.", name: "A. Laurent", role: "Fashion professional" },
   { quote: "I stopped second-guessing full-price purchases. Seeing the same piece across retailers changed how I shop luxury.", name: "M. Okafor", role: "Luxury shopper" },
@@ -432,6 +444,16 @@ export function LandingSections({ onGetStarted }: { onGetStarted: () => void }) 
           expertise to help people discover timeless style using authentic
           products from trusted retailers.
         </Text>
+        {/* Affiliate-legitimacy commitments — plainly states what the platform
+            does (and doesn't do) for affiliate networks, partners & customers. */}
+        <View style={s.commitments}>
+          {COMMITMENTS.map((c) => (
+            <View key={c.label} style={s.commitmentRow}>
+              <Feather name={c.icon} size={14} color={GOLD} />
+              <Text style={s.commitmentText}>{c.label}</Text>
+            </View>
+          ))}
+        </View>
         <View style={{ alignItems: "center", marginTop: 28 }}>
           <View style={{ width: 260 }}>
             <GoldButton label="GET STARTED" onPress={onGetStarted} />
@@ -699,6 +721,33 @@ const s = StyleSheet.create({
     textAlign: "center",
     maxWidth: 620,
     alignSelf: "center",
+  },
+
+  commitments: {
+    marginTop: 26,
+    alignSelf: "center",
+    gap: 12,
+    maxWidth: 560,
+    width: "100%",
+  },
+  commitmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "rgba(198,167,94,0.18)",
+    backgroundColor: PANEL,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  commitmentText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: "Inter_400Regular",
+    color: CREAM_60,
+    letterSpacing: 0.2,
   },
 
   // Newsletter

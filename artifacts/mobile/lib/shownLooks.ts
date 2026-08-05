@@ -10,6 +10,98 @@ import { hydrateShownLooks, setShownLooksPersister } from "./outfitEngine";
 // the user by SAVING them — everything generated is burned so it can't recur.
 
 const KEY = "shownLookFingerprints";
+
+// ─── Global (cross-user) registry sync ───────────────────────────────────────
+// Product rule: once a combination has been generated for ANY user it must
+// never be generated again for ANYONE. The api-server keeps the authoritative
+// global fingerprint set; we merge it into the local engine set on startup and
+// register everything we generate. All calls are best-effort — offline just
+// degrades to per-device dedup, never blocks generation.
+
+const API_BASE = resolveApiBase();
+
+function resolveApiBase(): string {
+  const explicit = process.env.EXPO_PUBLIC_API_URL;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
+  const dev =
+    process.env.EXPO_PUBLIC_DOMAIN ||
+    process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
+  if (dev && dev.length > 0) return `https://${dev}`;
+  return "";
+}
+
+// Fingerprints generated locally but not yet confirmed by the server.
+// Mirrored to AsyncStorage (PENDING_KEY) so an abrupt kill before the POST
+// lands doesn't lose the global registration — they're retried next launch.
+let pendingServer: string[] = [];
+let serverPushTimer: ReturnType<typeof setTimeout> | null = null;
+let pushInFlight = false;
+
+const PENDING_KEY = "pendingGlobalLookFingerprints";
+
+function persistPending(): void {
+  AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pendingServer)).catch(() => {});
+}
+
+/**
+ * GET the global set with a hard timeout so a hanging request can NEVER
+ * stall `initShownLooks` (generation awaits readiness — a dead network must
+ * degrade to per-device dedup, not block the product).
+ */
+async function fetchGlobalFingerprints(): Promise<string[]> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`${API_BASE}/api/looks/fingerprints`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.fingerprints)
+      ? data.fingerprints.filter((x: unknown): x is string => typeof x === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Single-flight sender: only ONE POST may mutate `pendingServer` at a time.
+ * Without the guard, a timer flush and a background flush racing with >500
+ * pending entries could both send the same head batch and BOTH slice the
+ * queue — silently dropping unsent fingerprints.
+ */
+function pushPendingToServer(): void {
+  if (pushInFlight || pendingServer.length === 0) return;
+  pushInFlight = true;
+  const batch = pendingServer.slice(0, 500);
+  fetch(`${API_BASE}/api/looks/fingerprints`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fingerprints: batch }),
+  })
+    .then((res) => {
+      if (res.ok) {
+        pendingServer = pendingServer.slice(batch.length);
+        persistPending();
+        if (pendingServer.length > 0) schedulePushToServer();
+      }
+      // Non-OK: keep the batch pending; retried on the next flush.
+    })
+    .catch(() => {})
+    .finally(() => {
+      pushInFlight = false;
+    });
+}
+
+function schedulePushToServer(): void {
+  if (serverPushTimer) clearTimeout(serverPushTimer);
+  serverPushTimer = setTimeout(() => {
+    serverPushTimer = null;
+    pushPendingToServer();
+  }, 800);
+}
 // Upper bound on how many fingerprints we persist. This is a STORAGE-SAFETY
 // valve, not a product feature: on web AsyncStorage is localStorage (~5MB), so
 // an unbounded store would eventually throw QuotaExceeded and silently stop
@@ -65,10 +157,28 @@ export async function initShownLooks(): Promise<void> {
   if (hydrated) return;
   hydrated = true;
   try {
-    const raw = await AsyncStorage.getItem(KEY);
+    // Local (per-device) memory and the global (cross-user) registry are
+    // fetched in parallel; the engine set is the UNION so a combination shown
+    // to any other user is burned here too before the first generation.
+    const [raw, rawPending, globalFps] = await Promise.all([
+      AsyncStorage.getItem(KEY),
+      AsyncStorage.getItem(PENDING_KEY),
+      fetchGlobalFingerprints(),
+    ]);
+    // Re-queue registrations that didn't reach the server last session.
+    try {
+      const pend = rawPending ? JSON.parse(rawPending) : [];
+      if (Array.isArray(pend)) {
+        pendingServer = pend.filter((x): x is string => typeof x === "string");
+        if (pendingServer.length > 0) schedulePushToServer();
+      }
+    } catch {
+      // Corrupt pending queue is non-fatal; the combos are still in the local set.
+    }
     const arr = raw ? JSON.parse(raw) : [];
     buffer = Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
     hydrateShownLooks(buffer);
+    if (globalFps.length > 0) hydrateShownLooks(globalFps);
   } catch {
     buffer = [];
   } finally {
@@ -76,12 +186,19 @@ export async function initShownLooks(): Promise<void> {
       buffer.push(fp);
       if (buffer.length > MAX) buffer = buffer.slice(buffer.length - MAX);
       scheduleFlush();
+      // Burn the combination globally so no other user can ever receive it.
+      pendingServer.push(fp);
+      persistPending();
+      schedulePushToServer();
     });
     // Durability: flush the debounced buffer immediately when the app is
     // backgrounded (native) or the tab is closed (web) so recently-generated
     // fingerprints aren't lost on an abrupt kill before the 500ms timer fires.
     AppState.addEventListener("change", (state) => {
-      if (state === "background" || state === "inactive") flushNow();
+      if (state === "background" || state === "inactive") {
+        flushNow();
+        pushPendingToServer();
+      }
     });
     if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
       window.addEventListener("pagehide", flushNow);

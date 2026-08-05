@@ -5,6 +5,14 @@ description: The two non-negotiable invariants of the Maison Simon outfit engine
 
 # Two hard rules the outfit engine must always honor
 
+> **Global layer (Aug 2026):** dedup is now CROSS-USER. The api-server keeps a
+> `look_fingerprints` table (unique fingerprint); `shownLooks.ts` merges the
+> global set into the engine at init (5s-timeout GET so offline never blocks
+> generation) and registers new fingerprints via a single-flight, persisted
+> pending queue. Any change to fingerprinting must keep both layers in sync.
+> Known limits: GET returns the full set (switch to delta-sync if it grows
+> large) and the POST endpoint is unauthenticated (abuse-hardening pending).
+
 ## Rule 1 — ZERO gender leakage
 A selected gender must NEVER receive an opposite-gender item.
 

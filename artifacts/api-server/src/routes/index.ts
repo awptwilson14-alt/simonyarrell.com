@@ -5,6 +5,7 @@ import tryonRouter from "./tryon";
 import usageRouter from "./usage";
 import subscriptionsRouter from "./subscriptions";
 import promoRouter from "./promo";
+import looksRouter from "./looks";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(tryonRouter);
 router.use(usageRouter);
 router.use(subscriptionsRouter);
 router.use(promoRouter);
+router.use(looksRouter);
 
 export default router;
