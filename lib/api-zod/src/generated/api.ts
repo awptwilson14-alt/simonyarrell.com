@@ -326,3 +326,47 @@ export const DeletePromoCodeResponse = zod.object({
 })
 
 
+/**
+ * Saves the subscriber email. Idempotent — re-subscribing an existing
+email returns `ok: true` with `alreadySubscribed: true` instead of an
+error, so the client never leaks whether an address was known.
+
+ * @summary Subscribe an email to the newsletter (public)
+ */
+export const newsletterSubscribeBodyEmailMin = 3;
+export const newsletterSubscribeBodyEmailMax = 254;
+
+export const newsletterSubscribeBodySourceMax = 64;
+
+
+
+export const NewsletterSubscribeBody = zod.object({
+  "email": zod.string().email().min(newsletterSubscribeBodyEmailMin).max(newsletterSubscribeBodyEmailMax),
+  "source": zod.string().max(newsletterSubscribeBodySourceMax).optional().describe('Where the signup came from (e.g. \"landing\").')
+})
+
+export const NewsletterSubscribeResponse = zod.object({
+  "ok": zod.boolean(),
+  "alreadySubscribed": zod.boolean().optional()
+})
+
+
+/**
+ * Requires the `x-admin-key` header. Returns every subscriber, newest
+first. Pass `format=csv` to download a CSV file instead of JSON.
+
+ * @summary Export all newsletter subscribers (admin)
+ */
+export const ListNewsletterSubscribersQueryParams = zod.object({
+  "format": zod.enum(['json', 'csv']).optional()
+})
+
+export const ListNewsletterSubscribersResponseItem = zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "source": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListNewsletterSubscribersResponse = zod.array(ListNewsletterSubscribersResponseItem)
+
+

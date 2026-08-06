@@ -5,6 +5,34 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface NewsletterSubscription {
+  /**
+     * @minLength 3
+     * @maxLength 254
+     */
+  email: string;
+  /**
+     * Where the signup came from (e.g. "landing").
+     * @maxLength 64
+     */
+  source?: string;
+}
+
+export interface NewsletterSubscribeResponse {
+  ok: boolean;
+  alreadySubscribed?: boolean;
+}
+
+export interface NewsletterSubscriberRecord {
+  id: number;
+  email: string;
+  /** @nullable */
+  source?: string | null;
+  createdAt: string;
+}
+
+export type NewsletterSubscriberList = NewsletterSubscriberRecord[];
+
 export interface HealthStatus {
   status: string;
 }
@@ -316,4 +344,16 @@ export type PromoLookupParams = {
  */
 code: string;
 };
+
+export type ListNewsletterSubscribersParams = {
+format?: ListNewsletterSubscribersFormat;
+};
+
+export type ListNewsletterSubscribersFormat = typeof ListNewsletterSubscribersFormat[keyof typeof ListNewsletterSubscribersFormat];
+
+
+export const ListNewsletterSubscribersFormat = {
+  json: 'json',
+  csv: 'csv',
+} as const;
 

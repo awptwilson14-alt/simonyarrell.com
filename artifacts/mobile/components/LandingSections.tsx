@@ -38,6 +38,7 @@ import {
 
 import { LinearGradient } from "@/lib/safeWebShims";
 import { OrnamentRule } from "@/components/OrnamentRule";
+import { subscribeToNewsletter } from "@/lib/newsletter";
 import { GoldButton } from "@/components/GoldButton";
 import { useResponsive } from "@/hooks/useResponsive";
 
@@ -251,6 +252,21 @@ export function LandingSections({ onGetStarted }: { onGetStarted: () => void }) 
   const carouselRef = useRef<ScrollView>(null);
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
+
+  const handleSubscribe = async () => {
+    if (subscribing) return;
+    setSubscribeError(null);
+    setSubscribing(true);
+    const result = await subscribeToNewsletter(email);
+    setSubscribing(false);
+    if (result.ok) {
+      setSubscribed(true);
+    } else {
+      setSubscribeError(result.error);
+    }
+  };
 
   const cardW = isDesktop ? 300 : 240;
 
@@ -474,24 +490,30 @@ export function LandingSections({ onGetStarted }: { onGetStarted: () => void }) 
             <Text style={s.newsletterDoneText}>You're on the list.</Text>
           </View>
         ) : (
-          <View style={[s.newsletterRow, !isDesktop && { flexDirection: "column" }]}>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Your email address"
-              placeholderTextColor={CREAM_40}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={[s.newsletterInput, !isDesktop && { width: "100%" }]}
-            />
-            <GoldButton
-              small
-              label="SUBSCRIBE"
-              onPress={() => {
-                if (email.includes("@")) setSubscribed(true);
-              }}
-            />
-          </View>
+          <>
+            <View style={[s.newsletterRow, !isDesktop && { flexDirection: "column" }]}>
+              <TextInput
+                value={email}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  if (subscribeError) setSubscribeError(null);
+                }}
+                placeholder="Your email address"
+                placeholderTextColor={CREAM_40}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={[s.newsletterInput, !isDesktop && { width: "100%" }]}
+              />
+              <GoldButton
+                small
+                label={subscribing ? "SUBSCRIBING…" : "SUBSCRIBE"}
+                onPress={handleSubscribe}
+              />
+            </View>
+            {subscribeError ? (
+              <Text style={s.newsletterError}>{subscribeError}</Text>
+            ) : null}
+          </>
         )}
       </View>
 
@@ -781,6 +803,7 @@ const s = StyleSheet.create({
     paddingVertical: 8,
   },
   newsletterDoneText: { fontSize: 15, fontFamily: "PlayfairDisplay_400Regular_Italic", color: CREAM },
+  newsletterError: { fontSize: 13, color: "#E07A5F", textAlign: "center", marginTop: 10 },
 
   // Footer
   footer: {

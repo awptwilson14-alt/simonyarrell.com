@@ -24,8 +24,12 @@ import type {
   DeletePromoCodeResponse,
   GetUsageTodayParams,
   HealthStatus,
+  ListNewsletterSubscribersParams,
   LookAttemptRequest,
   LookAttemptResponse,
+  NewsletterSubscribeResponse,
+  NewsletterSubscriberList,
+  NewsletterSubscription,
   PromoCodeList,
   PromoCodeRecord,
   PromoLookupParams,
@@ -901,4 +905,166 @@ export const useDeletePromoCode = <TError = ErrorType<void>,
       > => {
       return useMutation(getDeletePromoCodeMutationOptions(options));
     }
+
+export const getNewsletterSubscribeUrl = () => {
+
+
+
+
+  return `/api/newsletter/subscribe`
+}
+
+/**
+ * Saves the subscriber email. Idempotent — re-subscribing an existing
+email returns `ok: true` with `alreadySubscribed: true` instead of an
+error, so the client never leaks whether an address was known.
+
+ * @summary Subscribe an email to the newsletter (public)
+ */
+export const newsletterSubscribe = async (newsletterSubscription: NewsletterSubscription, options?: RequestInit): Promise<NewsletterSubscribeResponse> => {
+
+  return customFetch<NewsletterSubscribeResponse>(getNewsletterSubscribeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      newsletterSubscription,)
+  }
+);}
+
+
+
+
+export const getNewsletterSubscribeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof newsletterSubscribe>>, TError,{data: BodyType<NewsletterSubscription>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof newsletterSubscribe>>, TError,{data: BodyType<NewsletterSubscription>}, TContext> => {
+
+const mutationKey = ['newsletterSubscribe'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof newsletterSubscribe>>, {data: BodyType<NewsletterSubscription>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  newsletterSubscribe(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NewsletterSubscribeMutationResult = NonNullable<Awaited<ReturnType<typeof newsletterSubscribe>>>
+    export type NewsletterSubscribeMutationBody = BodyType<NewsletterSubscription>
+    export type NewsletterSubscribeMutationError = ErrorType<void>
+
+    /**
+ * @summary Subscribe an email to the newsletter (public)
+ */
+export const useNewsletterSubscribe = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof newsletterSubscribe>>, TError,{data: BodyType<NewsletterSubscription>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof newsletterSubscribe>>,
+        TError,
+        {data: BodyType<NewsletterSubscription>},
+        TContext
+      > => {
+      return useMutation(getNewsletterSubscribeMutationOptions(options));
+    }
+
+export const getListNewsletterSubscribersUrl = (params?: ListNewsletterSubscribersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/newsletter/subscribers?${stringifiedParams}` : `/api/newsletter/subscribers`
+}
+
+/**
+ * Requires the `x-admin-key` header. Returns every subscriber, newest
+first. Pass `format=csv` to download a CSV file instead of JSON.
+
+ * @summary Export all newsletter subscribers (admin)
+ */
+export const listNewsletterSubscribers = async (params?: ListNewsletterSubscribersParams, options?: RequestInit): Promise<NewsletterSubscriberList | string> => {
+
+  return customFetch<NewsletterSubscriberList | string>(getListNewsletterSubscribersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListNewsletterSubscribersQueryKey = (params?: ListNewsletterSubscribersParams,) => {
+    return [
+    `/api/newsletter/subscribers`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListNewsletterSubscribersQueryOptions = <TData = Awaited<ReturnType<typeof listNewsletterSubscribers>>, TError = ErrorType<void>>(params?: ListNewsletterSubscribersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNewsletterSubscribers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListNewsletterSubscribersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNewsletterSubscribers>>> = ({ signal }) => listNewsletterSubscribers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNewsletterSubscribers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListNewsletterSubscribersQueryResult = NonNullable<Awaited<ReturnType<typeof listNewsletterSubscribers>>>
+export type ListNewsletterSubscribersQueryError = ErrorType<void>
+
+
+/**
+ * @summary Export all newsletter subscribers (admin)
+ */
+
+export function useListNewsletterSubscribers<TData = Awaited<ReturnType<typeof listNewsletterSubscribers>>, TError = ErrorType<void>>(
+ params?: ListNewsletterSubscribersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNewsletterSubscribers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListNewsletterSubscribersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 

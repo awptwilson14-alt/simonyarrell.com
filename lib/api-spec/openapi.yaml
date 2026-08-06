@@ -20,6 +20,8 @@ tags:
     description: Promo / comp code lookup (public) and admin-managed code CRUD
   - name: tryon
     description: Virtual try-on — AI photorealistic garment compositing
+  - name: newsletter
+    description: Newsletter signup capture (public) and admin subscriber export
 paths:
   /healthz:
     get:
@@ -294,8 +296,103 @@ paths:
           description: Code not found
         "503":
           description: Admin features disabled
+  /newsletter/subscribe:
+    post:
+      operationId: newsletterSubscribe
+      tags: [newsletter]
+      summary: Subscribe an email to the newsletter (public)
+      description: |
+        Saves the subscriber email. Idempotent — re-subscribing an existing
+        email returns `ok: true` with `alreadySubscribed: true` instead of an
+        error, so the client never leaks whether an address was known.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsletterSubscription"
+      responses:
+        "200":
+          description: Subscribed (or already subscribed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsletterSubscribeResponse"
+        "400":
+          description: Missing or invalid email
+  /newsletter/subscribers:
+    get:
+      operationId: listNewsletterSubscribers
+      tags: [newsletter]
+      summary: Export all newsletter subscribers (admin)
+      description: |
+        Requires the `x-admin-key` header. Returns every subscriber, newest
+        first. Pass `format=csv` to download a CSV file instead of JSON.
+      parameters:
+        - in: query
+          name: format
+          required: false
+          schema:
+            type: string
+            enum: [json, csv]
+      responses:
+        "200":
+          description: Subscribers listed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsletterSubscriberList"
+            text/csv:
+              schema:
+                type: string
+        "401":
+          description: Missing or invalid admin key
+        "503":
+          description: Admin features disabled (no admin key configured)
 components:
   schemas:
+    NewsletterSubscription:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+        source:
+          type: string
+          maxLength: 64
+          description: Where the signup came from (e.g. "landing").
+      required:
+        - email
+    NewsletterSubscribeResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        alreadySubscribed:
+          type: boolean
+      required:
+        - ok
+    NewsletterSubscriberRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        source:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - email
+        - createdAt
+    NewsletterSubscriberList:
+      type: array
+      items:
+        $ref: "#/components/schemas/NewsletterSubscriberRecord"
     HealthStatus:
       type: object
       properties:
