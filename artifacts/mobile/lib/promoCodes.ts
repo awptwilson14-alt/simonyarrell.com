@@ -36,6 +36,9 @@ export const PROMO_CODES: PromoCode[] = [
   { code: "MAISON20", label: "20% off any membership", effect: { kind: "percent_off", percent: 20 } },
   { code: "MAISON30", label: "30% off any membership", effect: { kind: "percent_off", percent: 30 } },
   { code: "MAISON50", label: "50% off any membership", effect: { kind: "percent_off", percent: 50 } },
+  { code: "PREMIUMHOUSE", label: "Complimentary Premium membership", effect: { kind: "grant_tier", tier: "premium" } },
+  { code: "PROHOUSE", label: "Complimentary Pro membership", effect: { kind: "grant_tier", tier: "pro" } },
+  { code: "VIPHOUSE", label: "Complimentary VIP membership", effect: { kind: "grant_tier", tier: "vip" } },
   { code: "DIAMONDHOUSE", label: "Complimentary Diamond membership", effect: { kind: "grant_tier", tier: "diamond" } },
 ];
 
