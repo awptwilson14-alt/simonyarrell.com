@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState } from "react-native";
-import { hydrateShownLooks, setShownLooksPersister } from "./outfitEngine";
+import { LOOKS } from "@/constants/data";
+
+import { hydrateShownLooks, lookFingerprint, setShownLooksPersister } from "./outfitEngine";
 
 // ─── Persistent "already generated" memory ───────────────────────────────────
 // The outfit engine remembers every look combination it has ever produced so it
@@ -182,6 +184,15 @@ export async function initShownLooks(): Promise<void> {
   } catch {
     buffer = [];
   } finally {
+    // Burn every static curated look (all genders) into the shown-set so no
+    // generation path can ever recreate a curated combination as a "new" look.
+    // Seeded in `finally` so it applies even when storage/network fail. Not
+    // pushed to the server registry — every client seeds these locally.
+    try {
+      hydrateShownLooks(LOOKS.map((l) => lookFingerprint(l.pieces)));
+    } catch {
+      /* non-fatal */
+    }
     setShownLooksPersister((fp: string) => {
       buffer.push(fp);
       if (buffer.length > MAX) buffer = buffer.slice(buffer.length - MAX);

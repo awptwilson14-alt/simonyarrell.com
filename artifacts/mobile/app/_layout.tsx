@@ -17,7 +17,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Alert, Platform } from "react-native";
+import { Alert, Platform, Text, TextInput } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -32,6 +32,22 @@ import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
 // register the service worker. Web-only no-op on native; idempotent across
 // hot reloads. See lib/pwa.ts for the full rationale.
 initPWA();
+
+// Cap OS accessibility font scaling at 1.2×. The editorial layout uses fixed
+// line-heights and hero dimensions (Playfair titles, overlay hero info), so
+// unbounded Dynamic Type scaling (iOS "Larger Text") makes scaled glyphs
+// overflow their fixed line boxes and words print on top of each other
+// (user-reported on the look-detail hero). 1.2× keeps a meaningful
+// accessibility bump while guaranteeing text never collides.
+type TextWithDefaults = typeof Text & { defaultProps?: { maxFontSizeMultiplier?: number } };
+(Text as TextWithDefaults).defaultProps = {
+  ...(Text as TextWithDefaults).defaultProps,
+  maxFontSizeMultiplier: 1.2,
+};
+(TextInput as TextWithDefaults).defaultProps = {
+  ...(TextInput as TextWithDefaults).defaultProps,
+  maxFontSizeMultiplier: 1.2,
+};
 
 SplashScreen.preventAutoHideAsync();
 

@@ -62,3 +62,6 @@ mount, on Reset, and in dedup-recovery — all removed). Clearing it re-enables
 duplicates, which is the exact bug. Dedup-recovery re-runs the pass WITHOUT
 clearing; if the pool is genuinely exhausted, an empty grid is the intended
 honest empty-state, consistent with the app's finite-catalog philosophy.
+
+## Static curated LOOKS were a dedup blind spot
+The hard-coded curated `LOOKS` pool (constants/data.ts) is displayed directly (home rail fallback, related looks) and never passed through isShown/markShown — a user reported the same curated combo "kept being generated". Fix: `initShownLooks` seeds the shown-set with `lookFingerprint(l.pieces)` for every static look (in `finally`, local-only, never pushed to the server registry), so no generator can recreate a curated combination. If new curated pools are added, they must be seeded the same way.

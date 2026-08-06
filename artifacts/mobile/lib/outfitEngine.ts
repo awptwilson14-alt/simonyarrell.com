@@ -190,6 +190,14 @@ export function productKey(p: { brand: string; name: string }): string {
   return `${p.brand.toLowerCase().trim()}|${base}`;
 }
 
+// Public fingerprint for a look given its pieces — the SAME identity the
+// generators use internally (sorted productKeys). Lets lib/shownLooks.ts seed
+// the shown-set with the static curated LOOKS so no generation path (any
+// gender) can ever recreate a curated combination as a "new" look.
+export function lookFingerprint(pieces: { brand: string; name: string }[]): string {
+  return fingerprint(pieces.map(productKey));
+}
+
 // ─── Deterministic hash — same look always gets same image ───────────────────
 
 function hashStr(str: string): number {
