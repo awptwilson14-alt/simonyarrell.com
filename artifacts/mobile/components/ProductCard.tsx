@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "@/lib/safeWebShims";
+import { trackAffiliateClick } from "@/lib/affiliateTracking";
 import { openExternalUrl } from "@/lib/openExternal";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -54,6 +55,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const openShop = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    trackAffiliateClick({
+      productName: product.name,
+      brand: product.brand,
+      category: product.category,
+      url: product.purchaseUrl,
+      price: product.price,
+    });
     openExternalUrl(product.purchaseUrl);
   };
 

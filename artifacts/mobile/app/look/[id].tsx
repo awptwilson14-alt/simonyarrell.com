@@ -25,6 +25,7 @@ import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
+import { trackAffiliateClick } from "@/lib/affiliateTracking";
 import { openExternalUrl } from "@/lib/openExternal";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -120,6 +121,20 @@ export default function LookDetailScreen() {
     else saveLook(look);
   };
 
+  // Record a BUY tap (fire-and-forget) then open the retailer. One helper so
+  // all four purchase affordances on this screen log identically.
+  const buyPiece = (piece: { name: string; brand: string; category: string; price: number; purchaseUrl?: string }) => {
+    trackAffiliateClick({
+      productName: piece.name,
+      brand: piece.brand,
+      category: piece.category,
+      url: piece.purchaseUrl,
+      price: piece.price,
+      lookName: look.name,
+    });
+    openExternalUrl(piece.purchaseUrl);
+  };
+
   const shopAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     // Only open the FIRST piece — modern browsers block multi-window opens
@@ -127,7 +142,7 @@ export default function LookDetailScreen() {
     // blocked on web (out-of-gesture). Native users can tap the per-piece
     // BUY rows below to open each item individually.
     const first = look.pieces.find((p) => p.purchaseUrl);
-    if (first) openExternalUrl(first.purchaseUrl);
+    if (first) buyPiece(first);
   };
 
   return (
@@ -466,7 +481,7 @@ export default function LookDetailScreen() {
                   A colour-matched pair to swap in — same budget, elevated edge.
                 </Text>
                 <Pressable
-                  onPress={() => look.sneakerAlt?.purchaseUrl && openExternalUrl(look.sneakerAlt.purchaseUrl)}
+                  onPress={() => look.sneakerAlt?.purchaseUrl && buyPiece(look.sneakerAlt)}
                   style={({ pressed }) => [styles.pieceRow, { borderBottomWidth: 0, opacity: pressed ? 0.75 : 1 }]}
                 >
                   <ZoomableImage
@@ -517,7 +532,7 @@ export default function LookDetailScreen() {
               return (
                 <Pressable
                   key={piece.id}
-                  onPress={() => openExternalUrl(piece.purchaseUrl)}
+                  onPress={() => buyPiece(piece)}
                   style={({ pressed }) => [
                     styles.shopRow,
                     { borderBottomColor: colors.border, opacity: pressed ? 0.75 : 1 },
@@ -635,7 +650,7 @@ export default function LookDetailScreen() {
           {look.pieces.map((piece) => (
             <Pressable
               key={piece.id}
-              onPress={() => openExternalUrl(piece.purchaseUrl)}
+              onPress={() => buyPiece(piece)}
               style={[styles.stripThumb, { backgroundColor: colors.secondary }]}
             >
               <ResilientImage

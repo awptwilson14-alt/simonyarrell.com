@@ -21,7 +21,15 @@ const router: IRouter = Router();
  * owner isn't confused by a code that silently never applies. Keep in sync with
  * `artifacts/mobile/lib/promoCodes.ts`.
  */
-const BUILTIN_CODES = new Set(["MAISON20", "MAISON30", "MAISON50", "DIAMONDHOUSE"]);
+const BUILTIN_CODES = new Set([
+  "MAISON20",
+  "MAISON30",
+  "MAISON50",
+  "PREMIUMHOUSE",
+  "PROHOUSE",
+  "VIPHOUSE",
+  "DIAMONDHOUSE",
+]);
 
 /** Strip whitespace + uppercase so "maison 20" and "MAISON20" both match. */
 function normalizeCode(raw: string): string {

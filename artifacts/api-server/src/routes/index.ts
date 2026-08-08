@@ -7,6 +7,7 @@ import subscriptionsRouter from "./subscriptions";
 import promoRouter from "./promo";
 import looksRouter from "./looks";
 import newsletterRouter from "./newsletter";
+import affiliateRouter from "./affiliate";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(subscriptionsRouter);
 router.use(promoRouter);
 router.use(looksRouter);
 router.use(newsletterRouter);
+router.use(affiliateRouter);
 
 export default router;

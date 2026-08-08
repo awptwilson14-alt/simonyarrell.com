@@ -56,6 +56,7 @@ import {
   type RedeemResult,
 } from "@/lib/promoSettings";
 import { TierLockPrompt } from "@/components/TierLockPrompt";
+import { setAffiliateTrackingUserId } from "@/lib/affiliateTracking";
 
 interface RequireFeatureOptions {
   /** Override the upgrade target tier (defaults to `minTierFor(feature)`). */
@@ -115,6 +116,11 @@ export function EntitlementsProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     loadPromoConfig();
   }, []);
+
+  // Tag affiliate click analytics with the anonymous per-install user id.
+  useEffect(() => {
+    setAffiliateTrackingUserId(appUserId ?? null);
+  }, [appUserId]);
 
   // The RC entitlements are the base tier; a redeemed comp code can override
   // UP to a higher tier (never down). Highest of the two wins.
