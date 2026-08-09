@@ -54,7 +54,7 @@ export interface Look {
   // palette, not just its name. Only set for AI Stylist looks; values are
   // validated as #RRGGBB at render time so a malformed entry can't crash RN.
   paletteColors?: string[];
-  // Formal Remix only: a colour + budget-matched sneaker the user could swap
+  // Fashion Remix only: a colour + budget-matched sneaker the user could swap
   // in for the look's existing shoe. Priced within the same budget headroom and
   // biased toward pricier, high-end / limited-edition pairs as the budget
   // climbs. Additive suggestion — never part of `pieces` or `estimatedPrice`.
@@ -147,11 +147,11 @@ export const CELEBRITIES: Celebrity[] = [
 
 // ─── Trends ─────────────────────────────────────────────────────────────────
 export const TRENDS: Trend[] = [
-  // Formal Remix — new category from batch 96. Inserted first so it leads the
+  // Fashion Remix — new category from batch 96. Inserted first so it leads the
   // home "Trending Now" rail (which only shows the first N entries) and
   // signals the freshness of this offering. Image is the same editorial hero
   // used on the /style occasion chip so the surface reads consistently.
-  { id: "t7", name: "Formal Remix", description: "Black-tie energy with statement sneakers — tuxedos, suits, and gowns deliberately broken with luxury kicks for red-carpet rebellion.", image: require("../assets/images/occasions/formal_remix_unisex.png"), tags: ["Tuxedo", "Gown", "Sneakers", "Valentino", "Brioni"], vibe: "Couture meets the street" },
+  { id: "t7", name: "Fashion Remix", description: "Complete formal looks — tailoring, formal shoes, the works — each with a clean luxury sneaker ready to swap in for an instantly relaxed remix.", image: require("../assets/images/occasions/formal_remix_unisex.png"), tags: ["Tuxedo", "Gown", "Sneakers", "Valentino", "Brioni"], vibe: "Couture meets the street" },
   { id: "t1", name: "Old Money", description: "Understated wealth — heritage brands, neutral palette, impeccable tailoring", image: require("../assets/images/look_old_money.png"), tags: ["Ralph Lauren", "Loro Piana", "cashmere", "tweed"], vibe: "Inherited wealth, quiet confidence" },
   { id: "t2", name: "Luxury Streetwear", description: "High-end street aesthetics — designer logos, premium sneakers, oversized silhouettes", image: require("../assets/images/look_streetwear.png"), tags: ["Off-White", "Balenciaga", "Fear of God", "hoodies"], vibe: "Street meets couture" },
   { id: "t3", name: "Vacation Luxe", description: "Resort wear redefined — flowing silks, premium linens, sun-kissed sophistication", image: require("../assets/images/look_vacation.png"), tags: ["Zimmermann", "Loro Piana", "silk", "linen"], vibe: "Mediterranean billionaire summer" },
@@ -458,4 +458,4 @@ export const OCCASIONS = ["Casual", "Work", "Evening", "Street", "Resort", "Part
 export const SEASONS = ["Spring", "Summer", "Autumn", "Winter", "All Season"];
 export const BUDGETS = ["Under $500", "$500–$1500", "$1500–$3000", "$3000–$6000", "$6000+"];
 export const GENDERS = ["Women", "Men", "Unisex"];
-export const STYLE_CATEGORIES = ["Old Money", "Luxury Streetwear", "Clean Minimal", "Techwear", "Y2K Revival", "Vacation Luxe", "Avant-garde", "Business", "Formal Remix"];
+export const STYLE_CATEGORIES = ["Old Money", "Luxury Streetwear", "Clean Minimal", "Techwear", "Y2K Revival", "Vacation Luxe", "Avant-garde", "Business", "Fashion Remix"];

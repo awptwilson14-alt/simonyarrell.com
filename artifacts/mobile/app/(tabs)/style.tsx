@@ -81,7 +81,7 @@ const OCCASIONS: Occasion[] = [
   { label: "Event", image: require("../../assets/images/occasion_event.png") },
   { label: "Streetwear", image: require("../../assets/images/occasion_street.png") },
   { label: "Formal", image: require("../../assets/images/occasion_event.png") },
-  { label: "Formal Remix", image: require("../../assets/images/occasions/formal_remix_unisex.png") },
+  { label: "Fashion Remix", image: require("../../assets/images/occasions/formal_remix_unisex.png") },
 ];
 
 type Step = "occasion" | "refine" | "results";

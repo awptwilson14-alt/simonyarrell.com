@@ -484,7 +484,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hList}
           >
-            {/* Show 5 trends so the newly-added "Formal Remix" leads the rail
+            {/* Show 5 trends so the newly-added "Fashion Remix" leads the rail
                 alongside the existing top 4 — see TRENDS in data.ts. */}
             {TRENDS.slice(0, 5).map((trend) => {
               const savedCount = savedLooks.reduce(

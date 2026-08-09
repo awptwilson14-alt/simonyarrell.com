@@ -1,0 +1,164 @@
+SIMON YARRELL — FASHION REMIX + RUNWAY LOOKS UPDATE
+Update both the Fashion Remix and Runway Looks systems. These are mandatory production rules.
+FASHION REMIX
+Every Fashion Remix result must generate a complete formal/elevated outfit first, then provide a sneaker alternative for the footwear.
+Example structure:
+Jacket / Blazer
+Shirt / Sweater
+Trousers
+Formal Shoe
+Sneaker Alternative
+Bag / Accessory
+The sneaker is an alternative shoe choice, not an extra item worn with the formal shoe.
+The formal version and sneaker-remix version must both remain visually coherent in:
+color
+season
+fabric
+silhouette
+formality
+pattern
+overall aesthetic
+The sneaker should look intentional with the outfit. Do not simply attach a random sneaker to a formal combination.
+Example:
+FORMAL LOOK
+Olive double-breasted suit
+Cream button-up shirt
+Olive tailored trousers
+Brown leather loafers
+Brown leather bag
+
+SNEAKER REMIX
+Same clothing
+Replace loafers with:
+Cream / off-white luxury leather sneaker
+Do not use athletic running shoes with formal tailoring unless the specific aesthetic supports it.
+Prioritize luxury/minimal sneakers, leather sneakers, designer sneakers, retro lifestyle sneakers, or clean low-profile sneakers that complement the outfit.
+NO DUPLICATE FASHION REMIX COMBINATIONS
+No Fashion Remix combination may ever repeat.
+Store both the main outfit and its sneaker alternative.
+Create separate fingerprints:
+formalFingerprint =
+SHA256(sort(formalProductIds).join("|"))
+
+remixFingerprint =
+SHA256(sort(remixProductIds).join("|"))
+Both fingerprints must have database-level UNIQUE constraints.
+Before displaying either version, confirm it has never been displayed before.
+If either combination already exists, regenerate the look.
+Do not rely on session memory.
+This must prevent duplicates globally across all users.
+RUNWAY LOOKS — FIX CURRENT BEHAVIOR
+The Runway section must NOT generate random outfits inspired by a fashion house.
+If the user selects:
+Prada
+Gucci
+Saint Laurent
+Dior
+Bottega Veneta
+Balenciaga
+Louis Vuitton
+Burberry
+Versace
+Valentino
+or another supported runway house,
+the app should show actual documented runway looks from that selected house and collection.
+A Prada runway selection must return Prada runway looks.
+A Gucci selection must return Gucci runway looks.
+Never mix products from unrelated brands and label the result a runway look.
+RUNWAY DATA MODEL
+Every runway look should be associated with:
+fashionHouse
+collectionName
+season
+year
+gender
+runwayLookNumber
+runwayImage
+source
+garments[]
+accessories[]
+footwear[]
+Example:
+House: Prada
+Collection: Fall/Winter 2026 Menswear
+Season: Fall/Winter
+Year: 2026
+Look: 18
+Source: verified runway source
+ACTUAL LOOK VS SHOP THE LOOK
+Separate these into two different concepts.
+1. ORIGINAL RUNWAY LOOK
+Display the real runway image and actual garments/accessories worn in that runway look whenever product data is available.
+2. SHOP / RECREATE THE LOOK
+Under the original runway look, the system may generate purchasable alternatives that recreate the runway aesthetic.
+Clearly label these:
+Original Runway Look
+and
+Recreate This Look
+Never present substitute products as though they were the actual runway garments.
+RUNWAY ACCURACY RULE
+Never invent:
+runway look numbers
+collection names
+season/year
+runway garments
+runway images
+designer attribution
+A runway look should only appear after its source data has been verified.
+If no verified runway data exists for a requested house/season, return:
+"Verified runway looks are not currently available for this collection."
+instead of generating a fake look.
+RUNWAY FILTERING
+Allow users to filter by:
+Fashion House
+Menswear / Womenswear
+Spring/Summer
+Fall/Winter
+Resort
+Pre-Fall
+Couture
+Year
+Collection
+Selecting a house must strictly filter results to that fashion house.
+RUNWAY DUPLICATES
+The same original runway look should not repeatedly appear in the user's feed.
+Track:
+fashionHouse + collection + lookNumber
+as a unique runway identifier.
+However, unlike AI-generated outfits, an authentic historical runway look should remain accessible if the user intentionally searches for that collection again.
+Do not permanently hide legitimate runway history just because it was viewed once.
+IMPORTANT DISTINCTION
+Use two different duplicate rules:
+AI-generated Fashion Remix
+Never repeat the exact generated combination globally.
+Authentic Runway Looks
+Do not repeat them unnecessarily in discovery feeds, but allow users to revisit/search authentic runway looks at any time.
+UI CHANGE
+Fashion Remix should visibly show:
+FORMAL
+[formal shoe]
+then:
+SNEAKER REMIX
+Swap the shoes for: [sneaker]
+Do not generate two completely unrelated outfits.
+Runway should visibly show:
+PRADA
+Fall/Winter 2026 Menswear
+Runway Look 18
+[actual runway image]
+VIEW ORIGINAL LOOK
+RECREATE THIS LOOK
+FINAL REQUIREMENT
+Do not patch individual brands or individual bad combinations.
+Fix the underlying architecture.
+After completing the changes, report:
+Files changed.
+Fashion Remix generation logic.
+Sneaker-alternative compatibility logic.
+Duplicate-prevention database implementation.
+Runway data source/API/feed being used.
+How runway-house filtering is enforced.
+How actual runway looks are distinguished from recreated/shoppable versions.
+Screenshots or test output for Prada, Gucci, Saint Laurent, and Dior.
+Confirmation that no randomly generated outfit can be labeled an Original Runway Look.
+I would also make the formal shoe + sneak

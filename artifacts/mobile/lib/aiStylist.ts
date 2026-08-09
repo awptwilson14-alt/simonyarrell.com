@@ -130,12 +130,30 @@ export async function fetchAIPlan(req: AIStylistRequest): Promise<AIStylistPlan>
   return (await res.json()) as AIStylistPlan;
 }
 
+/**
+ * Rule 11 — user requests override default styling. The whole-look style
+ * coherence gate (formality / pattern / palette) is skipped ONLY when the
+ * user's own prompt explicitly asks for an unconventional or mixed combo.
+ */
+// Deliberately narrow: generic words like "mix"/"contrast" appear in ordinary
+// briefs ("contrast stitching", "mix of textures") and must NOT disable the
+// gate — only explicit cross-style constructions qualify.
+const MIXED_STYLE_REQUEST_RE =
+  /(unconventional|experimental|clash|eclectic|rule.?break|mash.?up|mix\s+(of\s+)?(styles|streetwear|formal|casual|athletic|high\s+and\s+low)|high.?low\s+(mix|styling|dressing)|rugby\s+shirt\s+with|with\s+a\s+rugby|hoodie\s+with\s+a\s+(suit|tux)|(suit|tux\w*|blazer|tailor\w*)\s+(and|with|over)\s+(a\s+)?(hoodie|rugby|jogger|sweatpant|track|sneaker\s+alt)|(streetwear|athletic)\s+(and|with|meets)\s+(a\s+)?(suit|tailor\w*|formal))/i;
+
+function wantsMixedStyles(req: AIStylistRequest): boolean {
+  return !!req.prompt && MIXED_STYLE_REQUEST_RE.test(req.prompt);
+}
+
 export async function generateAILook(
   req: AIStylistRequest,
   resolveParams: ResolveAIPlanParams,
 ): Promise<Look> {
   const plan = await fetchAIPlan(req);
-  const look = generateLookFromAIPlan(plan, resolveParams);
+  const look = generateLookFromAIPlan(plan, {
+    ...resolveParams,
+    allowMixedStyles: resolveParams.allowMixedStyles || wantsMixedStyles(req),
+  });
   if (!look) {
     throw new AIStylistError(
       "The AI plan didn't match enough catalog items. Try a different brief.",
@@ -167,9 +185,13 @@ export async function generateAILooks(
   // Outside the TV flow this stays undefined and each look dedups only within
   // itself, preserving the prior behaviour.
   const usedAcross = resolveParams.tvInspiration ? new Set<string>() : undefined;
+  const batchParams: ResolveAIPlanParams = {
+    ...resolveParams,
+    allowMixedStyles: resolveParams.allowMixedStyles || wantsMixedStyles(req),
+  };
   const maxAttempts = count * 4;
   for (let i = 0; i < maxAttempts && out.length < count; i++) {
-    const look = generateLookFromAIPlan(plan, resolveParams, usedAcross);
+    const look = generateLookFromAIPlan(plan, batchParams, usedAcross);
     if (!look) continue;
     const fp = look.pieces.map(productKey).sort().join("|");
     if (seenFingerprints.has(fp)) continue;

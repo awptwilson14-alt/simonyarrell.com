@@ -453,7 +453,11 @@ export default function LookDetailScreen() {
                   )}
                   <Text style={[styles.pieceName, { color: colors.foreground }]}>{piece.name}</Text>
                   <Text style={[styles.pieceCategory, { color: colors.mutedForeground }]}>
-                    {piece.category}<GoldDot />{piece.color}
+                    {look.sneakerAlt && piece.category === "shoes" ? (
+                      <>FORMAL<GoldDot />{piece.color}</>
+                    ) : (
+                      <>{piece.category}<GoldDot />{piece.color}</>
+                    )}
                   </Text>
                 </View>
                 <Text style={[styles.piecePrice, { color: colors.foreground }]}>
@@ -469,16 +473,16 @@ export default function LookDetailScreen() {
               </Text>
             </View>
 
-            {/* Formal Remix sneaker alternative — colour + budget-matched pair
+            {/* Fashion Remix sneaker alternative — colour + budget-matched pair
                 the user can swap in for the look's shoe. Tap to shop it. */}
             {look.sneakerAlt ? (
               <View style={[styles.altSection, { borderColor: colors.border }]}>
                 <View style={styles.altHeaderRow}>
                   <Feather name="refresh-cw" size={12} color={colors.gold} />
-                  <Text style={[styles.altHeader, { color: colors.gold }]}>SNEAKER ALTERNATIVE</Text>
+                  <Text style={[styles.altHeader, { color: colors.gold }]}>SWITCH TO SNEAKERS</Text>
                 </View>
                 <Text style={[styles.altHint, { color: colors.mutedForeground }]}>
-                  A colour-matched pair to swap in — same budget, elevated edge.
+                  Swap the formal shoe for this pair — same outfit, relaxed a notch, still polished.
                 </Text>
                 <Pressable
                   onPress={() => look.sneakerAlt?.purchaseUrl && buyPiece(look.sneakerAlt)}

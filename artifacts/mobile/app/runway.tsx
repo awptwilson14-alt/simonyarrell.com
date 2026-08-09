@@ -51,6 +51,18 @@ import {
   type FashionWeekMode,
   type RunwayMode,
 } from "@/lib/runwayModes";
+import {
+  RUNWAY_HOUSES,
+  RUNWAY_SEASON_CATEGORIES,
+  RUNWAY_UNAVAILABLE_MESSAGE,
+  archiveYears,
+  composeRecreateBrief,
+  findRunwayLooks,
+  runwayLookId,
+  type RunwayHouse,
+  type RunwayLook,
+  type RunwaySeasonCategory,
+} from "@/lib/runwayArchive";
 import type { Look } from "@/constants/data";
 
 /**
@@ -97,6 +109,33 @@ export default function RunwayScreen() {
   const [looks, setLooks] = useState<Look[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Verified Runway Archive filters ──
+  // Original runway looks come ONLY from lib/runwayArchive.ts (verified,
+  // documented data). Selecting a house strictly filters to that house; when
+  // no verified data exists we show the honest unavailable message — never a
+  // generated look dressed up as runway history.
+  const [archiveHouse, setArchiveHouse] = useState<RunwayHouse | null>(null);
+  const [archiveSeason, setArchiveSeason] = useState<RunwaySeasonCategory | null>(null);
+  const [archiveYear, setArchiveYear] = useState<number | null>(null);
+  const archiveResults: RunwayLook[] = archiveHouse
+    ? findRunwayLooks({
+        fashionHouse: archiveHouse,
+        gender:
+          userProfile.gender === "Men" || userProfile.gender === "Women"
+            ? userProfile.gender
+            : undefined,
+        season: archiveSeason ?? undefined,
+        year: archiveYear ?? undefined,
+      })
+    : [];
+  const years = archiveYears();
+
+  // "Recreate This Look" — feeds the VERIFIED look's documented garments into
+  // the AI recreation brief below. The output is always labeled a recreation.
+  const onRecreate = (l: RunwayLook) => {
+    setBrief(composeRecreateBrief(l));
+  };
 
   const topPad = Platform.OS === "web" ? 16 : insets.top;
 
@@ -212,14 +251,141 @@ export default function RunwayScreen() {
         </View>
 
         <Text style={[styles.title, { color: colors.foreground }]}>
-          Real Luxury{"\n"}Runway Looks
+          Runway
         </Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          Editorial outfit compositions from real designer pieces — no AI clothing renders, no
-          invented products, every link shoppable.
+          Browse verified original runway looks by fashion house, or have the stylist recreate a
+          runway aesthetic from real, shoppable designer pieces.
         </Text>
 
         <OrnamentRule style={{ marginVertical: 20 }} />
+
+        {/* ── VERIFIED RUNWAY ARCHIVE ─────────────────────────────────────
+            Original runway looks only — documented house / collection /
+            look-number data. Nothing here is generated. */}
+        <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+          Original Runway Looks
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          {RUNWAY_HOUSES.map((h) => {
+            const active = archiveHouse === h;
+            return (
+              <Pressable
+                key={h}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setArchiveHouse(active ? null : h);
+                }}
+                style={[
+                  styles.chip,
+                  {
+                    borderColor: active ? colors.gold : colors.border,
+                    backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                  },
+                ]}
+              >
+                <Text style={[styles.chipText, { color: active ? colors.gold : colors.foreground }]}>{h}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        {archiveHouse ? (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.chipRow, { marginTop: 10 }]}
+            >
+              {RUNWAY_SEASON_CATEGORIES.map((s) => {
+                const active = archiveSeason === s;
+                return (
+                  <Pressable
+                    key={s}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setArchiveSeason(active ? null : s);
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor: active ? colors.gold : colors.border,
+                        backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, { color: active ? colors.gold : colors.foreground }]}>{s}</Text>
+                  </Pressable>
+                );
+              })}
+              {years.map((y) => {
+                const active = archiveYear === y;
+                return (
+                  <Pressable
+                    key={y}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setArchiveYear(active ? null : y);
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor: active ? colors.gold : colors.border,
+                        backgroundColor: active ? "rgba(198,167,94,0.12)" : "transparent",
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, { color: active ? colors.gold : colors.foreground }]}>{y}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            {archiveResults.length === 0 ? (
+              <Text style={[styles.archiveEmpty, { color: colors.mutedForeground, borderColor: colors.border }]}>
+                {RUNWAY_UNAVAILABLE_MESSAGE}
+              </Text>
+            ) : (
+              archiveResults.map((l) => (
+                <View
+                  key={runwayLookId(l)}
+                  style={[styles.archiveCard, { borderColor: colors.border, backgroundColor: colors.card }]}
+                >
+                  <Text style={[styles.archiveBadge, { color: colors.gold }]}>ORIGINAL RUNWAY LOOK</Text>
+                  <Text style={[styles.archiveHouse, { color: colors.foreground }]}>
+                    {l.fashionHouse.toUpperCase()}
+                  </Text>
+                  <Text style={[styles.archiveMeta, { color: colors.mutedForeground }]}>
+                    {l.collectionName} · Runway Look {l.runwayLookNumber}
+                  </Text>
+                  <Text style={[styles.archiveMeta, { color: colors.mutedForeground }]}>
+                    Source: {l.source}
+                  </Text>
+                  <GoldButton
+                    label="RECREATE THIS LOOK"
+                    onPress={() => onRecreate(l)}
+                    style={{ marginTop: 12 }}
+                  />
+                </View>
+              ))
+            )}
+          </>
+        ) : (
+          <Text style={[styles.blurb, { color: colors.mutedForeground }]}>
+            Select a fashion house to browse its verified runway archive.
+          </Text>
+        )}
+
+        <OrnamentRule style={{ marginVertical: 20 }} />
+
+        {/* ── AI RECREATION ── clearly separated from the archive above:
+            everything below is stylist-generated from shoppable catalog
+            pieces and is never presented as an original runway look. */}
+        <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+          Recreate a Runway Aesthetic
+        </Text>
+        <Text style={[styles.blurb, { color: colors.mutedForeground, marginBottom: 14 }]}>
+          AI-styled recreations from real designer pieces — inspired by runway aesthetics, not
+          original runway looks.
+        </Text>
 
         {/* ── Runway Mode chips ── */}
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Runway Mode</Text>
@@ -351,7 +517,12 @@ export default function RunwayScreen() {
         {looks.length > 0 ? (
           <>
             <OrnamentRule style={{ marginVertical: 24 }} />
-            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Your Runway</Text>
+            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+              Your Recreations
+            </Text>
+            <Text style={[styles.blurb, { color: colors.mutedForeground }]}>
+              AI-styled from real shoppable pieces — not original runway looks.
+            </Text>
             <View style={{ marginTop: 10 }}>
               {looks.map((look) => (
                 <View key={look.id} style={{ marginBottom: 18 }}>
@@ -420,6 +591,24 @@ const styles = StyleSheet.create({
   },
   errorText: { marginTop: 14, fontSize: 13, textAlign: "center" },
   loadingText: { marginTop: 12, fontSize: 12, letterSpacing: 0.6 },
+  archiveEmpty: {
+    marginTop: 12,
+    fontSize: 12,
+    lineHeight: 18,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 14,
+    fontStyle: "italic",
+  },
+  archiveCard: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 16,
+  },
+  archiveBadge: { fontSize: 9, letterSpacing: 2, fontWeight: "700" },
+  archiveHouse: { fontSize: 18, fontWeight: "500", marginTop: 6, letterSpacing: 1 },
+  archiveMeta: { fontSize: 12, marginTop: 4, lineHeight: 17 },
   commentary: {
     marginTop: 10,
     paddingHorizontal: 4,

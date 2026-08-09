@@ -1,0 +1,129 @@
+SIMON YARRELL — OUTFIT GENERATION RULES
+Update the outfit-generation engine so every generated look is stylistically coherent. These rules are mandatory and must be enforced before an outfit is displayed.
+1. STYLE COHERENCE
+Every item in an outfit must belong to the same overall style direction and level of formality.
+Do NOT randomly combine items just because they fill the required clothing categories.
+Examples:
+Suit jacket → button-up/dress shirt, refined T-shirt, turtleneck, fine-knit sweater, or other appropriate elevated top.
+Blazer → button-up shirt, polo, refined T-shirt, sweater, turtleneck.
+Streetwear jacket → T-shirt, hoodie, sweatshirt, casual sweater.
+Athletic clothing → compatible athletic/casual pieces.
+Never pair a rugby shirt with a formal suit unless the user specifically requests that styling direction.
+In the attached example, the BODE double-breasted linen suit jacket should NOT have been paired with the NOAH rugby shirt. Replace that type of selection with a button-up shirt, T-shirt, sweater, turtleneck, or another top that complements the suit.
+2. FORMALITY MATCHING
+Assign every product a formality/style level before generating the outfit:
+formal
+business
+smart-casual
+casual
+streetwear
+athletic
+Items in the same outfit should normally be from the same level or an immediately compatible neighboring level.
+Do not make extreme jumps such as:
+formal suit + rugby shirt + athletic sweatpants
+unless the user specifically asks for an experimental or mixed-style outfit.
+3. COLOR COORDINATION
+Colors must work together as an intentional palette.
+First choose a palette for the entire look, then select products.
+Use:
+complementary colors
+analogous colors
+monochromatic colors
+neutrals with accent colors
+tonal combinations
+Avoid random colors simply because individual products match the requested category.
+Every outfit should have a clear:
+primaryColor
+secondaryColor
+neutralColor
+accentColor (optional)
+4. PATTERN COORDINATION
+Patterns must be coordinated across the entire outfit.
+Avoid competing patterns.
+If one garment has a strong pattern, most other pieces should normally be solid or visually restrained.
+Do not combine multiple loud patterns unless the styling engine determines that they intentionally complement each other.
+5. SEASON MUST MATCH
+Every generated outfit must belong to ONE season:
+spring
+summer
+fall
+winter
+All garments, footwear, materials, colors, and layering must make sense for that season.
+Never mix obviously incompatible seasonal pieces unless the user specifically requests transitional or mixed-season styling.
+Example:
+A lightweight linen summer suit should not be paired with a heavy winter sweater or winter footwear.
+6. FABRIC AND MATERIAL COMPATIBILITY
+Consider materials when building the look.
+Linen, lightweight cotton, suede, wool, leather, denim, technical fabrics, etc. should be combined intentionally and appropriately for the season and aesthetic.
+7. OUTFIT ARCHETYPE FIRST
+Do NOT select five random products and then attempt to make them into an outfit.
+The system must first decide what it is building.
+Example:
+Season: Summer
+Gender: Men
+Aesthetic: Luxury Smart Casual
+Formality: Smart Casual
+Palette: Olive + Cream + Brown
+Silhouette: Relaxed Tailoring
+THEN search the product catalog for compatible pieces.
+8. COMPLETE-LOOK VALIDATION
+Before displaying an outfit, evaluate the entire combination together.
+Validate:
+season compatibility
+formality compatibility
+color compatibility
+pattern compatibility
+fabric compatibility
+silhouette compatibility
+aesthetic compatibility
+If any major compatibility check fails, reject the outfit and generate another combination.
+9. NEVER REPEAT AN OUTFIT — GLOBAL RULE
+Once an outfit combination has been successfully displayed, that exact combination must NEVER be generated again for ANY user.
+This cannot be session-only or device-only memory.
+Store generated combinations permanently in the database.
+Create a deterministic outfit fingerprint from the product IDs after sorting them:
+outfitFingerprint =
+SHA256(sort(productIds).join("|"))
+Store the fingerprint in a database table with a UNIQUE database constraint.
+Before displaying an outfit:
+generate candidate
+      ↓
+validate styling
+      ↓
+create fingerprint
+      ↓
+check database
+      ↓
+already exists? → reject and regenerate
+      ↓
+new combination? → save fingerprint
+      ↓
+display outfit
+The database UNIQUE constraint is required so two simultaneous requests cannot accidentally display the same outfit.
+10. PRODUCT REPETITION VS. OUTFIT REPETITION
+Individual products MAY appear in different outfits.
+However, the exact same combination of products must never appear again.
+Also introduce variety rules so the generator does not repeatedly use the same hero jacket, shoe, bag, or top across many consecutive looks.
+11. USER REQUESTS OVERRIDE DEFAULT STYLING
+If a user specifically asks for something unconventional—such as:
+"Style a rugby shirt with a suit"
+then the system may intentionally create that combination.
+Otherwise, normal professional styling rules apply.
+12. FIX THE CURRENT EXAMPLE
+For the outfit shown in my screenshot:
+Keep the BODE olive double-breasted linen jacket.
+REMOVE the NOAH rugby shirt.
+Select a compatible button-up shirt, refined T-shirt, lightweight sweater, polo/turtleneck when seasonally appropriate, or another elevated top.
+Re-evaluate the pants, shoes, and bag so the entire look follows one aesthetic, palette, formality level, and season.
+IMPORTANT:
+Do not solve this by hard-coding "no rugby shirts with BODE."
+Fix the underlying outfit-generation logic so inappropriate combinations are automatically prevented throughout the entire Simon Yarrell catalog.
+Apply these rules to every AI-generated look, including Get Styled, Celebrity Inspired, seasonal looks, occasion looks, and any future outfit-generation features.
+After implementing this, show me:
+The files/code changed.
+The outfit compatibility scoring logic.
+The database schema used for global outfit fingerprints.
+How duplicate outfits are prevented under simultaneous requests.
+Three example outfits that would PASS validation.
+Three example outfits that would FAIL validation and the exact reason each is rejected.
+Confirmation that the current rugby-shirt/suit issue is fixed.

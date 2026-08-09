@@ -102,12 +102,12 @@ export const STYLE_HERO_IMAGES: Record<string, GenderedHero> = {
     men: require("../assets/images/occasions/formal_men.png"),
     women: require("../assets/images/occasions/formal_women.png"),
   },
-  // Formal Remix — only one unisex editorial hero exists for this occasion
+  // Fashion Remix — only one unisex editorial hero exists for this occasion
   // (see OCCASION_HEROES below). Map both gender slots to it so the
   // pickStyleHero gender lookup never returns a missing asset, and the home
   // "Trending Now" rail / explore TRENDS subtab show the editorial image
   // instead of falling back to the small TRENDS local image.
-  "Formal Remix": {
+  "Fashion Remix": {
     men: require("../assets/images/occasions/formal_remix_unisex.png"),
     women: require("../assets/images/occasions/formal_remix_unisex.png"),
   },
@@ -137,7 +137,7 @@ export const OCCASION_HEROES: Record<string, OccasionEntry> = {
   Event:        { men: require("../assets/images/occasions/event_men.png"),    women: require("../assets/images/occasions/event_women.png"),    unisex: require("../assets/images/occasion_event.png") },
   Streetwear:   { men: require("../assets/images/occasions/street_men.png"),   women: require("../assets/images/occasions/street_women.png"),   unisex: require("../assets/images/occasion_street.png") },
   Formal:       { men: require("../assets/images/occasions/formal_men.png"),   women: require("../assets/images/occasions/formal_women.png"),   unisex: require("../assets/images/occasion_event.png") },
-  "Formal Remix": { men: require("../assets/images/occasions/formal_remix_unisex.png"), women: require("../assets/images/occasions/formal_remix_unisex.png"), unisex: require("../assets/images/occasions/formal_remix_unisex.png") },
+  "Fashion Remix": { men: require("../assets/images/occasions/formal_remix_unisex.png"), women: require("../assets/images/occasions/formal_remix_unisex.png"), unisex: require("../assets/images/occasions/formal_remix_unisex.png") },
 };
 
 export function pickOccasionHero(label: string, gender: string): ImageSourcePropType | null {

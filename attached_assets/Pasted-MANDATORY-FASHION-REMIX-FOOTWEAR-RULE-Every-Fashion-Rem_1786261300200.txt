@@ -1,0 +1,71 @@
+MANDATORY FASHION REMIX FOOTWEAR RULE
+Every Fashion Remix outfit MUST include both:
+1. Formal Shoe
+loafers
+oxfords
+derbies
+monk straps
+dress boots
+luxury formal footwear appropriate to the outfit
+2. Sneaker Alternative
+clean luxury sneaker
+designer sneaker
+leather sneaker
+minimalist sneaker
+retro lifestyle sneaker when stylistically appropriate
+The sneaker is always a swap option for the formal shoe, not an additional item in the outfit.
+The system is NOT allowed to generate a Fashion Remix look without both footwear choices.
+Use this required structure:
+FASHION REMIX
+
+Jacket / Outerwear
+Top
+Pants / Trousers
+Accessory / Bag
+
+FORMAL SHOE
+[formal shoe product]
+
+SNEAKER ALTERNATIVE
+[compatible sneaker product]
+Before the look is displayed, validate that BOTH shoes work with the exact same outfit.
+The formal shoe must match:
+season + color palette + formality + silhouette + materials + aesthetic
+The sneaker alternative must match:
+season + color palette + silhouette + materials + aesthetic
+The sneaker should slightly relax the outfit while keeping it polished.
+Do not allow the sneaker swap to destroy the styling.
+For example:
+Navy double-breasted suit
+White button-up shirt
+Navy trousers
+Black leather bag
+
+FORMAL:
+Black leather loafer
+
+SNEAKER REMIX:
+White minimalist leather sneaker
+IMPORTANT VALIDATION RULE
+Fashion Remix is invalid if:
+formalShoe == null
+OR
+sneakerAlternative == null
+If either is missing or incompatible:
+reject look
+regenerate footwear
+validate again
+Do not display the outfit until both pass validation.
+Also make both footwear products part of duplicate detection. A previously displayed complete Fashion Remix combination must never be generated again.
+The final validation should require:
+outfitCompatible === true
+formalShoeCompatible === true
+sneakerCompatible === true
+duplicateCombination === false
+Only then may the Fashion Remix look be shown to the user.
+Update the UI so users immediately see:
+FORMAL
+[formal shoe]
+SWITCH TO SNEAKERS
+[sneaker alternative]
+Do not make the user regenerate the outfit to see the sneaker version. Both footwear options must be generated and displayed with every Fashion Remix result.
