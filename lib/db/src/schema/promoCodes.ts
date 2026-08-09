@@ -12,7 +12,7 @@ import { z } from "zod/v4";
 /**
  * Admin-managed promo / comp codes.
  *
- * The 4 launch codes (MAISON20/30/50, DIAMONDHOUSE) live in
+ * The 4 launch codes (SIMON20/30/50, DIAMONDHOUSE) live in
  * artifacts/mobile/lib/promoCodes.ts as offline built-ins. THIS table holds
  * the codes the owner creates/edits in the in-app admin screen, so they take
  * effect for every customer's device (redemption falls back to /promo/lookup

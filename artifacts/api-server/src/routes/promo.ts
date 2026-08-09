@@ -22,16 +22,16 @@ const router: IRouter = Router();
  * `artifacts/mobile/lib/promoCodes.ts`.
  */
 const BUILTIN_CODES = new Set([
-  "MAISON20",
-  "MAISON30",
-  "MAISON50",
+  "SIMON20",
+  "SIMON30",
+  "SIMON50",
   "PREMIUMHOUSE",
   "PROHOUSE",
   "VIPHOUSE",
   "DIAMONDHOUSE",
 ]);
 
-/** Strip whitespace + uppercase so "maison 20" and "MAISON20" both match. */
+/** Strip whitespace + uppercase so "simon 20" and "SIMON20" both match. */
 function normalizeCode(raw: string): string {
   return raw.replace(/\s+/g, "").toUpperCase();
 }
