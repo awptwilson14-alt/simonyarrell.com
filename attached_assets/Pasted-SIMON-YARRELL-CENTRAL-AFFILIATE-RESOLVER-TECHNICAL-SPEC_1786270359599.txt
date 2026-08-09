@@ -1,0 +1,428 @@
+SIMON YARRELL — CENTRAL AFFILIATE RESOLVER TECHNICAL SPEC
+
+Build one centralized affiliate-link system that supports Rakuten, Awin, Skimlinks, Impact, CJ, and future networks without hard-coding network logic across the app.
+
+1. Core service
+
+Create:
+
+AffiliateResolverService
+
+Main responsibility:
+
+Input:
+- product
+- retailer
+- originalProductUrl
+- user context if needed
+
+Output:
+- finalUrl
+- network
+- advertiserId
+- affiliateStatus
+- isMonetized
+- reason
+
+2. Database tables
+
+Create a retailer/network relationship table:
+
+affiliate_partnerships
+
+Suggested fields:
+
+id
+retailer_id
+network
+advertiser_id
+partnership_status
+commission_rate
+cookie_window_days
+priority
+country
+deep_link_enabled
+product_feed_enabled
+api_enabled
+starts_at
+ends_at
+last_verified_at
+created_at
+updated_at
+
+partnership_status must support:
+
+active
+pending
+applied
+rejected
+expired
+suspended
+unavailable
+
+Only active can generate an affiliate link.
+
+Create:
+
+affiliate_links
+
+Fields:
+
+id
+product_id
+retailer_id
+network
+advertiser_id
+original_url
+affiliate_url
+status
+generated_at
+expires_at
+last_verified_at
+click_count
+
+Never overwrite original_url.
+
+3. Product table additions
+
+Add:
+
+primary_retailer_id
+original_product_url
+affiliate_url
+affiliate_network
+affiliate_status
+advertiser_id
+last_affiliate_check
+
+These should be cache fields only. The source of truth for partnerships stays in affiliate_partnerships.
+
+4. Network priority logic
+
+Default resolver order:
+
+1. Active direct retailer affiliate relationship
+2. Active Rakuten relationship
+3. Active Awin relationship
+4. Active Impact relationship
+5. Active CJ relationship
+6. Active Skimlinks fallback
+7. Original retailer URL
+
+But do not choose purely by commission rate unless two active networks represent the exact same retailer/product and both are allowed.
+
+Add configurable priority in the database.
+
+5. Resolution flow
+
+product selected by styling engine
+↓
+identify retailer
+↓
+load active partnerships for retailer
+↓
+verify network supports current country/channel
+↓
+check valid cached affiliate link
+↓
+if valid → return it
+↓
+if not → generate via approved network integration
+↓
+validate destination
+↓
+cache affiliate URL
+↓
+return affiliate URL
+
+If anything fails:
+
+return originalProductUrl
+
+Never break the shopping experience because affiliate monetization fails.
+
+6. Backend routes
+
+Create:
+
+POST /api/affiliate/resolve
+
+Request:
+
+{
+  "productId": "123",
+  "retailerId": "456",
+  "originalUrl": "https://retailer.com/product/..."
+}
+
+Response:
+
+{
+  "finalUrl": "https://...",
+  "network": "rakuten",
+  "advertiserId": "25003",
+  "isMonetized": true,
+  "status": "active"
+}
+
+Also create:
+
+GET /api/affiliate/partnerships/:retailerId
+POST /api/affiliate/click
+POST /api/affiliate/refresh
+
+Admin-only:
+
+PATCH /api/admin/affiliate/partnerships/:id
+POST /api/admin/affiliate/partnerships
+
+7. Click tracking
+
+Before redirecting:
+
+record:
+- user_id if available
+- product_id
+- retailer_id
+- network
+- advertiser_id
+- outfit_id
+- source_screen
+- timestamp
+
+Then redirect to finalUrl.
+
+Recommended route:
+
+/go/:productId
+
+Example:
+
+user taps Buy
+↓
+app opens https://simonyarrell.com/go/123
+↓
+backend logs click
+↓
+backend resolves affiliate URL
+↓
+302 redirect to retailer
+
+This is better than exposing long affiliate URLs everywhere.
+
+8. React Native usage
+
+Every shopping button should call one shared function:
+
+openAffiliateProduct(product)
+
+Never place direct network-specific logic in screens/components.
+
+Example usage:
+
+await openAffiliateProduct(product)
+
+The helper should:
+
+call /api/affiliate/resolve
+log click
+open finalUrl
+
+9. Required UI buttons using resolver
+
+Use the same resolver for:
+
+Buy
+Shop Now
+View Product
+Buy This Outfit
+Shop This Look
+Compare Prices
+Retailer buttons
+Saved looks
+Runway products
+Celebrity-inspired products
+Closet recommendations
+Fashion Remix
+Get Styled
+
+10. Environment variables
+
+Never place credentials in frontend code.
+
+Server-side only:
+
+RAKUTEN_CLIENT_ID
+RAKUTEN_CLIENT_SECRET
+RAKUTEN_SID
+
+AWIN_PUBLISHER_ID
+AWIN_API_TOKEN
+
+IMPACT_ACCOUNT_SID
+IMPACT_AUTH_TOKEN
+
+CJ_WEBSITE_ID
+CJ_API_KEY
+
+SKIMLINKS_PUBLISHER_ID
+SKIMLINKS_API_KEY
+
+Use only the credentials actually issued to Simon Yarrell.
+
+11. Security
+
+Never:
+
+expose API secrets
+log credentials
+send secrets to React Native
+guess advertiser IDs
+fabricate tracking parameters
+alter network tracking codes
+
+Encrypt sensitive credentials at rest if stored outside managed environment variables.
+
+12. Affiliate disclosure
+
+Add a reusable disclosure component:
+
+AffiliateDisclosure
+
+Suggested wording:
+
+Simon Yarrell may earn a commission from qualifying purchases made through retailer links.
+
+Display it in shopping areas, product pages, and relevant legal pages.
+
+13. SEO
+
+Web affiliate anchors should use:
+
+rel="sponsored nofollow"
+
+If opening a new tab:
+
+rel="sponsored nofollow noopener noreferrer"
+
+14. Affiliate networks must never influence styling
+
+Critical:
+
+styling score
+brand compatibility
+season
+color harmony
+formality
+user preferences
+availability
+
+must determine product choice before affiliate monetization.
+
+Do not add:
+
+commission_rate
+affiliate_priority
+network_priority
+
+to the fashion-ranking model.
+
+15. Multi-retailer price comparison
+
+Each retailer version of the same product must resolve independently.
+
+Example:
+
+Gucci loafer
+
+Neiman Marcus → Rakuten
+Saks → another network
+Farfetch → another network
+
+Each button uses its own correct affiliate relationship.
+
+16. Admin dashboard
+
+Add an internal admin screen showing:
+
+Retailer
+Network
+Advertiser ID
+Status
+Commission
+Cookie window
+Product feed
+Deep linking
+Last verified
+
+Include filters:
+
+Active
+Pending
+Rejected
+Expired
+Missing integration
+
+17. Background validation
+
+Periodically re-check:
+
+expired partnerships
+broken affiliate URLs
+dead product URLs
+changed retailer domains
+expired offers
+inactive advertisers
+
+Do not continue serving dead affiliate links.
+
+18. Product feeds
+
+Where available, build a normalized feed importer:
+
+retailer feed
+↓
+map network fields
+↓
+normalize brand / product / image / price / category / URL
+↓
+deduplicate
+↓
+store canonical product
+
+Keep source-network metadata attached to the imported product.
+
+19. Deduplication
+
+Never create duplicate products just because the same item comes from multiple networks.
+
+Build canonical matching using:
+
+brand
+SKU
+UPC/GTIN if available
+retailer product ID
+normalized product name
+image similarity/hash where needed
+
+One product can have multiple retailer offers.
+
+20. Acceptance test
+
+Before deployment, verify:
+
+Active partnership → monetized URL
+Pending partnership → original URL
+No partnership → original URL
+Multiple networks → configured priority used
+Broken API → original URL
+Product comparison → each retailer resolves separately
+Styling output unchanged by commission data
+Click tracked before redirect
+Secrets never exposed in app bundle
+
+Definition of done
+
+Simon Yarrell has one centralized affiliate resolver that can support every affiliate network and every shopping surface without duplicate logic, without changing styling decisions, and without ever breaking a user's ability to shop a product.
+
+This is the architecture I’d use before adding more networks, because then each new affiliate program becomes mostly a connector, not a rewrite of the app.

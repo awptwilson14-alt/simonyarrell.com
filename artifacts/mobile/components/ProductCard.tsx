@@ -1,7 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "@/lib/safeWebShims";
-import { trackAffiliateClick } from "@/lib/affiliateTracking";
-import { openExternalUrl } from "@/lib/openExternal";
+import { openAffiliateProduct } from "@/lib/affiliateLinkService";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -55,14 +54,17 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const openShop = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    trackAffiliateClick({
-      productName: product.name,
-      brand: product.brand,
-      category: product.category,
-      url: product.purchaseUrl,
-      price: product.price,
-    });
-    openExternalUrl(product.purchaseUrl);
+    // ONE shared shopping handler for the whole app (central resolver).
+    openAffiliateProduct(
+      {
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        price: product.price,
+        purchaseUrl: product.purchaseUrl,
+      },
+      "shop_click",
+    );
   };
 
   const openSourceLook = () => {

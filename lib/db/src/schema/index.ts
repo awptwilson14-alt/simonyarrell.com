@@ -4,3 +4,4 @@ export * from "./promoCodes";
 export * from "./lookFingerprints";
 export * from "./newsletterSubscribers";
 export * from "./affiliateProducts";
+export * from "./affiliatePartnerships";

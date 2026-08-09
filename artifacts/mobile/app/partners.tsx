@@ -20,7 +20,6 @@ import { Feather } from "@expo/vector-icons";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
 import { useColors } from "@/hooks/useColors";
-import { applyAffiliate } from "@/lib/affiliate";
 
 const CONTACT_EMAIL = "fashion@simonyarrell.com";
 
@@ -122,7 +121,8 @@ export default function PartnersScreen() {
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
-        await Linking.openURL(applyAffiliate(url));
+        // mailto: — not a retailer link; no affiliate handling.
+        await Linking.openURL(url);
       } else {
         Alert.alert(
           "No Email App Found",

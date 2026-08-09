@@ -25,8 +25,8 @@ import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
 import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
-import { trackAffiliateClick } from "@/lib/affiliateTracking";
-import { openExternalUrl } from "@/lib/openExternal";
+import { openAffiliateProduct } from "@/lib/affiliateLinkService";
+import AffiliateDisclosure from "@/components/AffiliateDisclosure";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -123,16 +123,12 @@ export default function LookDetailScreen() {
 
   // Record a BUY tap (fire-and-forget) then open the retailer. One helper so
   // all four purchase affordances on this screen log identically.
-  const buyPiece = (piece: { name: string; brand: string; category: string; price: number; purchaseUrl?: string }) => {
-    trackAffiliateClick({
-      productName: piece.name,
-      brand: piece.brand,
-      category: piece.category,
-      url: piece.purchaseUrl,
-      price: piece.price,
-      lookName: look.name,
-    });
-    openExternalUrl(piece.purchaseUrl);
+  const buyPiece = (
+    piece: { name: string; brand: string; category: string; price: number; purchaseUrl?: string },
+    eventType: "affiliate_click" | "buy_outfit_click" = "affiliate_click",
+  ) => {
+    // ONE shared shopping handler for the whole app (central resolver).
+    openAffiliateProduct({ ...piece, lookName: look.name }, eventType);
   };
 
   const shopAll = () => {
@@ -142,7 +138,7 @@ export default function LookDetailScreen() {
     // blocked on web (out-of-gesture). Native users can tap the per-piece
     // BUY rows below to open each item individually.
     const first = look.pieces.find((p) => p.purchaseUrl);
-    if (first) buyPiece(first);
+    if (first) buyPiece(first, "buy_outfit_click");
   };
 
   return (
@@ -472,6 +468,9 @@ export default function LookDetailScreen() {
                 ${look.estimatedPrice.toLocaleString()}
               </Text>
             </View>
+
+            {/* Affiliate disclosure — required, easy to see near every BUY affordance. */}
+            <AffiliateDisclosure style={styles.disclosure} />
 
             {/* Fashion Remix sneaker alternative — colour + budget-matched pair
                 the user can swap in for the look's shoe. Tap to shop it. */}
@@ -906,6 +905,7 @@ const styles = StyleSheet.create({
   shopTotal: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 18, paddingBottom: 20, borderTopWidth: 0.5, marginTop: 4 },
   shopTotalLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", letterSpacing: 2, marginBottom: 2 },
   shopTotalPrice: { fontSize: 24, fontFamily: "PlayfairDisplay_700Bold" },
+  disclosure: { marginTop: 10 },
   shopAllBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 2 },
   shopAllText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 1.5, color: "#0B0B0C" },
   cta: { padding: 24, gap: 12 },

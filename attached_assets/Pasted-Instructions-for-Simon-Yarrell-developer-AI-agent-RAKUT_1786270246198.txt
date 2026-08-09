@@ -1,0 +1,179 @@
+Instructions for Simon Yarrell developer / AI agent
+
+RAKUTEN AFFILIATE LINK IMPLEMENTATION — REQUIRED
+
+Simon Yarrell uses Rakuten Advertising for approved retailer affiliate partnerships. All eligible retailer/product links must use the appropriate Rakuten affiliate tracking link whenever Simon Yarrell has an active partnership with that advertiser.
+
+1. Never replace the destination product
+
+The affiliate link must ultimately take the customer to the exact retailer/product being displayed. Never redirect users to an unrelated product solely because it offers a commission.
+
+2. Affiliate-link priority
+
+Before displaying a Buy, Shop, View Product, Buy This Outfit, or retailer button:
+
+Identify the retailer.
+Check whether Simon Yarrell has an active affiliate relationship with that retailer.
+If YES, generate/use the approved Rakuten affiliate tracking URL.
+If NO, use the normal retailer product URL unless another approved affiliate network is configured for that retailer.
+
+3. Never fabricate affiliate links
+
+Never construct or guess Rakuten tracking URLs, advertiser IDs, offer IDs, product IDs, MIDs, or tracking parameters.
+
+Affiliate links must come from authorized Rakuten data, APIs, feeds, deep-link tools, or other approved Rakuten integration methods.
+
+4. SEO attributes
+
+For affiliate links rendered as HTML links, use:
+
+rel="sponsored nofollow"
+
+Example:
+
+<a
+  href="{RAKUTEN_AFFILIATE_URL}"
+  rel="sponsored nofollow"
+  target="_blank"
+>
+  Buy at Retailer
+</a>
+
+When target="_blank" is used, also apply appropriate security protections such as noopener/noreferrer where supported by the framework.
+
+5. Centralize affiliate-link handling
+
+Do NOT hard-code affiliate URLs throughout individual screens or components.
+
+Create one centralized affiliate-link service, for example:
+
+AffiliateLinkService
+
+It should receive:
+
+retailer
+productId
+productUrl
+network
+advertiserId
+
+and return the appropriate monetized destination.
+
+6. Store original and affiliate URLs separately
+
+Every product record should support fields similar to:
+
+originalProductUrl
+affiliateUrl
+affiliateNetwork
+advertiserId
+affiliateStatus
+lastAffiliateCheck
+
+Never permanently overwrite the original retailer URL with the affiliate URL.
+
+7. Partnership-status protection
+
+Only monetize through Rakuten when the advertiser relationship is actually approved/active.
+
+Pending, Applied, Not Partnered, Rejected, Expired, or otherwise inactive relationships must NOT be treated as active Rakuten partnerships.
+
+8. Automatic fallback
+
+The link resolver should follow:
+
+Active Rakuten partnership
+        ↓
+Rakuten affiliate URL
+        ↓
+Otherwise check another authorized affiliate network
+        ↓
+No authorized affiliate relationship
+        ↓
+Original retailer URL
+
+The shopping experience must continue working even when no commission is available.
+
+9. Preserve product accuracy
+
+Affiliate processing must never change the product's:
+
+Brand
+Product name
+Image
+Retailer
+Price
+Color
+Size
+Product identity
+
+10. Price comparison
+
+If Simon Yarrell shows the same product at multiple retailers, each retailer button must independently resolve its own affiliate relationship and tracking URL.
+
+Never send every retailer button through one merchant simply because that merchant pays commission.
+
+11. Fashion Remix / AI-generated outfits
+
+Affiliate monetization must happen after the styling engine selects the appropriate products.
+
+Commission rates must NEVER influence which clothes, shoes, bags, accessories, or retailers the AI recommends.
+
+Sequence:
+
+AI creates appropriate outfit
+↓
+Match real products
+↓
+Verify retailer/product
+↓
+Resolve affiliate eligibility
+↓
+Generate monetized links
+↓
+Display outfit
+
+12. Affiliate disclosure
+
+Simon Yarrell must clearly disclose that qualifying purchases may generate commissions. The disclosure should be easy for users to see and understand.
+
+13. Tracking
+
+Track internally:
+
+product_view
+shop_click
+retailer_click
+affiliate_click
+outfit_click
+buy_outfit_click
+
+Do not interfere with or remove Rakuten tracking parameters.
+
+14. Never expose private credentials
+
+Rakuten API credentials, secrets, tokens, or private identifiers must never be embedded in the React Native application or public frontend JavaScript.
+
+Keep sensitive credentials server-side using environment variables.
+
+15. This rule applies everywhere
+
+Apply the affiliate-link resolver to:
+
+Get Styled
+Fashion Remix
+Runway Looks
+Celebrity Inspired
+Shop Luxury
+Closet Intelligence recommendations
+Search results
+Product pages
+Price comparison
+Buy This Outfit
+Saved looks
+Favorites
+Trending products
+
+There must be one affiliate-link system used across the entire Simon Yarrell platform, rather than separate affiliate logic on individual pages.
+
+One additional rule I'd add for your app: never let a higher commission determine what Simon Yarrell recommends. The styling engine should choose the best outfit first and monetize eligible products afterward. That protects the credibility of your AI styling recommendations.

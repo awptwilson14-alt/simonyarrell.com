@@ -17,4 +17,5 @@
 - [Fashion Remix structure](formal-remix-sneaker-alt.md) — renamed from Formal Remix; formal primary shoe (dress-lock) + MANDATORY coherent sneakerAlt or the look is dropped; BOTH combos fingerprinted globally; single-accent invariant kept.
 - [Runway verified-archive honesty](runway-verified-archive.md) — Original Runway Looks come ONLY from lib/runwayArchive.ts (ships EMPTY; never invent/scrape runway data); AI output is always labeled a recreation.
 - [Style coherence gate](style-coherence-gate.md) — every gen path runs isStyleCoherent (formality span ≤2, ≤1 loud pattern, ≤2 accent families) BEFORE markShown; sneakerAlt re-gates the swap; no brand hard-coding.
+- [Affiliate link resolver](affiliate-link-resolver.md) — ALL buy links monetize via one resolver (Rakuten template → other network → sitewide → raw); never fabricate tracking links; already-tagged URLs are immutable.
 - [Mandatory season consistency](season-consistency.md) — no summer+winter mix in any look; `isSeasonallyConsistent` gate on ALL builders + AI resolver; name-based `hasSeasonConflict` catches accessory violations (tank+scarf) that inferItemSeasons misses; keep neutrals flexible.

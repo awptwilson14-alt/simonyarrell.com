@@ -37,6 +37,12 @@ export const affiliateProducts = pgTable(
     originalUrl: text("original_url").notNull(),
     sku: text("sku"),
     commissionNetwork: text("commission_network").notNull().default("skimlinks"),
+    /** Network-assigned advertiser id for this retailer (from the network UI). */
+    advertiserId: text("advertiser_id"),
+    /** active | pending | applied | not_partnered | rejected | expired */
+    affiliateStatus: text("affiliate_status").notNull().default("pending"),
+    /** When the affiliate relationship/link for this product was last verified. */
+    lastAffiliateCheck: timestamp("last_affiliate_check", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -67,6 +73,9 @@ export const affiliateClicks = pgTable(
   retailer: text("retailer"),
   /** Affiliate network expected to pay (e.g. skimlinks). */
   network: text("network").notNull().default("skimlinks"),
+  /** Interaction type: product_view | shop_click | retailer_click |
+   *  affiliate_click | outfit_click | buy_outfit_click */
+  eventType: text("event_type").notNull().default("affiliate_click"),
   /** Look/outfit context when the tap came from a look detail. */
   lookName: text("look_name"),
   /** Raw destination URL (pre-affiliate-wrap) for retailer attribution. */

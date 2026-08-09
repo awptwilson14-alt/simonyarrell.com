@@ -24,6 +24,7 @@ import {
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { TitleRule } from "@/components/TitleRule";
+import AffiliateDisclosure from "@/components/AffiliateDisclosure";
 import { useApp } from "@/context/AppContext";
 import { findCelebByName } from "@/lib/celebLookup";
 
@@ -219,6 +220,9 @@ export default function ShopScreen() {
           { paddingBottom: 100 + (Platform.OS === "web" ? 34 : insets.bottom) },
         ]}
       >
+        {/* Affiliate disclosure — required in shopping areas. */}
+        <AffiliateDisclosure style={{ marginBottom: 12 }} />
+
         {/* ══════════════════════════════ BRANDS TAB ══════════════════ */}
         {mainTab === "brands" && (
           <>

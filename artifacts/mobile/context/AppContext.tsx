@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loadAffiliateConfig } from "@/lib/affiliateSettings";
+import { hydrateAffiliatePartnerships } from "@/lib/affiliateLinkService";
 import { initShownLooks } from "@/lib/shownLooks";
 import React, {
   createContext,
@@ -88,6 +89,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // (raw URLs), which is the safe default that closes the first-tap
     // race. Hydration failure is non-fatal and stays no-op.
     loadAffiliateConfig().catch(() => {});
+    // Centralized affiliate resolver: cache + refresh the active partnership
+    // list (Rakuten etc.) so click-time link resolution works offline.
+    hydrateAffiliatePartnerships().catch(() => {});
     // Hydrate the persistent "already generated" look memory so a combination
     // that was produced in ANY prior session never regenerates. Fire-and-forget;
     // failure just means we start with an empty (in-session-only) memory.

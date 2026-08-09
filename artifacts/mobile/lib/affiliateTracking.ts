@@ -18,6 +18,11 @@ function resolveApiBase(): string {
 }
 const API_BASE = resolveApiBase();
 
+/** Absolute API URL for a server path (shared by affiliate modules). */
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 // Anonymous per-install id (RevenueCat appUserId) — set once by
 // EntitlementsContext when the subscription SDK resolves. Optional.
 let trackedUserId: string | null = null;
@@ -36,6 +41,14 @@ function retailerFromUrl(url: string | undefined | null): string | undefined {
   }
 }
 
+export type AffiliateEventType =
+  | "product_view"
+  | "shop_click"
+  | "retailer_click"
+  | "affiliate_click"
+  | "outfit_click"
+  | "buy_outfit_click";
+
 export interface AffiliateClickEvent {
   productName: string;
   brand: string;
@@ -45,6 +58,8 @@ export interface AffiliateClickEvent {
   /** Look/outfit name when the tap came from a look detail. */
   lookName?: string;
   price?: number;
+  /** Interaction type — defaults to affiliate_click on the server. */
+  eventType?: AffiliateEventType;
 }
 
 /** Record a BUY tap. Fire-and-forget — never throws, never blocks. */
@@ -64,6 +79,7 @@ export function trackAffiliateClick(ev: AffiliateClickEvent): void {
         typeof ev.price === "number" && Number.isFinite(ev.price)
           ? Math.round(ev.price * 100)
           : undefined,
+      eventType: ev.eventType,
     });
     fetch(`${API_BASE}/api/affiliate/clicks`, {
       method: "POST",
