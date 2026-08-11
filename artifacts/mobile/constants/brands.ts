@@ -1,4 +1,10 @@
-export type BrandTier = "ultra-luxury" | "luxury" | "premium" | "contemporary" | "fast-fashion";
+export type BrandTier =
+  | "ultra-luxury"
+  | "luxury"
+  | "premium"
+  | "contemporary"
+  | "fast-fashion"
+  | "department-stores";
 
 export interface Brand {
   id: string;
@@ -902,6 +908,116 @@ export const BRANDS: Brand[] = [
     description: "UK fast fashion for the fearlessly dressed night-out queen",
     categories: ["RTW", "Shoes", "Accessories"],
   },
+
+  // ── Department Stores ───────────────────────────────────────────────
+  {
+    id: "b_saks",
+    name: "Saks Fifth Avenue",
+    tier: "department-stores",
+    origin: "New York, USA",
+    known: "Designer Floors, 10022-SHOE, Personal Shopping",
+    description: "The Fifth Avenue flagship of American luxury retail since 1924",
+    categories: ["RTW", "Bags", "Shoes", "Jewellery", "Beauty"],
+  },
+  {
+    id: "b_neiman",
+    name: "Neiman Marcus",
+    tier: "department-stores",
+    origin: "Dallas, USA",
+    known: "Fantasy Gifts, Couture Salons, NM Awards",
+    description: "Texas-born temple of couture and the American luxury fantasy",
+    categories: ["RTW", "Bags", "Shoes", "Jewellery", "Beauty"],
+  },
+  {
+    id: "b_bergdorf",
+    name: "Bergdorf Goodman",
+    tier: "department-stores",
+    origin: "New York, USA",
+    known: "5th Ave Windows, Designer Salons, BG Restaurant",
+    description: "Manhattan's most rarefied address for fashion at 58th & Fifth",
+    categories: ["RTW", "Bags", "Shoes", "Jewellery", "Beauty"],
+  },
+  {
+    id: "b_nordstrom",
+    name: "Nordstrom",
+    tier: "department-stores",
+    origin: "Seattle, USA",
+    known: "Legendary Service, Designer + Contemporary Mix, Anniversary Sale",
+    description: "The service-first American icon spanning designer to everyday",
+    categories: ["RTW", "Bags", "Shoes", "Accessories", "Beauty"],
+  },
+  {
+    id: "b_bloomingdales",
+    name: "Bloomingdale's",
+    tier: "department-stores",
+    origin: "New York, USA",
+    known: "Little Brown Bag, 59th Street Flagship",
+    description: "New York's beloved big brown bag of designer discovery",
+    categories: ["RTW", "Bags", "Shoes", "Accessories", "Beauty"],
+  },
+  {
+    id: "b_macys",
+    name: "Macy's",
+    tier: "department-stores",
+    origin: "New York, USA",
+    known: "Herald Square, Thanksgiving Parade, Accessible Designer",
+    description: "The Herald Square institution bringing fashion to everyone",
+    categories: ["RTW", "Bags", "Shoes", "Accessories", "Beauty"],
+  },
+  {
+    id: "b_harrods",
+    name: "Harrods",
+    tier: "department-stores",
+    origin: "London, UK",
+    known: "Knightsbridge, Food Halls, Superbrands Floor",
+    description: "Knightsbridge's gilded landmark of world luxury retail",
+    categories: ["RTW", "Bags", "Shoes", "Jewellery", "Beauty"],
+  },
+  {
+    id: "b_selfridges",
+    name: "Selfridges",
+    tier: "department-stores",
+    origin: "London, UK",
+    known: "Oxford Street, Corner Shop, The Wonder Room",
+    description: "Oxford Street's theatre of retail and creative luxury",
+    categories: ["RTW", "Bags", "Shoes", "Jewellery", "Beauty"],
+  },
+  {
+    id: "b_harveynichols",
+    name: "Harvey Nichols",
+    tier: "department-stores",
+    origin: "London, UK",
+    known: "Knightsbridge Fashion Floors, Fifth Floor Bar",
+    description: "London's sharply curated edit of directional designer fashion",
+    categories: ["RTW", "Bags", "Shoes", "Beauty"],
+  },
+  {
+    id: "b_galerieslafayette",
+    name: "Galeries Lafayette",
+    tier: "department-stores",
+    origin: "Paris, France",
+    known: "Art Nouveau Dome, Boulevard Haussmann",
+    description: "Paris's glass-domed grand magasin of French fashion",
+    categories: ["RTW", "Bags", "Shoes", "Jewellery", "Beauty"],
+  },
+  {
+    id: "b_bonmarche",
+    name: "Le Bon Marché",
+    tier: "department-stores",
+    origin: "Paris, France",
+    known: "Rive Gauche, LVMH Curation, La Grande Épicerie",
+    description: "The Left Bank's original department store, curated by LVMH",
+    categories: ["RTW", "Bags", "Shoes", "Beauty"],
+  },
+  {
+    id: "b_holtrenfrew",
+    name: "Holt Renfrew",
+    tier: "department-stores",
+    origin: "Toronto, Canada",
+    known: "Bloor Street, Designer Boutiques, Holts Concierge",
+    description: "Canada's home of designer luxury since 1837",
+    categories: ["RTW", "Bags", "Shoes", "Beauty"],
+  },
 ];
 
 export const BRAND_TIERS: { id: BrandTier; label: string; description: string }[] = [
@@ -929,6 +1045,11 @@ export const BRAND_TIERS: { id: BrandTier; label: string; description: string }[
     id: "fast-fashion",
     label: "Fast Fashion",
     description: "SHEIN, Fashion Nova, PLT & the ultra-accessible market",
+  },
+  {
+    id: "department-stores",
+    label: "Department Stores",
+    description: "Saks, Neiman Marcus, Nordstrom, Harrods & the great fashion houses' homes",
   },
 ];
 

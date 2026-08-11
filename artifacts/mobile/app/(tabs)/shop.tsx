@@ -39,6 +39,7 @@ const TIER_ACCENT: Record<BrandTier, string> = {
   premium: "#8E9EAB",
   contemporary: "#7A8C6E",
   "fast-fashion": "#9E7A8C",
+  "department-stores": "#A8894E",
 };
 
 const TIER_ICON: Record<BrandTier, React.ComponentProps<typeof Feather>["name"]> = {
@@ -47,6 +48,7 @@ const TIER_ICON: Record<BrandTier, React.ComponentProps<typeof Feather>["name"]>
   premium: "trending-up",
   contemporary: "shopping-bag",
   "fast-fashion": "zap",
+  "department-stores": "home",
 };
 
 // Budget bucket to seed when handing off "STYLE WITH <BRAND>" to /style.
@@ -393,6 +395,11 @@ export default function ShopScreen() {
                             </View>
                           ))}
                         </View>
+                        {/* Department stores are retailers, not designer
+                            labels — brand-locking the Style grid to a store
+                            name would always come back empty, so the
+                            STYLE WITH handoff is hidden for that tier. */}
+                        {brand.tier !== "department-stores" && (
                         <Pressable
                           style={[styles.brandShopBtn, { borderColor: accent }]}
                           onPress={() =>
@@ -422,6 +429,7 @@ export default function ShopScreen() {
                           </Text>
                           <Feather name="arrow-right" size={12} color={accent} />
                         </Pressable>
+                        )}
                       </View>
                     )}
                   </Pressable>

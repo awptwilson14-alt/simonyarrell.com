@@ -191,6 +191,42 @@ export function productKey(p: { brand: string; name: string }): string {
   return `${p.brand.toLowerCase().trim()}|${base}`;
 }
 
+// ── Cross-batch item ROTATION (soft variety) ────────────────────────────────
+// The catalog spans 3,000+ items across 22+ stores, but whole-look fingerprint
+// dedup alone lets the SAME individual items headline look after look ("the
+// same items are generating"). This session-scoped rotation remembers the
+// articles (productKeys) used by recently generated looks and steers every
+// picker toward pieces NOT seen lately. It is a SOFT preference, never a hard
+// gate: when a filtered pool would drop below `min` candidates, the full pool
+// is used so completeness / budget / gender / season rules always win.
+const RECENT_ARTICLE_CAP = 600;
+const recentArticleQueue: string[] = [];
+const recentArticleSet = new Set<string>();
+function rememberUsedArticles(pieces: { brand: string; name: string }[]): void {
+  for (const p of pieces) {
+    const key = productKey(p);
+    if (recentArticleSet.has(key)) continue;
+    recentArticleSet.add(key);
+    recentArticleQueue.push(key);
+  }
+  while (recentArticleQueue.length > RECENT_ARTICLE_CAP) {
+    recentArticleSet.delete(recentArticleQueue.shift()!);
+  }
+}
+function preferFresh<T extends { brand: string; name: string }>(
+  pool: T[],
+  min = 4,
+  alsoAvoid?: Set<string>,
+): T[] {
+  if (pool.length <= min) return pool;
+  if (recentArticleSet.size === 0 && (!alsoAvoid || alsoAvoid.size === 0)) return pool;
+  const fresh = pool.filter((i) => {
+    const key = productKey(i);
+    return !recentArticleSet.has(key) && !(alsoAvoid && alsoAvoid.has(key));
+  });
+  return fresh.length >= min ? fresh : pool;
+}
+
 // Public fingerprint for a look given its pieces — the SAME identity the
 // generators use internally (sorted productKeys). Lets lib/shownLooks.ts seed
 // the shown-set with the static curated LOOKS so no generation path (any
@@ -2301,6 +2337,11 @@ export function generateLooks(params: GenerateParams): Look[] {
   // pass 2 still sees what pass 1 already used and avoids repeats.
   // Relaxation policy in `filterByUnique` keeps the batch from starving
   // when supply is genuinely exhausted.
+  // Soft within-batch variety set (ALL modes): articles already committed to
+  // earlier looks in this batch. Feeds preferFresh in stylePick so sibling
+  // looks draw different pieces whenever supply allows — unlike the HARD
+  // Remix/TV sets below, exhaustion simply falls back to the full pool.
+  const batchUsedArticles = new Set<string>();
   const enforceUniquePerLook = occasion === "Fashion Remix" || tvInspiration;
   const usedShoeIds = new Set<string>();
   const usedShoeBrands = new Set<string>();
@@ -2520,6 +2561,13 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     const stylePick = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
+
+      // Variety rotation (soft): steer away from articles used in recent
+      // batches AND earlier looks in THIS batch, so the whole catalog of
+      // stores gets exposure instead of the same few pieces headlining
+      // every look. Falls back to the full pool when supply is thin —
+      // completeness and every hard gate always outrank variety.
+      pool_ = preferFresh(pool_, 4, batchUsedArticles);
 
       // ─── Editorial bypass ─────────────────────────────────────────────────
       // Avant-garde + Fashion Remix are intentionally cross-vibe. The 5 styling
@@ -3000,6 +3048,9 @@ export function generateLooks(params: GenerateParams): Look[] {
       pieces[0].brand.toLowerCase(),
     ];
 
+    // Variety rotation: commit this look's articles to the within-batch set so
+    // subsequent sibling looks prefer different pieces.
+    for (const p of pieces) batchUsedArticles.add(productKey(p));
     looks.push({
       id: `gen_${Date.now()}_${looks.length}_${Math.random().toString(36).substr(2, 6)}`,
       name: lookName,
@@ -3144,6 +3195,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       // so drop a non-cohesive fallback rather than ship a clashing look.
       if (!isShown(bFp) && (occasion !== "Fashion Remix" || isFormalRemixColorCohesive(bPieces)) && isStyleCoherent(bPieces, { skipColor: occasion === "Fashion Remix" })) {
       markShown(bFp);
+      for (const p of bPieces) batchUsedArticles.add(productKey(p));
       looks.push({
         id: `gen_brandlock_fb_${Date.now()}`,
         name: bName,
@@ -3181,13 +3233,20 @@ export function generateLooks(params: GenerateParams): Look[] {
     const gPoolFR = occasion === "Fashion Remix"
       ? gPool.filter((i) => isFormalRemixGarment(i, genderKey))
       : gPool;
-    const anyTop = gPoolFR.find((i) => i.category === "top");
-    const anyBottom = gPoolFR.find((i) => i.category === "bottom");
+    // Random (rotation-aware) picks instead of always the FIRST catalog row —
+    // the old .find() meant every ultra-fallback outfit was literally the same
+    // items. All hard gates (gender/season/remix) already shaped gPoolFR.
+    const pickCat = (pred: (i: CatalogItem) => boolean): CatalogItem | undefined => {
+      const c = gPoolFR.filter(pred);
+      return c.length > 0 ? pick(preferFresh(c)) : undefined;
+    };
+    const anyTop = pickCat((i) => i.category === "top");
+    const anyBottom = pickCat((i) => i.category === "bottom");
     const anyShoe = occasion === "Fashion Remix"
-      ? gPoolFR.find((i) => i.category === "shoes" && inferShoeType(i) === "dress")
-      : gPoolFR.find((i) => i.category === "shoes");
-    const anyDress = gPoolFR.find((i) => i.category === "dress");
-    const anyBag = gPoolFR.find((i) => i.category === "bag");
+      ? pickCat((i) => i.category === "shoes" && inferShoeType(i) === "dress")
+      : pickCat((i) => i.category === "shoes");
+    const anyDress = pickCat((i) => i.category === "dress");
+    const anyBag = pickCat((i) => i.category === "bag");
     const fallbackItems: CatalogItem[] = [];
     // Ultra-fallback must still be a COMPLETE outfit — never a 2-piece partial.
     // Women need (dress | top+bottom) + shoes + a bag (REQUIRED outside the TV
@@ -3244,6 +3303,7 @@ export function generateLooks(params: GenerateParams): Look[] {
       // biased but not hard) — drop a non-cohesive look rather than ship it.
       if (!isShown(fp) && (occasion !== "Fashion Remix" || isFormalRemixColorCohesive(pieces)) && isStyleCoherent(pieces, { skipColor: occasion === "Fashion Remix" })) {
       markShown(fp);
+      for (const p of pieces) batchUsedArticles.add(productKey(p));
       looks.push({
         id: `gen_fallback_${Date.now()}`,
         name: fallbackName,
@@ -3316,9 +3376,13 @@ export function generateLooks(params: GenerateParams): Look[] {
       // else: drop — a Fashion Remix look is INVALID without both footwear
       // options (formalShoe + sneakerAlternative).
     }
+    for (const l of complete) rememberUsedArticles(l.pieces);
     return shuffle(complete);
   }
 
+  // Feed the cross-batch rotation memory so the NEXT generation press steers
+  // toward pieces not seen in this batch — wider catalog exposure over time.
+  for (const l of withinBudget) rememberUsedArticles(l.pieces);
   return shuffle(withinBudget);
 }
 
@@ -3471,10 +3535,13 @@ export function generateLookFromAIPlan(
     const colorSet = new Set(slot.colorPreferences.map((c) => c.toLowerCase()));
     const styleKey = plan.style.toLowerCase();
     const ranked = [...pool].sort((a, b) => scoreFor(b) - scoreFor(a));
-    // Top-3 random pick so back-to-back AI generations don't always return
-    // the literal same item for the same plan.
-    const top = ranked.slice(0, Math.min(3, ranked.length));
-    return top[Math.floor(Math.random() * top.length)];
+    // Weighted random pick from a WIDE top slice (was top-3, which funneled
+    // every generation of a similar plan through the same handful of items).
+    // Earlier ranks stay more likely (quadratic bias) but the whole top-12
+    // gets real exposure, so similar prompts explore the catalog's breadth.
+    const top = ranked.slice(0, Math.min(12, ranked.length));
+    const r = Math.random();
+    return top[Math.floor(r * r * top.length)];
 
     function scoreFor(item: CatalogItem): number {
       let s = 0;
@@ -3535,7 +3602,9 @@ export function generateLookFromAIPlan(
       // based, so a dress slot is skipped and its core comes from top + bottom.
       if (slot.category === "dress" || usedCategories.has(slot.category)) continue;
     }
-    const pool = slotPool(slot).filter((i) => !articleUsed(i));
+    // Variety rotation (soft): prefer articles not used in recent generations
+    // so the same catalog items don't headline every AI look.
+    const pool = preferFresh(slotPool(slot).filter((i) => !articleUsed(i)));
     const item = rankBySlot(pool, slot);
     if (!item) continue; // catalog gap for this slot — drop honestly
     addResolved(item);
@@ -3583,7 +3652,11 @@ export function generateLookFromAIPlan(
         (b.styles.some((s) => s.toLowerCase() === styleKey) ? 1 : 0) -
         (a.styles.some((s) => s.toLowerCase() === styleKey) ? 1 : 0),
     );
-    addResolved(ranked[0]);
+    // Random pick among the freshest top candidates instead of always
+    // ranked[0] — the old deterministic backfill made every under-specified
+    // AI plan converge on the identical completion piece.
+    const fresh = preferFresh(ranked, 1);
+    addResolved(pick(fresh.slice(0, Math.min(5, fresh.length))));
   };
 
   const hasCat = (c: CatalogItem["category"]) => pieces.some((p) => p.category === c);
@@ -3652,6 +3725,9 @@ export function generateLookFromAIPlan(
   // resurface in a sibling look — matches the seeding above and generateLooks.
   if (usedAcross) for (const p of pieces) usedAcross.add(productKey(p));
   markShown(fp);
+  // Feed the cross-batch variety rotation (soft) — next generations steer
+  // toward articles not in this look.
+  rememberUsedArticles(pieces);
 
   return {
     id: `ai_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
