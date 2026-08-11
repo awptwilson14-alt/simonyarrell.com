@@ -18,7 +18,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
-import { ResilientImage } from "@/components/ResilientImage";
+import { ResilientImage, resolveEffectiveImageUri } from "@/components/ResilientImage";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { LOOKS, TRENDS, filterLooksForProfile } from "@/constants/data";
 import { useShopBrandHandoff } from "@/hooks/useShopBrandHandoff";
@@ -419,7 +419,14 @@ export default function LookDetailScreen() {
               >
                 {/* Piece image — tap to enlarge, tap again to shrink. */}
                 <ZoomableImage
-                  source={piece.localImage ? piece.localImage : piece.imageUrl ? { uri: piece.imageUrl } : null}
+                  source={
+                    piece.localImage
+                      ? piece.localImage
+                      : (() => {
+                          const eff = resolveEffectiveImageUri(piece.imageUrl, piece.brand, piece.name, piece.category, piece.color);
+                          return eff ? { uri: eff } : null;
+                        })()
+                  }
                   accessibilityLabel={`${piece.brand} ${piece.name}`}
                 >
                   <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
@@ -429,6 +436,7 @@ export default function LookDetailScreen() {
                       style={styles.pieceThumbImg}
                       fallbackColor={categoryColor(piece.category)}
                       brand={piece.brand}
+                      name={piece.name}
                       category={piece.category}
                       color={piece.color}
                     />
@@ -488,7 +496,14 @@ export default function LookDetailScreen() {
                   style={({ pressed }) => [styles.pieceRow, { borderBottomWidth: 0, opacity: pressed ? 0.75 : 1 }]}
                 >
                   <ZoomableImage
-                    source={look.sneakerAlt.localImage ? look.sneakerAlt.localImage : look.sneakerAlt.imageUrl ? { uri: look.sneakerAlt.imageUrl } : null}
+                    source={
+                      look.sneakerAlt.localImage
+                        ? look.sneakerAlt.localImage
+                        : (() => {
+                            const eff = resolveEffectiveImageUri(look.sneakerAlt.imageUrl, look.sneakerAlt.brand, look.sneakerAlt.name, "shoes", look.sneakerAlt.color);
+                            return eff ? { uri: eff } : null;
+                          })()
+                    }
                     accessibilityLabel={`${look.sneakerAlt.brand} ${look.sneakerAlt.name}`}
                   >
                     <View style={[styles.pieceThumb, { backgroundColor: colors.secondary }]}>
@@ -498,6 +513,7 @@ export default function LookDetailScreen() {
                         style={styles.pieceThumbImg}
                         fallbackColor={categoryColor("shoes")}
                         brand={look.sneakerAlt.brand}
+                        name={look.sneakerAlt.name}
                         category="shoes"
                         color={look.sneakerAlt.color}
                       />
@@ -550,6 +566,7 @@ export default function LookDetailScreen() {
                       style={styles.shopThumbImg}
                       fallbackColor={categoryColor(piece.category)}
                       brand={piece.brand}
+                      name={piece.name}
                       category={piece.category}
                       color={piece.color}
                     />
@@ -663,6 +680,7 @@ export default function LookDetailScreen() {
                 fallbackColor={categoryColor(piece.category)}
                 transition={200}
                 brand={piece.brand}
+                name={piece.name}
                 category={piece.category}
                 color={piece.color}
               />

@@ -8,6 +8,7 @@ import promoRouter from "./promo";
 import looksRouter from "./looks";
 import newsletterRouter from "./newsletter";
 import affiliateRouter from "./affiliate";
+import itemImageRouter from "./itemImage";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(promoRouter);
 router.use(looksRouter);
 router.use(newsletterRouter);
 router.use(affiliateRouter);
+router.use(itemImageRouter);
 
 export default router;

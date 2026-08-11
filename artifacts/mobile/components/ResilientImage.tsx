@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { isBadUnsId } from "@/constants/badImageIds";
+import { apiUrl } from "@/lib/affiliateTracking";
 
 /**
  * Render-time denylist gate (batch 74). Extracts the Unsplash photo ID from
@@ -99,8 +100,48 @@ export interface ResilientImageProps {
   brand?: string;
   category?: string;
   color?: string;
+  /** Item name (e.g. "Crystal Mini Skirt"). When set and no real product
+   *  image is available, the thumbnail loads a server-side AI-generated
+   *  product photo (GET /api/item-image — generated once per unique item,
+   *  cached forever). The monogram tile still renders while loading and
+   *  remains the fallback if generation fails. */
+  name?: string;
   /** Scale the monogram + icon for larger tiles (e.g. ProductCard hero). */
   size?: "sm" | "md" | "lg";
+}
+
+/** Absolute URL of the AI-generated product photo for an item. Exported so
+ *  zoom/lightbox wrappers can show the same image the thumbnail resolved. */
+export function generatedItemImageUri(
+  brand?: string,
+  name?: string,
+  category?: string,
+  color?: string,
+): string | undefined {
+  if (!brand || !name) return undefined;
+  const qs = new URLSearchParams({ brand, name });
+  if (category) qs.set("category", category);
+  if (color) qs.set("color", color);
+  const base = apiUrl(`/api/item-image?${qs.toString()}`);
+  // apiUrl returns a relative path when no API base is configured — expo-image
+  // needs an absolute URL, so treat that case as "no generated image".
+  return base.startsWith("http") ? base : undefined;
+}
+
+/** Shared effective-URI resolver — the SAME logic ResilientImage uses, so
+ *  zoom/lightbox wrappers always show exactly what the thumbnail resolved:
+ *  real URI (unless denylisted) → AI-generated product photo → undefined. */
+export function resolveEffectiveImageUri(
+  uri: string | undefined,
+  brand?: string,
+  name?: string,
+  category?: string,
+  color?: string,
+): string | undefined {
+  const id = extractUnsplashId(uri);
+  const denylisted = id ? isBadUnsId(id) : false;
+  if (uri && !denylisted) return uri;
+  return generatedItemImageUri(brand, name, category, color);
 }
 
 export function ResilientImage({
@@ -112,6 +153,7 @@ export function ResilientImage({
   brand,
   category,
   color,
+  name,
   size = "sm",
 }: ResilientImageProps) {
   const [failed, setFailed] = useState(false);
@@ -133,7 +175,17 @@ export function ResilientImage({
     return id ? isBadUnsId(id) : false;
   })();
 
-  const hasImage = !!(localSource || (uri && !denylisted));
+  // No real product image? Fall through to the server-side AI-generated
+  // product photo (generated once per unique item, cached forever). The
+  // monogram tile still renders underneath while it loads and remains the
+  // final fallback if the endpoint 404s (generation failed / server down).
+  const effectiveUri = localSource
+    ? uri
+    : resolveEffectiveImageUri(uri, brand, name, category, color);
+
+  // effectiveUri already excludes denylisted URIs (they were swapped for the
+  // generated photo or undefined above), so no further denylist check here.
+  const hasImage = !!(localSource || effectiveUri);
   const showOverlay = hasImage && !failed;
 
   const monoSize = size === "lg" ? 44 : size === "md" ? 28 : 20;
@@ -206,7 +258,7 @@ export function ResilientImage({
     <View style={[style, { position: "relative", overflow: "hidden" }]}>
       {fallback}
       <Image
-        source={localSource ? localSource : { uri: uri! }}
+        source={localSource ? localSource : { uri: effectiveUri! }}
         style={{
           position: "absolute",
           top: 0,

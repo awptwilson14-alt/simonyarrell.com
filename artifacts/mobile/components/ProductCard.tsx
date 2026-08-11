@@ -99,6 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
           localSource={product.localImage}
           style={styles.image}
           brand={product.brand}
+          name={product.name}
           category={product.category}
           size="lg"
           transition={300}
