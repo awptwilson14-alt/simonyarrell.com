@@ -152,6 +152,7 @@ const TESTIMONIALS = [
 
 const FOOTER_LINKS: { label: string; route?: string }[] = [
   { label: "About", route: "/about" },
+  { label: "Style Journal", route: "/journal" },
   { label: "Contact" },
   { label: "Careers" },
   { label: "Privacy Policy", route: "/privacy" },

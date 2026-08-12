@@ -18,6 +18,7 @@ type NavItem = {
     | "/explore"
     | "/style"
     | "/shop"
+    | "/journal"
     | "/closet"
     | "/profile";
   label: string;
@@ -28,6 +29,10 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/explore", label: "Explore" },
   { href: "/style", label: "Style AI" },
   { href: "/shop", label: "Shop" },
+  // Style Journal sits in the PRIMARY nav on purpose: the editorial section
+  // must be immediately visible (e.g. to affiliate-network reviewers), never
+  // buried in the footer.
+  { href: "/journal", label: "Journal" },
   { href: "/closet", label: "Closet" },
   { href: "/profile", label: "Profile" },
 ];

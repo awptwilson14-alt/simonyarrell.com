@@ -1,0 +1,412 @@
+SIMON YARRELL — FASHION EDITORIAL & STYLE GUIDES
+
+Create a new editorial content section for Simon Yarrell called:
+
+"Style Journal"
+
+Purpose:
+Build a high-quality fashion editorial section containing original, useful fashion content. This content should strengthen the Simon Yarrell brand, improve SEO, give users useful styling information, and demonstrate that Simon Yarrell provides genuine editorial value in addition to shopping and affiliate links.
+
+IMPORTANT RULES
+
+1. Articles must provide genuine fashion advice and information.
+2. Do not create thin pages designed only to contain affiliate links.
+3. Do not copy descriptions, articles, or editorial content from retailers or fashion publications.
+4. All written content must be original.
+5. Affiliate/product links must be relevant to the article.
+6. Do not overload articles with shopping links.
+7. Clearly identify sponsored or affiliate links where required.
+8. Every article should have a real author/byline:
+   "Simon Yarrell Editorial"
+9. Every article must display:
+   - Article title
+   - Category
+   - Hero image
+   - Publication date
+   - Last updated date
+   - Author
+   - Estimated reading time
+   - Article content
+   - Related articles
+10. Articles should be mobile responsive.
+
+NAVIGATION
+
+Add:
+
+STYLE JOURNAL
+
+to the main navigation.
+
+URL:
+/journal
+
+Create categories:
+
+Men's Style
+Women's Style
+Luxury
+Streetwear
+Sneakers
+Runway
+Trends
+Style Education
+AI & Fashion
+
+ARTICLE PAGE URL STRUCTURE
+
+/journal/[article-slug]
+
+Example:
+
+/journal/how-to-build-luxury-streetwear-look
+
+STYLE JOURNAL HOMEPAGE
+
+Create a premium editorial layout consistent with Simon Yarrell's luxury visual identity.
+
+Include:
+
+FEATURED STORY
+
+Latest Stories
+
+Men's Style
+
+Women's Style
+
+Luxury
+
+Streetwear
+
+Runway & Trends
+
+AI & Fashion
+
+Style Education
+
+Each article card should contain:
+
+Hero image
+Category
+Headline
+Short description
+Reading time
+
+Do not make the page look like an affiliate storefront.
+
+--------------------------------------------------
+
+INITIAL 10 ARTICLES
+
+ARTICLE 1
+
+Title:
+How to Build a Luxury Streetwear Look Without Overdoing It
+
+Category:
+Streetwear
+
+Topics:
+- Balancing luxury and casual pieces
+- Choosing one statement item
+- Sneakers
+- Jackets
+- Pants
+- Accessories
+- Color coordination
+- Common styling mistakes
+
+SEO Title:
+How to Build a Luxury Streetwear Look | Simon Yarrell
+
+Meta Description:
+Learn how to combine luxury fashion and streetwear into polished outfits without making your look feel excessive.
+
+--------------------------------------------------
+
+ARTICLE 2
+
+Title:
+Designer Sneakers vs. Dress Shoes: When to Wear Each
+
+Category:
+Men's Style
+
+Discuss:
+- Suits
+- Smart casual
+- Business casual
+- Evening looks
+- Luxury sneakers
+- Loafers
+- Oxfords
+- Minimalist sneakers
+
+IMPORTANT:
+Connect this concept with Simon Yarrell's Fashion Remix feature, where appropriate, showing how one elevated outfit can work with a formal shoe or sneaker alternative.
+
+--------------------------------------------------
+
+ARTICLE 3
+
+Title:
+The Modern Man's Guide to Smart Casual
+
+Category:
+Men's Style
+
+Discuss:
+- Jackets
+- Trousers
+- Denim
+- Knitwear
+- Button-down shirts
+- Sneakers
+- Loafers
+- Accessories
+
+Include several example outfit formulas.
+
+--------------------------------------------------
+
+ARTICLE 4
+
+Title:
+How to Mix Designer and Affordable Fashion
+
+Category:
+Style Education
+
+Explain how shoppers can combine investment pieces with accessible fashion without making an outfit look mismatched.
+
+Cover:
+- Where to spend
+- Where to save
+- Shoes
+- Jackets
+- Basics
+- Accessories
+- Fit
+- Fabric quality
+
+--------------------------------------------------
+
+ARTICLE 5
+
+Title:
+How to Coordinate Colors Without Looking Over-Styled
+
+Category:
+Style Education
+
+Teach:
+- Neutral foundations
+- Tonal dressing
+- Complementary colors
+- Accent colors
+- Matching shoes
+- Bags
+- Accessories
+- Patterns
+
+Include visual outfit examples.
+
+--------------------------------------------------
+
+ARTICLE 6
+
+Title:
+The Essential Luxury Wardrobe: Pieces Worth Investing In
+
+Category:
+Luxury
+
+Discuss long-term wardrobe pieces such as:
+
+Outerwear
+Leather jackets
+Tailoring
+Shoes
+Bags
+Knitwear
+Quality denim
+
+Do not claim that expensive automatically means better.
+
+--------------------------------------------------
+
+ARTICLE 7
+
+Title:
+How Runway Fashion Becomes Everyday Style
+
+Category:
+Runway
+
+Explain:
+- Fashion-week collections
+- Runway styling
+- Silhouettes
+- Colors
+- Materials
+- How trends move into retail
+- How consumers can interpret runway looks without copying them exactly
+
+--------------------------------------------------
+
+ARTICLE 8
+
+Title:
+How AI Is Changing Personal Styling
+
+Category:
+AI & Fashion
+
+Explain:
+- Personalized recommendations
+- Closet intelligence
+- Style preferences
+- Occasion-based recommendations
+- Fashion discovery
+- Potential limitations of AI styling
+
+Explain naturally how Simon Yarrell uses AI to help users discover and coordinate fashion.
+
+Do not make exaggerated claims about AI.
+
+--------------------------------------------------
+
+ARTICLE 9
+
+Title:
+How to Build an Outfit Around One Statement Piece
+
+Category:
+Style Education
+
+Examples:
+
+Statement jacket
+Designer sneakers
+Luxury handbag
+Patterned trousers
+Bold coat
+Unique accessory
+
+Teach users how to keep the rest of the outfit balanced.
+
+--------------------------------------------------
+
+ARTICLE 10
+
+Title:
+The Complete Guide to Dressing for the Season
+
+Category:
+Style Education
+
+Create sections for:
+
+Spring
+Summer
+Fall
+Winter
+
+Explain appropriate:
+
+Fabrics
+Layers
+Footwear
+Outerwear
+Colors
+Accessories
+
+IMPORTANT:
+Simon Yarrell outfit recommendations should keep clothing within the same appropriate season unless the user specifically requests otherwise.
+
+--------------------------------------------------
+
+CONTENT QUALITY REQUIREMENTS
+
+Each major article should contain approximately 1,000–1,800 words when the topic supports that length.
+
+Do not artificially pad articles to reach a word count.
+
+Use:
+
+H1 — Article title
+H2 — Main sections
+H3 — Subsections
+
+Articles should answer actual fashion questions rather than simply promoting products.
+
+Include useful outfit formulas such as:
+
+Navy blazer
+White Oxford shirt
+Grey trousers
+Brown loafers
+
+Sneaker Alternative:
+Minimal white leather sneakers
+
+When product recommendations are included, clearly distinguish editorial advice from shopping links.
+
+--------------------------------------------------
+
+AFFILIATE DISCLOSURE
+
+Create a site-wide Affiliate Disclosure page.
+
+/affiliate-disclosure
+
+Suggested disclosure:
+
+"Simon Yarrell may earn a commission when you purchase products through certain links on our website. This does not increase the price you pay. Product recommendations and editorial decisions are made independently, and compensation does not determine our editorial opinions."
+
+Add a visible link to the Affiliate Disclosure in the website footer.
+
+Where an article contains affiliate links, display a short disclosure near the beginning of the article.
+
+--------------------------------------------------
+
+TRUST PAGES
+
+Confirm these pages exist and are accessible from the footer:
+
+About
+Contact
+Privacy Policy
+Terms & Conditions
+Affiliate Disclosure
+
+Do not generate duplicate pages if they already exist.
+
+--------------------------------------------------
+
+SEO
+
+Generate:
+
+Unique title tags
+Unique meta descriptions
+Canonical URLs
+Article structured data/schema
+Open Graph metadata
+Social sharing metadata
+XML sitemap entries
+
+Do not create duplicate article URLs.
+
+--------------------------------------------------
+
+IMPORTANT SIMON YARRELL RULE
+
+The Style Journal should integrate naturally with the existing Simon Yarrell platform.
+
+Editorial content → styling inspiration → personalized styling → product discovery.
+
+Do NOT turn every paragraph into a sales opportunity.
+
+The user should receive useful fashion information even if they never purchase anything.
