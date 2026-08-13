@@ -12,6 +12,7 @@ import { isBadUnsId } from "@/constants/badImageIds";
 import { CATALOG_EXTRAS } from "./catalogExtras";
 import { isStyleCoherent } from "./outfitCoherence";
 import { SHOPIFY_FEED } from "./catalogFeed";
+import { sanitizeFeedCatalog, isSwimName } from "./feedSanitize";
 import { LOCAL_PRODUCT_ASSETS } from "../assets/images/catalog/_index";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -1778,7 +1779,7 @@ export function getSignatureBrands(style: string, limit = 4): readonly string[] 
 
 // ─── Massive Catalog — 200+ items, 80+ brands ────────────────────────────────
 
-const CATALOG: CatalogItem[] = [
+export const CATALOG: CatalogItem[] = [
   // ── TOPS — Women ──────────────────────────────────────────────────────────
   { id: "t001", name: "Silk Charmeuse Blouse", brand: "Loro Piana", price: 980, category: "top", styles: ["Old Money", "Business", "Clean Minimal"], occasions: ["Work", "Casual", "Date Night", "Event"], genders: ["women"], colors: ["Ivory", "Champagne"], imageUrl: uns("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.loropiana.com" },
   { id: "t002", name: "Fitted Cashmere Turtleneck", brand: "Brunello Cucinelli", price: 890, category: "top", styles: ["Old Money", "Clean Minimal"], occasions: ["Work", "Casual", "Date Night"], genders: ["women"], colors: ["Camel", "Ivory", "Black"], imageUrl: uns("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.brunellocucinelli.com" },
@@ -2065,44 +2066,10 @@ for (const item of CATALOG) {
   }
 }
 
-// ─── Feed category sanitation ───────────────────────────────────────────────
-//
-// The auto-generated Shopify feed occasionally mislabels a garment's slot
-// (observed: tees / shirts / hoodies tagged "bottom", jackets/blazers tagged
-// "bag"), which lets a piece fill the wrong outfit slot — e.g. a t-shirt
-// showing up as the "bottom" of a look. We re-infer the slot from the product
-// NAME for FEED items ONLY (id prefix "sf_"); hand-curated inline rows and
-// CATALOG_EXTRAS are trusted exactly as authored. Strong garment head-nouns
-// (shirt / tee / jacket / …) are matched BEFORE ambiguous fabric / cut words,
-// so "Short-Sleeve Shirt" and "Cargo Shirt" stay tops while "Board Short"
-// stays a bottom. Dress/gown names are left untouched — they collide with the
-// top matcher and aren't a source of the mislabel bug.
-const _CAT_SHOE = /\b(sneakers?|boots?|loafers?|heels?|sandals?|mules?|derbys?|oxfords?|trainers?|pumps?|clogs?|espadrilles?|moccasins?|brogues?|slippers?|footwear)\b/i;
-const _CAT_BAG = /\b(bags?|totes?|clutch|clutches|backpacks?|crossbody|satchels?|pouch|pouches|purses?|hobo|wallets?|holdall|duffels?|duffles?|briefcase|messenger)\b/i;
-const _CAT_DRESSY = /\b(dress|gown)\b/i;
-const _CAT_TOP = /\b(t-?shirts?|tees?|polos?|hoodies?|sweatshirts?|sweaters?|blouses?|henleys?|camis|camisoles?|turtlenecks?|crewnecks?|tanks?|pullovers?|knits?|shirts?|tops?)\b/i;
-const _CAT_OUTER = /\b(jackets?|coats?|blazers?|parkas?|trench|overcoats?|anoraks?|windbreakers?|bombers?|puffers?|peacoats?|raincoats?)\b/i;
-const _CAT_BOTTOM = /\b(jeans?|trousers?|pants?|chinos?|shorts?|skirts?|leggings?|cargos?|sweatpants?|joggers?|slacks?|culottes?|bermudas?)\b/i;
-const _CAT_APPLY = new Set<CatalogItem["category"]>(["top", "bottom", "outerwear", "shoes", "bag"]);
-
-function reinferFeedCategory(
-  name: string,
-  current: CatalogItem["category"],
-): CatalogItem["category"] {
-  if (_CAT_SHOE.test(name)) return "shoes";
-  if (_CAT_BAG.test(name)) return "bag";
-  if (_CAT_DRESSY.test(name)) return current;
-  if (_CAT_TOP.test(name)) return "top";
-  if (_CAT_OUTER.test(name)) return "outerwear";
-  if (_CAT_BOTTOM.test(name)) return "bottom";
-  return current;
-}
-
-for (const item of CATALOG) {
-  if (item.id.startsWith("sf_") && _CAT_APPLY.has(item.category)) {
-    item.category = reinferFeedCategory(item.name, item.category);
-  }
-}
+// ─── Feed sanitation (categories, genders, swim) ────────────────────────────
+// See lib/feedSanitize.ts for the full contract. Runs once at module load on
+// feed rows (id prefix "sf_") only; hand-curated rows are trusted as authored.
+sanitizeFeedCatalog(CATALOG);
 
 // ─── Occasion Normalization ───────────────────────────────────────────────────
 
@@ -2526,6 +2493,10 @@ export function generateLooks(params: GenerateParams): Look[] {
   for (const li of params.lockedItems ?? []) {
     const src = CATALOG.find((c) => c.id === li.id);
     if (src && !itemMatchesGender(src, genderKey)) continue;
+    // sf_ ids missing from CATALOG were removed by feed sanitation (swim);
+    // they are FEED items, not closet items — never trust them back in.
+    if (!src && li.id.startsWith("sf_")) continue;
+    if (isSwimName(li.name) && !li.id.startsWith("closet_")) continue;
     if (!isBagAppropriateForGender(li, genderKey)) continue;
     if (!lockedByCat.has(li.category)) lockedByCat.set(li.category, li);
   }
