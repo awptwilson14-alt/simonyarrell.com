@@ -53,6 +53,28 @@ interface GenerateParams {
   prompt?: string;
   favoriteStyles?: string[];
   count?: number;       // how many looks to generate (default 6)
+  // ── Remix This Look support ────────────────────────────────────────────
+  // avoidPalette: name of the base look's palette — a "New Color Story"
+  // remix must compose around a DIFFERENT palette. Soft: if the style only
+  // has one palette, generation still succeeds.
+  avoidPalette?: string;
+  // avoidBrands: brands of the base look's pieces — a "New Designer Mix"
+  // remix should draw from different houses. Soft filter: pools only narrow
+  // when enough non-avoided items remain, so hard gates never starve.
+  avoidBrands?: string[];
+  // forceShoeTypes: overrides occasion/subtype shoe preferences (e.g.
+  // "Sneaker Version" remix → ["sneakers"]).
+  forceShoeTypes?: Array<NonNullable<CatalogItem["shoeType"]>>;
+  // lockedItems: pieces the user explicitly locked ("Keep This Item",
+  // "build around my X", Style With My Closet). Each locked piece is seeded
+  // into its category slot VERBATIM — never replaced — and the rest of the
+  // outfit is composed around it (palette biased to its colors). All final
+  // hard gates (budget, completeness, season, coherence, dedup) still run.
+  lockedItems?: OutfitPiece[];
+  // Optional occasion SUBTYPE (e.g. Wedding → "Black Tie", Vacation → "Ski",
+  // Work → "Casual Workplace", Concert → "Jazz"). Looked up in SUBTYPE_RULES
+  // to refine formality, footwear and season beyond the parent occasion.
+  subtype?: string;
   // When the generation was triggered by tapping "GENERATE MY <CELEB> LOOK"
   // on a celebrity profile, the celeb's signatureBrands list is forwarded
   // here so the catalog picker can prefer those houses (mirrors batch 15's
@@ -880,6 +902,12 @@ function preferredShoeTypes(occasion: string): Array<NonNullable<CatalogItem["sh
     case "Streetwear":         return ["sneakers", "casual"];
     case "Vacation":           return ["casual", "sneakers"];
     case "Casual":             return ["sneakers", "casual"];
+    // Expanded occasions
+    case "Wedding":            return ["dress"];
+    case "Night Out":          return ["dress", "casual"];
+    case "Concert":            return ["sneakers", "casual"];
+    case "Brunch":             return ["casual", "dress", "sneakers"];
+    case "Travel":             return ["sneakers", "casual"];
     default:                   return ["sneakers", "casual", "dress"];
   }
 }
@@ -1188,9 +1216,9 @@ function targetLookFormality(occasion: string, dominantStyle: string): Formality
   if (/Streetwear|Y2K|Vacation Luxe/.test(dominantStyle)) return "casual";
   if (/Business|Clean Minimal|Techwear/.test(dominantStyle)) return "smart";
   // Occasion fallback.
-  if (/Formal|Event|Evening|Party|Date Night/.test(occasion)) return "dress";
-  if (/Work|Business/.test(occasion)) return "smart";
-  if (/Streetwear|Casual|Vacation|Resort|Street/.test(occasion)) return "casual";
+  if (/Formal|Event|Evening|Party|Date Night|Wedding|Night Out/.test(occasion)) return "dress";
+  if (/Work|Business|Brunch/.test(occasion)) return "smart";
+  if (/Streetwear|Casual|Vacation|Resort|Street|Concert|Travel/.test(occasion)) return "casual";
   return "smart";
 }
 
@@ -1257,6 +1285,11 @@ const LOOK_NAMES: Record<string, string[]> = {
   Party: ["Main Character", "The Afterparty", "Disco Heaven", "Glitter & Gold", "Night Frequency", "Party Season", "Euphoric Edit", "Club Luxe", "Electric Night", "The Entrance"],
   Formal: ["The Black Tie", "White Tie & Tails", "Grande Ceremony", "The Tuxedo Edit", "Gala Royale", "The Floor-Length Moment", "Couture Formality", "The Dress Code", "Champagne & Silk", "The Invitation"],
   "Fashion Remix": ["Black Tie, Loud Sole", "Tuxedo Reimagined", "Gala Sneakers", "The Remix", "Formal Subverted", "Couture Kicks", "Red Carpet Rebel", "The Hybrid Edit", "Sneakers After Dark", "Gown Meets Sole"],
+  "Night Out": ["Past Midnight", "The Velvet Rope", "Rooftop Hours", "City Lights Edit", "The Late Arrival", "Neon Nocturne", "Last Call Luxe", "The Night Shift", "Skyline Social", "Til Sunrise"],
+  "Concert": ["Front of Stage", "The Encore", "Soundcheck Chic", "Backstage Pass", "Amplified", "The Setlist", "Crowd Surfer Luxe", "Stage Lights", "The Headliner", "Mosh Pit Polished"],
+  "Wedding": ["The Honored Guest", "Vows & Velvet", "Garden Ceremony", "The Toast", "Champagne Witness", "Aisle Style", "The Reception Edit", "Something Blue", "Golden Hour Vows", "The Celebrant"],
+  "Brunch": ["Eleven Thirty", "The Long Table", "Mimosa Hour", "Sunday Best", "Terrace Morning", "The Standing Reservation", "Pressed & Present", "Late Morning Light", "The Social Hour", "Café Society"],
+  "Travel": ["Terminal Chic", "First Class Comfort", "The Layover Edit", "Carry-On Uniform", "Gate to Gate", "The Departure Lounge", "Jet Set Minimal", "Window Seat", "The Arrival Look", "Passport Ready"],
 };
 
 const LOOK_DESCRIPTIONS: Record<string, string[]> = {
@@ -1329,6 +1362,41 @@ const LOOK_DESCRIPTIONS: Record<string, string[]> = {
     "The night only starts when you walk in.",
     "Dressed to dance, to dazzle, and to disappear at the right moment.",
     "Because some nights call for your best possible self.",
+  ],
+  "Night Out": [
+    "Bolder than dinner, sharper than the club — dressed for wherever the night decides to go.",
+    "The look that works at the bar, the lounge, and the rooftop after.",
+    "Confidence you can dance in, tailoring you can lean on.",
+    "For the night that starts at ten and refuses to end.",
+    "Dark, sleek and unapologetic — the city after hours, worn well.",
+  ],
+  Concert: [
+    "Built to stand, move and be seen — without sacrificing the fit.",
+    "Stage-light ready, all-night comfortable.",
+    "Dressed for the encore, not just the entrance.",
+    "The setlist changes; the silhouette holds.",
+    "Loud enough for the front row, considered enough for the photos.",
+  ],
+  Wedding: [
+    "Celebratory, respectful, and quietly memorable — exactly what a guest should be.",
+    "Dressed to honor the day without competing with it.",
+    "Elegance with etiquette — every piece knows its place at the ceremony.",
+    "From vows to last dance, one look that holds the whole day.",
+    "Polished for the aisle, comfortable through the reception.",
+  ],
+  Brunch: [
+    "More intentional than casual, more relaxed than dinner — the eleven-thirty sweet spot.",
+    "Polished enough for the terrace, easy enough for a second coffee.",
+    "Daylight dressing at its most social.",
+    "The look that says you planned this morning — gracefully.",
+    "Soft tailoring, warm light, unhurried hours.",
+  ],
+  Travel: [
+    "Comfort engineered to look composed at both ends of the journey.",
+    "Layers that move, fabrics that forgive, shoes that go the distance.",
+    "From security line to city street without a wardrobe change.",
+    "The uniform of the well-traveled: practical, unwrinkled, deliberate.",
+    "Built for the window seat and the arrival photo alike.",
   ],
 };
 
@@ -1578,6 +1646,108 @@ function generateDescription(occasion: string, style?: string): string {
   const styleDescs = style ? STYLE_LOOK_DESCRIPTIONS[style] : undefined;
   const descs = styleDescs ?? LOOK_DESCRIPTIONS[occasion] ?? LOOK_DESCRIPTIONS["Casual"];
   return pick(descs);
+}
+
+// ─── "Why This Look Works" + Stylist Tip composer ───────────────────────────
+// Styling-agent spec: every look explains its ACTUAL styling logic in 2–4
+// sentences (color, proportion, footwear, occasion) — never generic filler
+// like "this is a stylish outfit". Everything referenced here is read off the
+// look's real pieces, palette, style and occasion so the copy can't drift
+// from what's on screen.
+
+const STYLE_SILHOUETTE_WORDS: Record<string, string> = {
+  "Old Money":         "tailored and unhurried",
+  "Clean Minimal":     "architectural and precise",
+  "Luxury Streetwear": "relaxed up top with structure below",
+  "Y2K Revival":       "playful but proportioned",
+  "Vacation Luxe":     "fluid and easy",
+  Evening:             "long, lean and deliberate",
+  Business:            "sharp and controlled",
+  Techwear:            "technical and streamlined",
+};
+
+function lc(s: string): string {
+  return s.toLowerCase();
+}
+
+export function composeLookNarrative(opts: {
+  pieces: OutfitPiece[];
+  occasion: string;
+  style: string;
+  paletteName?: string;
+  season?: string;
+}): { whyItWorks: string; stylistTip: string } {
+  const { pieces, occasion, style, paletteName, season } = opts;
+  const byCat = (c: string) => pieces.find((p) => p.category === c);
+  const top = byCat("top");
+  const bottom = byCat("bottom");
+  const dress = byCat("dress");
+  const shoes = byCat("shoes");
+  const outer = byCat("outerwear");
+  const bag = byCat("bag");
+  const jewelry = byCat("jewelry") ?? byCat("accessory") ?? byCat("accessories");
+
+  const sentences: string[] = [];
+
+  // 1 — Color story
+  const colors = Array.from(new Set(pieces.map((p) => p.color).filter(Boolean)));
+  const colorList = colors.slice(0, 3).map(lc).join(", ");
+  if (paletteName) {
+    sentences.push(
+      `Every piece supports one ${lc(paletteName)} color story — ${colorList} read as a single palette instead of competing accents.`
+    );
+  } else if (colors.length <= 2) {
+    sentences.push(`The palette stays disciplined — ${colorList} keep the look tonal and intentional.`);
+  } else {
+    sentences.push(`${colorList[0].toUpperCase()}${colorList.slice(1)} anchor the palette, so no single piece shouts over the rest.`);
+  }
+
+  // 2 — Proportion / silhouette
+  const silWord = STYLE_SILHOUETTE_WORDS[style] ?? "balanced";
+  if (dress) {
+    sentences.push(`The ${lc(dress.name)} carries the silhouette on its own, keeping the line ${silWord}.`);
+  } else if (top && bottom) {
+    sentences.push(`The ${lc(bottom.name)} balances the ${lc(top.name)}, keeping the overall silhouette ${silWord}.`);
+  }
+
+  // 3 — Footwear ↔ occasion
+  if (shoes) {
+    const n = lc(shoes.name);
+    const verb = /sneaker|trainer|runner|jordan|dunk|court/.test(n)
+      ? "grounds"
+      : /(oxford|loafer|pump|heel|derby|monk|stiletto|slingback)/.test(n)
+        ? "sharpens"
+        : "settles";
+    const occLabel = occasion === "Fashion Remix" ? "the remix" : lc(occasion);
+    sentences.push(`${shoes.brand}'s ${n} ${verb} the outfit at exactly the right register for ${occLabel}.`);
+  }
+
+  // 4 — Finisher (bag / outerwear), only if we still have room
+  if (sentences.length < 4) {
+    if (bag) {
+      sentences.push(`The ${lc(bag.name)} finishes the story without introducing a second statement.`);
+    } else if (outer) {
+      sentences.push(`The ${lc(outer.name)} adds the layer that makes the look read styled${season && season !== "All Season" ? ` for ${lc(season)}` : ""}, not assembled.`);
+    }
+  }
+
+  const whyItWorks = sentences.slice(0, 4).join(" ");
+
+  // Stylist tip — one practical note derived from what's actually in the look.
+  const tips: string[] = [];
+  if (outer) tips.push(`Wear the ${lc(outer.name)} open and pushed slightly back at the shoulders — it frames the pieces underneath instead of hiding them.`);
+  if (bottom && /trouser|pant|slack|chino/.test(lc(bottom.name))) tips.push(`Have the ${lc(bottom.name)} hemmed to a single soft break over the shoe — no pooling.`);
+  if (top && /shirt|blouse|tee|t-shirt|polo|turtleneck|camisole/.test(lc(top.name))) {
+    tips.push(/tee|t-shirt/.test(lc(top.name))
+      ? `Leave the ${lc(top.name)} untucked but check the hem hits mid-fly — longer reads sloppy with this silhouette.`
+      : `A clean full tuck on the ${lc(top.name)} keeps the waistline — and the proportions — where they belong.`);
+  }
+  if (jewelry) tips.push(`Keep jewelry to the ${lc(jewelry.name)} alone — one metal moment is a choice, two is clutter.`);
+  if (dress) tips.push(`Steam the ${lc(dress.name)} and let it fall naturally — the drape is the whole statement.`);
+  if (shoes && /sneaker|trainer/.test(lc(shoes.name))) tips.push(`Keep the ${lc(shoes.name)} box-fresh — crisp sneakers are what make this pairing deliberate instead of accidental.`);
+  const stylistTip = tips.length ? pick(tips) : `Finish with one personal piece — a watch, a scarf, a signet — so the look reads yours, not the mannequin's.`;
+
+  return { whyItWorks, stylistTip };
 }
 
 // Signature fashion houses per style — surfaced on the look-detail page as
@@ -1956,6 +2126,66 @@ const OCCASION_MAP: Record<string, string[]> = {
   "Resort": ["Vacation", "Casual"],
   "Street": ["Streetwear", "Casual"],
   "Cultural": ["Event", "Casual"],
+  // Expanded primary occasions (styling-agent spec): each maps onto the
+  // occasion tags that already exist across the catalog so the new options
+  // surface real, appropriate pools without re-tagging thousands of rows.
+  "Night Out": ["Party", "Evening", "Date Night", "Event"],
+  "Concert": ["Party", "Streetwear", "Casual", "Evening"],
+  "Wedding": ["Formal", "Event", "Evening"],
+  "Brunch": ["Casual", "Date Night", "Vacation", "Work"],
+  "Travel": ["Casual", "Vacation", "Streetwear"],
+};
+
+// ─── Occasion SUBTYPE rules ──────────────────────────────────────────────────
+// A subtype refines its parent occasion along three axes; each field is
+// optional and, when present, OVERRIDES the occasion-level default:
+//   formality — target look formality (dress | smart | casual)
+//   season    — hard season context (e.g. Ski → Winter, Beach → Summer)
+//   shoeTypes — preferred shoe sub-types for the outfit
+// Subtypes without special behavior (e.g. Concert → "Pop") intentionally have
+// no entry: the parent occasion's defaults already fit, and the subtype still
+// flavors the AI prompt upstream.
+const SUBTYPE_RULES: Record<
+  string,
+  {
+    formality?: Formality;
+    season?: string;
+    shoeTypes?: Array<NonNullable<CatalogItem["shoeType"]>>;
+  }
+> = {
+  // Work dress codes
+  "Business Formal": { formality: "dress", shoeTypes: ["dress"] },
+  "Business Professional": { formality: "smart", shoeTypes: ["dress"] },
+  "Business Casual": { formality: "smart", shoeTypes: ["dress", "casual"] },
+  "Smart Casual": { formality: "smart", shoeTypes: ["casual", "dress", "sneakers"] },
+  "Creative Professional": { formality: "smart", shoeTypes: ["casual", "sneakers", "dress"] },
+  "Casual Workplace": { formality: "casual", shoeTypes: ["sneakers", "casual"] },
+  // Event subtypes
+  "Gala": { formality: "dress", shoeTypes: ["dress"] },
+  "Corporate Event": { formality: "smart", shoeTypes: ["dress", "casual"] },
+  "Sporting Event": { formality: "casual", shoeTypes: ["sneakers", "casual"] },
+  "Graduation": { formality: "smart", shoeTypes: ["dress", "casual"] },
+  // Concert genres (only those that shift the register)
+  "Jazz": { formality: "smart", shoeTypes: ["dress", "casual"] },
+  "Festival": { formality: "casual", season: "Summer", shoeTypes: ["sneakers", "casual"] },
+  // Vacation destinations
+  "Beach": { formality: "casual", season: "Summer", shoeTypes: ["casual", "sneakers"] },
+  "Tropical": { formality: "casual", season: "Summer", shoeTypes: ["casual", "sneakers"] },
+  "Desert": { formality: "casual", season: "Summer", shoeTypes: ["casual", "sneakers"] },
+  "Ski": { formality: "casual", season: "Winter", shoeTypes: ["casual", "sneakers"] },
+  "Resort": { season: "Summer", shoeTypes: ["casual", "dress"] },
+  "Cruise": { formality: "smart", season: "Summer" },
+  "Adventure": { formality: "casual", shoeTypes: ["sneakers", "casual"] },
+  // Wedding dress codes / settings
+  "Black Tie": { formality: "dress", shoeTypes: ["dress"] },
+  "Black-Tie Optional": { formality: "dress", shoeTypes: ["dress"] },
+  "Cocktail": { formality: "dress", shoeTypes: ["dress"] },
+  "Garden Wedding": { formality: "dress", season: "Summer", shoeTypes: ["dress", "casual"] },
+  "Beach Wedding": { formality: "smart", season: "Summer", shoeTypes: ["casual", "dress"] },
+  // Night Out venues
+  "Upscale Nightlife": { formality: "dress", shoeTypes: ["dress"] },
+  "Rooftop": { formality: "smart" },
+  "Lounge": { formality: "smart", shoeTypes: ["dress", "casual"] },
 };
 
 // ─── Style map — what styles work for each occasion ──────────────────────────
@@ -1974,6 +2204,13 @@ const OCCASION_STYLES: Record<string, string[]> = {
   // Evening (gowns/tuxedos), Business (suits), and Luxury Streetwear (the
   // sneaker culture that defines the remix).
   "Fashion Remix": ["Evening", "Business", "Luxury Streetwear", "Old Money"],
+  // Expanded occasions. Each pulls a DIFFERENT style mix so the new
+  // occasions don't collapse into re-skinned versions of the old ones.
+  "Night Out": ["Evening", "Y2K Revival", "Luxury Streetwear", "Old Money"],
+  "Concert": ["Luxury Streetwear", "Y2K Revival", "Techwear", "Evening"],
+  "Wedding": ["Evening", "Old Money", "Business"],
+  "Brunch": ["Old Money", "Clean Minimal", "Vacation Luxe", "Y2K Revival"],
+  "Travel": ["Clean Minimal", "Luxury Streetwear", "Techwear", "Vacation Luxe"],
 };
 
 // ─── Look name style tags ─────────────────────────────────────────────────────
@@ -2269,10 +2506,34 @@ function isBagAppropriateForGender(
 }
 
 export function generateLooks(params: GenerateParams): Look[] {
-  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName, season, tvInspiration = false } = params;
+  const { gender, occasion, budget, prompt = "", favoriteStyles = [], count = 6, celebSignatureBrands = [], celebName, season: seasonParam, tvInspiration = false } = params;
+  // Subtype refinements (see SUBTYPE_RULES). Subtype season wins over the
+  // profile season — "Ski" means winter clothes even for a summer-profile
+  // user; the destination is a stronger signal than the home climate.
+  const subtypeRule = params.subtype ? SUBTYPE_RULES[params.subtype] : undefined;
+  const season = subtypeRule?.season ?? seasonParam;
+  // Remix support (see GenerateParams docs). Both are SOFT constraints.
+  const avoidBrandSet = new Set((params.avoidBrands ?? []).map((b) => b.toLowerCase()));
+  const avoidPalette = params.avoidPalette;
   const brandLock = params.brandLock ? (BRAND_LOCK_ALIASES[params.brandLock] ?? params.brandLock) : undefined;
   const { max: budgetMax } = parseBudget(budget);
   const genderKey = gender.toLowerCase() as "women" | "men" | "unisex";
+  // Locked pieces by category — at most one per category slot. Catalog-backed
+  // locked pieces still pass the gender + men's-bag hard gates (a lock must
+  // never smuggle a cross-gender item or a men's tote past the pools); pieces
+  // NOT in the catalog are the user's own closet items and are trusted.
+  const lockedByCat = new Map<string, OutfitPiece>();
+  for (const li of params.lockedItems ?? []) {
+    const src = CATALOG.find((c) => c.id === li.id);
+    if (src && !itemMatchesGender(src, genderKey)) continue;
+    if (!isBagAppropriateForGender(li, genderKey)) continue;
+    if (!lockedByCat.has(li.category)) lockedByCat.set(li.category, li);
+  }
+  // A locked dress contradicts locked separates — dress wins, drop the rest.
+  if (lockedByCat.has("dress")) {
+    lockedByCat.delete("top");
+    lockedByCat.delete("bottom");
+  }
 
   // Allowed occasions for filtering
   const allowedOccasions = OCCASION_MAP[occasion] ?? [occasion, "Casual"];
@@ -2481,7 +2742,24 @@ export function generateLooks(params: GenerateParams): Look[] {
 
     // Pick a dominant style and color palette for this look
     const dominantStyle = pick(stylePool.length > 0 ? stylePool : occasionStyles);
-    const selectedPalette = pickPaletteForStyle(dominantStyle);
+    // New Color Story remix: re-roll (bounded) until the palette differs from
+    // the base look's. Soft — a single-palette style still generates.
+    let selectedPalette = pickPaletteForStyle(dominantStyle);
+    if (avoidPalette) {
+      for (let r = 0; r < 6 && selectedPalette.name === avoidPalette; r++) {
+        selectedPalette = pickPaletteForStyle(dominantStyle);
+      }
+    }
+    // Locked items drive the color story ("build the palette around them"):
+    // re-roll (bounded) toward a palette that harmonizes with a locked color.
+    if (lockedByCat.size > 0) {
+      const lockedColors = Array.from(lockedByCat.values()).map((p) => p.color).filter(Boolean);
+      if (lockedColors.length > 0) {
+        for (let r = 0; r < 8 && !paletteMatch(lockedColors, selectedPalette.colors); r++) {
+          selectedPalette = pickPaletteForStyle(dominantStyle);
+        }
+      }
+    }
 
     // Anchor THIS look's formality so the clothing pieces coordinate.
     // Without this, a Date Night look can pick "Vintage Gel Logo T-Shirt"
@@ -2489,7 +2767,7 @@ export function generateLooks(params: GenerateParams): Look[] {
     // because each pool is filtered independently and nothing checks
     // whether the pieces visually agree. Fashion Remix returns null and
     // therefore skips this filter — it is intentionally mixed.
-    const lookFormality = targetLookFormality(occasion, dominantStyle);
+    const lookFormality = subtypeRule?.formality ?? targetLookFormality(occasion, dominantStyle);
     const okFormalities: Formality[] | null = lookFormality
       ? compatibleFormalities(lookFormality)
       : null;
@@ -2521,10 +2799,16 @@ export function generateLooks(params: GenerateParams): Look[] {
     // Decide outfit structure. TV Inspiration looks are ALWAYS top+bottom+shoes
     // based — never dress-based — so the dress branch is disabled in that flow.
     const useDress =
-      !tvInspiration &&
-      genderKey === "women" &&
-      dresses.length > 0 &&
-      Math.random() > 0.5;
+      // Locked items dictate the outfit structure: a locked dress forces the
+      // dress branch; a locked top or bottom forces separates.
+      lockedByCat.has("dress")
+        ? true
+        : (lockedByCat.has("top") || lockedByCat.has("bottom"))
+          ? false
+          : !tvInspiration &&
+            genderKey === "women" &&
+            dresses.length > 0 &&
+            Math.random() > 0.5;
 
     const pieces: OutfitPiece[] = [];
     let total = 0;
@@ -2534,14 +2818,17 @@ export function generateLooks(params: GenerateParams): Look[] {
      // or inferred) shoeType matches the occasion's preferred sub-types, then
      // run the normal style/palette ranker on that narrowed pool. If nothing
      // matches, fall back to the full pool so we never fail to place a shoe.
-    const shoeTypePrefs = preferredShoeTypes(occasion);
+    const shoeTypePrefs = params.forceShoeTypes ?? subtypeRule?.shoeTypes ?? preferredShoeTypes(occasion);
     const pickShoe = (pool_: CatalogItem[]): CatalogItem | null => {
       if (pool_.length === 0) return null;
       // Outfit-coherent prefs: re-derive shoe types from the pieces ALREADY
       // added (top+bottom or dress) so the shoe matches the outfit's
       // formality, not just the occasion's nominal preference. This is what
       // prevents jeans+tee → dress oxford, or tuxedo → graphic sneaker.
-      const coherentPrefs = coherentShoeTypes(pieces, shoeTypePrefs, occasion);
+      // forceShoeTypes (remix "Sneaker Version") is honored verbatim — the
+      // caller explicitly asked for this footwear register; the final
+      // isStyleCoherent gate still protects against a truly clashing result.
+      const coherentPrefs = params.forceShoeTypes ?? coherentShoeTypes(pieces, shoeTypePrefs, occasion);
       const preferred = pool_.filter((s) => {
         const t = inferShoeType(s);
         return t ? coherentPrefs.includes(t) : false;
@@ -2568,6 +2855,14 @@ export function generateLooks(params: GenerateParams): Look[] {
       // every look. Falls back to the full pool when supply is thin —
       // completeness and every hard gate always outrank variety.
       pool_ = preferFresh(pool_, 4, batchUsedArticles);
+
+      // New Designer Mix remix: softly steer away from the base look's
+      // houses. Only narrows when enough alternatives remain — brand
+      // avoidance never outranks completeness or any hard gate.
+      if (avoidBrandSet.size > 0) {
+        const alt = pool_.filter((i) => !avoidBrandSet.has(i.brand.toLowerCase()));
+        if (alt.length >= 3) pool_ = alt;
+      }
 
       // ─── Editorial bypass ─────────────────────────────────────────────────
       // Avant-garde + Fashion Remix are intentionally cross-vibe. The 5 styling
@@ -2853,6 +3148,14 @@ export function generateLooks(params: GenerateParams): Look[] {
       total += item.price;
     };
 
+    // Seed a locked piece VERBATIM into its slot (Keep This Item / closet
+    // styling). Locked pieces bypass pool filters by design — the user chose
+    // them — but every look-level hard gate below still applies.
+    const addLocked = (piece: OutfitPiece): void => {
+      pieces.push({ ...piece });
+      total += piece.price;
+    };
+
     if (useDress) {
       // Structure: dress + shoes + (optional bag) + (optional jewelry)
       const dressPool = filterByUnique(
@@ -2860,27 +3163,48 @@ export function generateLooks(params: GenerateParams): Look[] {
         usedPrimaryIds,
         usedPrimaryBrands,
       );
-      const dress = stylePick(dressPool);
-      if (!dress) continue;
-      addPiece(dress);
+      const lockedDress = lockedByCat.get("dress");
+      if (lockedDress) addLocked(lockedDress);
+      else {
+        const dress = stylePick(dressPool);
+        if (!dress) continue;
+        addPiece(dress);
+      }
 
-      const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.9);
-      const shoePool = filterByUnique(affordableShoes, usedShoeIds, usedShoeBrands);
-      const shoe = pickShoe(shoePool);
-      if (!shoe) continue;
-      addPiece(shoe);
+      const lockedShoe = lockedByCat.get("shoes");
+      if (lockedShoe) addLocked(lockedShoe);
+      else {
+        const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.9);
+        const shoePool = filterByUnique(affordableShoes, usedShoeIds, usedShoeBrands);
+        const shoe = pickShoe(shoePool);
+        if (!shoe) continue;
+        addPiece(shoe);
+      }
 
       // Handbag — REQUIRED for women. The dress branch only runs OUTSIDE the TV
       // flow (TV looks are always top+bottom+shoes based, never dress-based), so
       // a dress + shoes with no coordinating bag is a partial outfit and the look
       // is dropped when no in-budget bag fits.
-      const affordableBags = filterAux(bags.filter((b) => b.price + total <= cap));
-      const bag = stylePick(affordableBags);
-      if (bag) addPiece(bag);
-      else if (!tvInspiration) continue;
+      const lockedBag = lockedByCat.get("bag");
+      if (lockedBag) addLocked(lockedBag);
+      else {
+        const affordableBags = filterAux(bags.filter((b) => b.price + total <= cap));
+        const bag = stylePick(affordableBags);
+        if (bag) addPiece(bag);
+        else if (!tvInspiration) continue;
+      }
+
+      // Locked outerwear / jewelry / accessories ride along in the dress
+      // branch too — every requested lock must survive into the final look.
+      const lockedOuterD = lockedByCat.get("outerwear");
+      if (lockedOuterD) addLocked(lockedOuterD);
+      const lockedAccD = lockedByCat.get("accessories");
+      if (lockedAccD) addLocked(lockedAccD);
 
       // Optional jewelry
-      if (total < cap * 0.9 && jewelry.length > 0) {
+      const lockedJewelD = lockedByCat.get("jewelry");
+      if (lockedJewelD) addLocked(lockedJewelD);
+      else if (total < cap * 0.9 && jewelry.length > 0) {
         const affordableJewels = filterAux(jewelry.filter((j) => j.price + total <= cap));
         const jewel = stylePick(affordableJewels);
         if (jewel) addPiece(jewel);
@@ -2892,17 +3216,20 @@ export function generateLooks(params: GenerateParams): Look[] {
         usedPrimaryIds,
         usedPrimaryBrands,
       );
-      const top = stylePick(topPool);
-      if (!top) continue;
-      addPiece(top);
+      const lockedTop = lockedByCat.get("top");
+      const top = lockedTop ? null : stylePick(topPool);
+      if (lockedTop) addLocked(lockedTop);
+      else if (!top) continue;
+      else addPiece(top);
 
       // Bottom: in addition to the look-level formality anchor, also
       // narrow to bottoms whose formality matches the TOP we just
       // picked. Top is the visual anchor of the upper half, so once
       // we commit to (e.g.) a graphic tee, a tuxedo trouser is off the
       // table even if both are "smart-compatible" in the global anchor.
+      const anchorTop = lockedTop ?? top!;
       const topFormality = inferPieceFormality({
-        name: top.name, category: top.category, shoeType: top.shoeType,
+        name: anchorTop.name, category: anchorTop.category, shoeType: undefined,
       });
       const bottomAllowedFromTop: Formality[] =
         topFormality === "casual" ? ["casual", "smart"]
@@ -2929,18 +3256,28 @@ export function generateLooks(params: GenerateParams): Look[] {
         ? bottomFormalityFiltered
         : (okFormalities ? filterByFormality(affordableBottoms) : affordableBottoms);
       const bottomPool = filterByUnique(bottomBase, usedBottomIds);
-      const bottom = stylePick(bottomPool);
-      if (!bottom) continue;
-      addPiece(bottom);
+      const lockedBottom = lockedByCat.get("bottom");
+      if (lockedBottom) addLocked(lockedBottom);
+      else {
+        const bottom = stylePick(bottomPool);
+        if (!bottom) continue;
+        addPiece(bottom);
+      }
 
-      const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.85);
-      const shoePool = filterByUnique(affordableShoes, usedShoeIds, usedShoeBrands);
-      const shoe = pickShoe(shoePool);
-      if (!shoe) continue;
-      addPiece(shoe);
+      const lockedShoe2 = lockedByCat.get("shoes");
+      if (lockedShoe2) addLocked(lockedShoe2);
+      else {
+        const affordableShoes = shoes.filter((s) => s.price + total <= cap * 0.85);
+        const shoePool = filterByUnique(affordableShoes, usedShoeIds, usedShoeBrands);
+        const shoe = pickShoe(shoePool);
+        if (!shoe) continue;
+        addPiece(shoe);
+      }
 
       // Optional outerwear (50% chance, or if budget has room)
-      if (outerwear.length > 0 && total < cap * 0.6 && Math.random() > 0.5) {
+      const lockedOuter = lockedByCat.get("outerwear");
+      if (lockedOuter) addLocked(lockedOuter);
+      else if (outerwear.length > 0 && total < cap * 0.6 && Math.random() > 0.5) {
         const affordableOuter = filterAux(filterByFormality(
           outerwear.filter((o) => o.price + total <= cap * 0.95),
         ));
@@ -2948,7 +3285,9 @@ export function generateLooks(params: GenerateParams): Look[] {
         if (outer) addPiece(outer);
       }
 
-      if (genderKey === "women") {
+      if (lockedByCat.has("bag")) {
+        addLocked(lockedByCat.get("bag")!);
+      } else if (genderKey === "women") {
         // Handbag — REQUIRED for women per the completeness contract, EXCEPT in
         // the TV Inspiration flow where top+bottom+shoes is already a complete
         // look and a bag is optional. Outside TV, drop the look when no in-budget
@@ -2970,7 +3309,30 @@ export function generateLooks(params: GenerateParams): Look[] {
           if (extra) addPiece(extra);
         }
       }
+
+      // Locked jewelry / accessories in the separates branch — every
+      // requested lock must survive into the final look.
+      const lockedJewelS = lockedByCat.get("jewelry");
+      if (lockedJewelS) addLocked(lockedJewelS);
+      const lockedAccS = lockedByCat.get("accessories");
+      if (lockedAccS && !pieces.some((p) => p.id === lockedAccS.id)) addLocked(lockedAccS);
     }
+
+    // Locked-item integrity — a look that dropped ANY requested lock is
+    // invalid ("Keep This Item" / closet styling promise the piece appears).
+    if (lockedByCat.size > 0) {
+      let allLocksPresent = true;
+      for (const lp of lockedByCat.values()) {
+        if (!pieces.some((p) => p.id === lp.id)) { allLocksPresent = false; break; }
+      }
+      if (!allLocksPresent) continue;
+    }
+
+    // FINAL hard budget cap — pool filters keep the running total in range on
+    // the normal path, but locked pieces are seeded verbatim, so re-assert the
+    // cap BEFORE the fingerprint is marked shown (an over-budget look must
+    // never poison the dedup memory).
+    if (cap !== Infinity && total > cap) continue;
 
     // Completeness gate — no partial outfits ever reach the grid. Men/unisex
     // need top+bottom+shoes; women need (dress | top+bottom)+shoes+bag — except
@@ -3051,10 +3413,13 @@ export function generateLooks(params: GenerateParams): Look[] {
     // Variety rotation: commit this look's articles to the within-batch set so
     // subsequent sibling looks prefer different pieces.
     for (const p of pieces) batchUsedArticles.add(productKey(p));
+    const narrative = composeLookNarrative({ pieces, occasion, style: dominantStyle, paletteName: selectedPalette.name, season });
     looks.push({
       id: `gen_${Date.now()}_${looks.length}_${Math.random().toString(36).substr(2, 6)}`,
       name: lookName,
       description: lookDesc,
+      whyItWorks: narrative.whyItWorks,
+      stylistTip: narrative.stylistTip,
       occasion,
       season: (season && season !== "All Season") ? season : pickSeasonForStyle(dominantStyle),
       estimatedPrice: total,
@@ -3200,6 +3565,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         id: `gen_brandlock_fb_${Date.now()}`,
         name: bName,
         description: generateDescription(occasion, bStyle),
+        ...composeLookNarrative({ pieces: bPieces, occasion, style: bStyle, paletteName: bPalette.name, season }),
         occasion,
         inspiredBy: celebName,
         season: (season && season !== "All Season") ? season : pickSeasonForStyle(bStyle),
@@ -3308,6 +3674,7 @@ export function generateLooks(params: GenerateParams): Look[] {
         id: `gen_fallback_${Date.now()}`,
         name: fallbackName,
         description: generateDescription(occasion, fallbackStyle),
+        ...composeLookNarrative({ pieces, occasion, style: fallbackStyle, paletteName: fallbackPalette.name, season }),
         occasion,
         // Attribution parity with the main path (line 1684) — if the user
         // arrived from a celeb CTA, even an ultra-fallback look stamps the
@@ -3414,6 +3781,10 @@ export interface AIStylistPlan {
 export interface ResolveAIPlanParams {
   gender: string;       // "Women" | "Men" | "Unisex"
   budget: string;
+  // Occasion label the user generated for (incl. optional " — subtype"
+  // suffix). Only used for narrative copy ("Why This Look Works"); the AI
+  // plan itself already encodes the occasion in its slots and palette.
+  occasion?: string;
   season?: string;      // user's onboarding season — overrides plan.season
   // When true, only catalog items with a reliable, brand-direct product image
   // (a live photo that actually loads — see hasReliableProductImage) are eligible.
@@ -3733,6 +4104,7 @@ export function generateLookFromAIPlan(
     id: `ai_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
     name: plan.name,
     description: plan.description,
+    ...composeLookNarrative({ pieces, occasion: params.occasion ?? "AI Stylist", style: plan.style, paletteName: plan.palette, season: effectiveSeason }),
     occasion: "AI Stylist",
     season: effectiveSeason && effectiveSeason !== "All Season"
       ? effectiveSeason

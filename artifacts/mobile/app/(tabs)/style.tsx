@@ -18,7 +18,9 @@ import { Feather } from "@expo/vector-icons";
 
 import { GoldButton } from "@/components/GoldButton";
 import { LookCard } from "@/components/LookCard";
-import { BUDGETS, GENDERS, Look } from "@/constants/data";
+import { BUDGETS, GENDERS, Look, OutfitPiece } from "@/constants/data";
+import { closetItemToPiece, pickClosetSeeds } from "@/lib/closetStyling";
+import { derivedAvoidBrands, derivedBoostStyles } from "@/lib/feedback";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { BrandWordmark } from "@/components/BrandWordmark";
@@ -81,8 +83,26 @@ const OCCASIONS: Occasion[] = [
   { label: "Event", image: require("../../assets/images/occasion_event.png") },
   { label: "Streetwear", image: require("../../assets/images/occasion_street.png") },
   { label: "Formal", image: require("../../assets/images/occasion_event.png") },
+  { label: "Night Out", image: require("../../assets/images/occasion_date.png") },
+  { label: "Wedding", image: require("../../assets/images/occasion_event.png") },
+  { label: "Concert", image: require("../../assets/images/occasion_street.png") },
+  { label: "Brunch", image: require("../../assets/images/occasion_casual.png") },
+  { label: "Travel", image: require("../../assets/images/occasion_vacation.png") },
   { label: "Fashion Remix", image: require("../../assets/images/occasions/formal_remix_unisex.png") },
 ];
+
+// Optional refinement per occasion (styling-agent spec): a subtype narrows
+// formality / footwear / season in the engine (SUBTYPE_RULES) and flavors the
+// AI brief. Purely optional — "skip" is always valid.
+const OCCASION_SUBTYPES: Record<string, string[]> = {
+  Work: ["Business Formal", "Business Professional", "Business Casual", "Smart Casual", "Creative Professional", "Casual Workplace"],
+  Event: ["Birthday", "Party", "Dinner", "Gala", "Fashion Event", "Sporting Event", "Corporate Event", "Graduation"],
+  Concert: ["Hip-Hop", "R&B", "Pop", "Rock", "Country", "Jazz", "Festival"],
+  Vacation: ["Beach", "Resort", "Cruise", "City", "Tropical", "Ski", "Desert", "Adventure"],
+  Wedding: ["Guest", "Wedding Party", "Black Tie", "Black-Tie Optional", "Garden Wedding", "Beach Wedding"],
+  "Night Out": ["Club", "Lounge", "Rooftop", "Bar", "Upscale Nightlife"],
+  Formal: ["Cocktail", "Formal Dinner", "Black Tie", "Black-Tie Optional", "Gala"],
+};
 
 type Step = "occasion" | "refine" | "results";
 
@@ -92,7 +112,9 @@ export default function StyleScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { userProfile, registerGeneratedLooks } = useApp();
+  const { userProfile, registerGeneratedLooks, closetItems, styleFeedback } = useApp();
+  // Closet Intelligence: owned pieces locked into the next generation.
+  const [closetSeeds, setClosetSeeds] = useState<OutfitPiece[]>([]);
   const { tier, showUpgradePrompt, refreshUsage, bumpLooksToday } = useEntitlements();
   const { appUserId } = useSubscription();
   // Optional celeb context — set when the user came from
@@ -101,13 +123,16 @@ export default function StyleScreen() {
   // Snapshotted to local state on mount so it survives within this Style
   // session, then the route params are immediately cleared so the bias
   // does NOT leak the next time the user opens the Style tab.
-  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam, budget: budgetParam, tvchar: tvCharParam, museHint: museHintParam } = useLocalSearchParams<{
+  const { celebrity: celebrityId, lookHint: lookHintParam, trendHint: trendHintParam, brand: brandParam, budget: budgetParam, tvchar: tvCharParam, museHint: museHintParam, closet: closetParam, closetItem: closetItemParam } = useLocalSearchParams<{
     celebrity?: string;
     celebName?: string;
     lookHint?: string;
     trendHint?: string;
     brand?: string;
     budget?: string;
+    // Closet Intelligence hand-off from /closet (see effect below).
+    closet?: string;
+    closetItem?: string;
     // TV Show Inspirations (constants/tvShows.ts). `tvchar` is a composite
     // muse id `tv:<showId>:<charId>` resolved to a synthetic CelebFull via
     // buildMuseFromCharId; `museHint` is the tapped signature-look name.
@@ -143,6 +168,7 @@ export default function StyleScreen() {
 
   const [step, setStep] = useState<Step>("occasion");
   const [selectedOccasion, setSelectedOccasion] = useState("");
+  const [selectedSubtype, setSelectedSubtype] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedBudget, setSelectedBudget] = useState(userProfile.budget || "$500–$1500");
   const [selectedGender, setSelectedGender] = useState(userProfile.gender || "Women");
@@ -229,9 +255,28 @@ export default function StyleScreen() {
     router.setParams({ tvchar: undefined, museHint: undefined });
   }, [tvCharParam, museHintParam, router]);
 
+  // One-shot capture of the Closet Intelligence route params. `closetItem`
+  // locks ONE specific owned item ("Style around this"); `closet=1` seeds up
+  // to two most-recent distinct-category items ("Style with My Closet").
+  // Locked closet pieces are seeded into generation VERBATIM and the engine
+  // completes the look with compatible purchasable products.
+  useEffect(() => {
+    if (!closetParam && !closetItemParam) return;
+    if (closetItemParam) {
+      const item = closetItems.find((c) => c.id === closetItemParam);
+      setClosetSeeds(item ? [closetItemToPiece(item)] : []);
+    } else {
+      setClosetSeeds(pickClosetSeeds(closetItems, 2));
+    }
+    router.setParams({ closet: undefined, closetItem: undefined });
+  }, [closetParam, closetItemParam, closetItems, router]);
+
   const selectOccasion = (label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedOccasion(label);
+    // Subtypes are occasion-specific — a stale "Ski" must never leak into
+    // a Wedding generation.
+    setSelectedSubtype("");
   };
 
   const goToRefine = () => {
@@ -268,9 +313,16 @@ export default function StyleScreen() {
         generateLooks({
           gender: selectedGender,
           occasion: selectedOccasion,
+          subtype: selectedSubtype || undefined,
           budget: selectedBudget,
           prompt,
-          favoriteStyles: userProfile.favoriteStyles,
+          // Preference learning (Love This / Not For Me): consistently loved
+          // styles are boosted; brands voted against are softly avoided.
+          favoriteStyles: [...userProfile.favoriteStyles, ...derivedBoostStyles(styleFeedback)],
+          avoidBrands: derivedAvoidBrands(styleFeedback),
+          // Closet Intelligence: locked owned pieces (if any) are seeded
+          // verbatim and the engine completes the look around them.
+          lockedItems: closetSeeds.length > 0 ? closetSeeds : undefined,
           count: 6,
           celebSignatureBrands: activeCeleb?.signatureBrands,
           celebName: activeCeleb?.name,
@@ -326,7 +378,12 @@ export default function StyleScreen() {
       const looks = await generateAILooks(
         {
           gender: genderForReq,
-          occasion: selectedOccasion || "Casual",
+          // Subtype folded into the occasion string so the AI stylist briefs
+          // around the specific setting ("Wedding — Black Tie", "Concert —
+          // Country") without a schema change.
+          occasion: selectedSubtype
+            ? `${selectedOccasion || "Casual"} — ${selectedSubtype}`
+            : (selectedOccasion || "Casual"),
           budget: selectedBudget,
           season: seasonForReq,
           prompt: effectivePrompt,
@@ -367,6 +424,7 @@ export default function StyleScreen() {
   const reset = () => {
     setStep("occasion");
     setSelectedOccasion("");
+    setSelectedSubtype("");
     setPrompt("");
     setResults([]);
     setGenerateCount(0);
@@ -482,6 +540,27 @@ export default function StyleScreen() {
               <View style={{ width: 20 }} />
             )}
           </View>
+
+          {/* Closet Intelligence banner — owned pieces locked into the next
+              generation. Tap × to clear and style from scratch. */}
+          {closetSeeds.length > 0 && step !== "results" && (
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setClosetSeeds([]); }}
+              style={({ pressed }) => [{
+                flexDirection: "row", alignItems: "center", gap: 8,
+                borderWidth: 1, borderColor: colors.gold, borderRadius: 20,
+                paddingHorizontal: 12, paddingVertical: 8, alignSelf: "flex-start",
+                marginBottom: 16, opacity: pressed ? 0.6 : 1,
+              }]}
+              accessibilityLabel="Clear closet items"
+            >
+              <Feather name="home" size={11} color={colors.gold} />
+              <Text style={{ fontSize: 10, letterSpacing: 1, color: colors.gold }} numberOfLines={1}>
+                STYLING WITH: {closetSeeds.map((p) => p.name.toUpperCase()).join(" + ")}
+              </Text>
+              <Feather name="x" size={11} color={colors.gold} />
+            </Pressable>
+          )}
 
           {step === "occasion" && (
             <>
@@ -611,6 +690,41 @@ export default function StyleScreen() {
                 ))}
               </View>
             </View>
+
+            {/* Occasion subtype (optional) */}
+            {(OCCASION_SUBTYPES[selectedOccasion]?.length ?? 0) > 0 && (
+              <View style={s.fieldBlock}>
+                <Text style={[s.fieldLabel, { color: colors.mutedForeground }]}>
+                  {selectedOccasion === "Work" ? "DRESS CODE" :
+                   selectedOccasion === "Concert" ? "GENRE" :
+                   selectedOccasion === "Vacation" ? "DESTINATION" :
+                   selectedOccasion === "Night Out" ? "WHERE TO" :
+                   "WHAT KIND"} · OPTIONAL
+                </Text>
+                <View style={s.chipRow}>
+                  {OCCASION_SUBTYPES[selectedOccasion].map((sub) => {
+                    const active = selectedSubtype === sub;
+                    return (
+                      <Pressable
+                        key={sub}
+                        onPress={() => { Haptics.selectionAsync(); setSelectedSubtype(active ? "" : sub); }}
+                        style={[
+                          s.chip,
+                          {
+                            borderColor: active ? colors.gold : colors.border,
+                            backgroundColor: active ? "rgba(198,167,94,0.1)" : "transparent",
+                          },
+                        ]}
+                      >
+                        <Text style={[s.chipText, { color: active ? colors.gold : colors.mutedForeground }]}>
+                          {sub}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
 
             {/* Budget */}
             <View style={s.fieldBlock}>

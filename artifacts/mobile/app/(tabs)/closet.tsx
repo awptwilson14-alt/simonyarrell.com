@@ -411,6 +411,16 @@ export default function ClosetScreen() {
                     {item.category}<GoldDot />{item.color}
                   </Text>
                 </View>
+                {/* Style THIS owned item — locks it into generation so the
+                    engine completes the look around it (Complete This Look). */}
+                <Pressable
+                  onPress={() => router.push(`/(tabs)/style?closetItem=${item.id}`)}
+                  hitSlop={12}
+                  style={{ marginRight: 14 }}
+                  accessibilityLabel={`Style around ${item.name}`}
+                >
+                  <Feather name="zap" size={14} color={colors.gold} />
+                </Pressable>
                 <Pressable onPress={() => handleDelete(item.id, item.name)} hitSlop={12}>
                   <Feather name="trash-2" size={14} color={colors.mutedForeground} />
                 </Pressable>
@@ -423,7 +433,7 @@ export default function ClosetScreen() {
           <View style={styles.closetActions}>
             <GoldButton
               label="Style with My Closet"
-              onPress={() => router.push("/(tabs)/style")}
+              onPress={() => router.push("/(tabs)/style?closet=1")}
             />
           </View>
         )}

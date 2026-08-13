@@ -11,6 +11,13 @@ import React, {
 } from "react";
 
 import { Look, LOOKS, Product } from "@/constants/data";
+import {
+  applyLove,
+  applyNotForMe,
+  EMPTY_FEEDBACK,
+  type NotForMeReason,
+  type StyleFeedback,
+} from "@/lib/feedback";
 
 export interface ClosetItem {
   id: string;
@@ -55,6 +62,11 @@ interface AppContextType {
   completeOnboarding: (profile: Partial<UserProfile>) => void;
   registerGeneratedLooks: (looks: Look[]) => void;
   findLook: (id: string) => Look | undefined;
+  // Love This / Not For Me preference learning (soft generation biases).
+  styleFeedback: StyleFeedback;
+  loveLook: (look: Look) => void;
+  rejectLook: (look: Look, reason: NotForMeReason) => void;
+  lookFeedbackGiven: (id: string) => "love" | "reject" | undefined;
 }
 
 // Saved looks expire 7 days after they were saved, unless the user saves /
@@ -81,6 +93,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [savedCelebrityIds, setSavedCelebrityIds] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [generatedLooksMap, setGeneratedLooksMap] = useState<Record<string, Look>>({});
+  const [styleFeedback, setStyleFeedback] = useState<StyleFeedback>(EMPTY_FEEDBACK);
+  // Which looks the user already rated (love/reject) — drives button state.
+  const [feedbackByLook, setFeedbackByLook] = useState<Record<string, "love" | "reject">>({});
 
   useEffect(() => {
     loadPersistedData();
@@ -100,12 +115,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loadPersistedData = async () => {
     try {
-      const [looks, products, closet, celebs, profile] = await Promise.all([
+      const [looks, products, closet, celebs, profile, feedback, feedbackIds] = await Promise.all([
         AsyncStorage.getItem("savedLooks"),
         AsyncStorage.getItem("savedProducts"),
         AsyncStorage.getItem("closetItems"),
         AsyncStorage.getItem("savedCelebrityIds"),
         AsyncStorage.getItem("userProfile"),
+        AsyncStorage.getItem("styleFeedback"),
+        AsyncStorage.getItem("feedbackByLook"),
       ]);
       if (looks) {
         const now = Date.now();
@@ -128,8 +145,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // before a new field like `season` was added) inherit the default
       // for any missing key instead of becoming undefined.
       if (profile) setUserProfile({ ...DEFAULT_PROFILE, ...JSON.parse(profile) });
+      // Hydration must never clobber a rating the user made while storage
+      // was still loading — only apply persisted feedback when the in-memory
+      // state is still pristine.
+      if (feedback) {
+        const loaded = { ...EMPTY_FEEDBACK, ...JSON.parse(feedback) };
+        setStyleFeedback((cur) => (cur === EMPTY_FEEDBACK ? loaded : cur));
+      }
+      if (feedbackIds) {
+        const loadedIds = JSON.parse(feedbackIds);
+        setFeedbackByLook((cur) => (Object.keys(cur).length === 0 ? { ...loadedIds, ...cur } : { ...loadedIds, ...cur }));
+      }
     } catch {}
   };
+
+  // Love This / Not For Me — one rating per look; signals accumulate into
+  // soft generation biases (see lib/feedback.ts).
+  const loveLook = useCallback((look: Look) => {
+    setFeedbackByLook((prev) => {
+      if (prev[look.id]) return prev;
+      const nextIds = { ...prev, [look.id]: "love" as const };
+      AsyncStorage.setItem("feedbackByLook", JSON.stringify(nextIds));
+      setStyleFeedback((fb) => {
+        const next = applyLove(fb, look);
+        AsyncStorage.setItem("styleFeedback", JSON.stringify(next));
+        return next;
+      });
+      return nextIds;
+    });
+  }, []);
+
+  const rejectLook = useCallback((look: Look, reason: NotForMeReason) => {
+    setFeedbackByLook((prev) => {
+      if (prev[look.id]) return prev;
+      const nextIds = { ...prev, [look.id]: "reject" as const };
+      AsyncStorage.setItem("feedbackByLook", JSON.stringify(nextIds));
+      setStyleFeedback((fb) => {
+        const next = applyNotForMe(fb, look, reason);
+        AsyncStorage.setItem("styleFeedback", JSON.stringify(next));
+        return next;
+      });
+      return nextIds;
+    });
+  }, []);
+
+  const lookFeedbackGiven = useCallback(
+    (id: string) => feedbackByLook[id],
+    [feedbackByLook]
+  );
 
   const saveLook = useCallback((look: Look) => {
     setSavedLooks((prev) => {
@@ -264,6 +327,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         completeOnboarding,
         registerGeneratedLooks,
+        styleFeedback,
+        loveLook,
+        rejectLook,
+        lookFeedbackGiven,
         findLook,
       }}
     >

@@ -26,6 +26,8 @@ import { findCelebByName } from "@/lib/celebLookup";
 import { pickLookHero, pickStyleHero } from "@/constants/heroImages";
 import { hasNamedLookImageForStyle, assignUniqueLookImages, getSignatureBrands } from "@/lib/outfitEngine";
 import { openAffiliateProduct } from "@/lib/affiliateLinkService";
+import { CHANGE_ITEM_MODES, REMIX_ACTIONS, changeItem, remixLook, type ChangeItemMode, type RemixAction } from "@/lib/remix";
+import { NOT_FOR_ME_REASONS } from "@/lib/feedback";
 import AffiliateDisclosure from "@/components/AffiliateDisclosure";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
@@ -43,8 +45,18 @@ export default function LookDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook, userProfile, savedLooks } = useApp();
+  const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook, userProfile, savedLooks, registerGeneratedLooks, loveLook, rejectLook, lookFeedbackGiven } = useApp();
   const [panel, setPanel] = useState<PanelView>("details");
+  // Remix This Look — which action is generating, and the last soft failure.
+  const [remixing, setRemixing] = useState<RemixAction | null>(null);
+  const [remixError, setRemixError] = useState<string | null>(null);
+  // Keep This Item — locked pieces survive every remix (never replaced).
+  const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
+  // Change This Item — which piece's swap options are open, and busy state.
+  const [changeTarget, setChangeTarget] = useState<string | null>(null);
+  const [changing, setChanging] = useState<ChangeItemMode | null>(null);
+  // Not For Me — whether the reason picker is open.
+  const [showReasons, setShowReasons] = useState(false);
 
   const look = findLook(id ?? "");
   // Look-detail piece brands tap → shop brand drawer (batch 63 → batch 64
@@ -123,6 +135,58 @@ export default function LookDetailScreen() {
 
   // Record a BUY tap (fire-and-forget) then open the retailer. One helper so
   // all four purchase affordances on this screen log identically.
+  // Remix This Look: derive new params from THIS look, run the engine (all
+  // hard gates + global dedup apply), register the result and navigate to it.
+  const runRemix = (action: RemixAction) => {
+    if (!look || remixing) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setRemixError(null);
+    setRemixing(action);
+    // Defer a tick so the "STYLING…" state paints before the synchronous
+    // engine call blocks the JS thread.
+    setTimeout(() => {
+      try {
+        const remixed = remixLook(look, action, {
+          favoriteStyles: userProfile.favoriteStyles,
+          season: userProfile.season,
+          // Locked pieces ride through the remix untouched.
+          lockedItems: look.pieces.filter((p) => lockedIds.has(p.id)),
+        });
+        if (!remixed) {
+          setRemixError("Couldn't compose a fresh remix in that direction — try another one.");
+          return;
+        }
+        registerGeneratedLooks([remixed]);
+        router.push(`/look/${remixed.id}`);
+      } finally {
+        setRemixing(null);
+      }
+    }, 50);
+  };
+
+  // Change This Item: swap ONE piece under a constraint; all other pieces are
+  // locked so the outfit is preserved, and the whole look is re-validated.
+  const runChange = (pieceId: string, mode: ChangeItemMode) => {
+    if (!look || changing) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setRemixError(null);
+    setChanging(mode);
+    setTimeout(() => {
+      try {
+        const updated = changeItem(look, pieceId, mode, { favoriteStyles: userProfile.favoriteStyles });
+        if (!updated) {
+          setRemixError("No piece in the catalog satisfies that swap right now — try a different direction.");
+          return;
+        }
+        registerGeneratedLooks([updated]);
+        setChangeTarget(null);
+        router.push(`/look/${updated.id}`);
+      } finally {
+        setChanging(null);
+      }
+    }, 50);
+  };
+
   const buyPiece = (
     piece: { name: string; brand: string; category: string; price: number; purchaseUrl?: string },
     eventType: "affiliate_click" | "buy_outfit_click" = "affiliate_click",
@@ -245,6 +309,28 @@ export default function LookDetailScreen() {
           <Text style={[styles.description, { color: colors.mutedForeground }]}>
             {look.description}
           </Text>
+          {/* Why This Look Works — concrete styling logic composed by the
+              engine from the look's real pieces/palette (styling-agent spec). */}
+          {look.whyItWorks ? (
+            <View style={{ marginTop: 18 }}>
+              <Text style={[styles.brandsLabel, { color: colors.gold }]}>
+                WHY THIS LOOK WORKS
+              </Text>
+              <Text style={[styles.description, { color: colors.mutedForeground, marginTop: 8 }]}>
+                {look.whyItWorks}
+              </Text>
+            </View>
+          ) : null}
+          {look.stylistTip ? (
+            <View style={{ marginTop: 14, borderLeftWidth: 2, borderLeftColor: colors.gold, paddingLeft: 12 }}>
+              <Text style={[styles.brandsLabel, { color: colors.mutedForeground }]}>
+                STYLIST TIP
+              </Text>
+              <Text style={[styles.description, { color: colors.mutedForeground, marginTop: 6, fontStyle: "italic" }]}>
+                {look.stylistTip}
+              </Text>
+            </View>
+          ) : null}
           {/* AI palette swatches — only render hex-valid entries so a
               malformed model response can't crash RN's color parser. The
               palette NAME already shows in the hero pill (e.g. "Champagne
@@ -464,11 +550,77 @@ export default function LookDetailScreen() {
                     )}
                   </Text>
                 </View>
-                <Text style={[styles.piecePrice, { color: colors.foreground }]}>
-                  ${piece.price.toLocaleString()}
-                </Text>
+                <View style={{ alignItems: "flex-end", gap: 8 }}>
+                  <Text style={[styles.piecePrice, { color: colors.foreground }]}>
+                    ${piece.price.toLocaleString()}
+                  </Text>
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    {/* Keep This Item — locked pieces survive every remix. */}
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setLockedIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(piece.id)) next.delete(piece.id); else next.add(piece.id);
+                          return next;
+                        });
+                      }}
+                      accessibilityLabel={lockedIds.has(piece.id) ? "Unlock item" : "Keep this item"}
+                    >
+                      <Feather
+                        name={lockedIds.has(piece.id) ? "lock" : "unlock"}
+                        size={14}
+                        color={lockedIds.has(piece.id) ? colors.gold : colors.mutedForeground}
+                      />
+                    </Pressable>
+                    {/* Change This Item */}
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setChangeTarget((cur) => (cur === piece.id ? null : piece.id));
+                      }}
+                      accessibilityLabel="Change this item"
+                    >
+                      <Feather
+                        name="refresh-cw"
+                        size={14}
+                        color={changeTarget === piece.id ? colors.gold : colors.mutedForeground}
+                      />
+                    </Pressable>
+                  </View>
+                </View>
               </View>
             ))}
+
+            {/* Change This Item — swap options for the selected piece. */}
+            {changeTarget && look.pieces.some((p) => p.id === changeTarget) ? (
+              <View style={{ paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
+                <Text style={[styles.altHeader, { color: colors.gold }]}>CHANGE THIS ITEM</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                  {CHANGE_ITEM_MODES.map((mode) => (
+                    <Pressable
+                      key={mode}
+                      disabled={changing !== null}
+                      onPress={() => runChange(changeTarget, mode)}
+                      style={({ pressed }) => [{
+                        borderWidth: 1,
+                        borderColor: changing === mode ? colors.gold : colors.border,
+                        borderRadius: 20,
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
+                        opacity: pressed || (changing !== null && changing !== mode) ? 0.5 : 1,
+                      }]}
+                    >
+                      <Text style={{ fontSize: 10, letterSpacing: 1, color: changing === mode ? colors.gold : colors.mutedForeground }}>
+                        {changing === mode ? "SWAPPING…" : mode.toUpperCase()}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             <View style={[styles.totalRow, { borderTopColor: colors.gold }]}>
               <Text style={[styles.totalLabel, { color: colors.mutedForeground }]}>TOTAL LOOK</Text>
@@ -532,6 +684,113 @@ export default function LookDetailScreen() {
                 </Pressable>
               </View>
             ) : null}
+
+            {/* ── Remix This Look ── */}
+            <View style={{ marginTop: 28 }}>
+              <Text style={[styles.altHeader, { color: colors.gold }]}>REMIX THIS LOOK</Text>
+              <Text style={[styles.sectionMeta, { color: colors.mutedForeground, marginTop: 6 }]}>
+                Same standards, new direction — every remix is a fresh, never-shown combination.
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                {REMIX_ACTIONS.map((action) => (
+                  <Pressable
+                    key={action}
+                    disabled={remixing !== null}
+                    onPress={() => runRemix(action)}
+                    style={({ pressed }) => [
+                      {
+                        borderWidth: 1,
+                        borderColor: remixing === action ? colors.gold : colors.border,
+                        borderRadius: 20,
+                        paddingHorizontal: 14,
+                        paddingVertical: 8,
+                        opacity: pressed || (remixing !== null && remixing !== action) ? 0.5 : 1,
+                        backgroundColor: remixing === action ? "rgba(198,167,94,0.1)" : "transparent",
+                      },
+                    ]}
+                  >
+                    <Text style={{ fontSize: 11, letterSpacing: 1, color: remixing === action ? colors.gold : colors.mutedForeground }}>
+                      {remixing === action ? "STYLING…" : action.toUpperCase()}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              {remixError ? (
+                <Text style={[styles.sectionMeta, { color: colors.mutedForeground, marginTop: 10 }]}>
+                  {remixError}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* ── Love This / Not For Me — preference learning ── */}
+            <View style={{ marginTop: 28 }}>
+              {(() => {
+                const rated = lookFeedbackGiven(look.id);
+                if (rated) {
+                  return (
+                    <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
+                      {rated === "love"
+                        ? "Noted — Simon will lean into this direction."
+                        : "Understood — you'll see less of this."}
+                    </Text>
+                  );
+                }
+                return (
+                  <>
+                    <View style={{ flexDirection: "row", gap: 10 }}>
+                      <Pressable
+                        onPress={() => {
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                          loveLook(look);
+                          setShowReasons(false);
+                        }}
+                        style={({ pressed }) => [{
+                          flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8,
+                          borderWidth: 1, borderColor: colors.gold, borderRadius: 24, paddingVertical: 12,
+                          opacity: pressed ? 0.6 : 1,
+                        }]}
+                      >
+                        <Feather name="heart" size={13} color={colors.gold} />
+                        <Text style={{ fontSize: 11, letterSpacing: 1.5, color: colors.gold }}>LOVE THIS</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => { Haptics.selectionAsync(); setShowReasons((v) => !v); }}
+                        style={({ pressed }) => [{
+                          flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8,
+                          borderWidth: 1, borderColor: showReasons ? colors.gold : colors.border, borderRadius: 24, paddingVertical: 12,
+                          opacity: pressed ? 0.6 : 1,
+                        }]}
+                      >
+                        <Feather name="thumbs-down" size={13} color={colors.mutedForeground} />
+                        <Text style={{ fontSize: 11, letterSpacing: 1.5, color: colors.mutedForeground }}>NOT FOR ME</Text>
+                      </Pressable>
+                    </View>
+                    {showReasons ? (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                        {NOT_FOR_ME_REASONS.map((reason) => (
+                          <Pressable
+                            key={reason}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              rejectLook(look, reason);
+                              setShowReasons(false);
+                            }}
+                            style={({ pressed }) => [{
+                              borderWidth: 1, borderColor: colors.border, borderRadius: 20,
+                              paddingHorizontal: 12, paddingVertical: 7, opacity: pressed ? 0.5 : 1,
+                            }]}
+                          >
+                            <Text style={{ fontSize: 10, letterSpacing: 1, color: colors.mutedForeground }}>
+                              {reason.toUpperCase()}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : null}
+                  </>
+                );
+              })()}
+            </View>
           </View>
         )}
 

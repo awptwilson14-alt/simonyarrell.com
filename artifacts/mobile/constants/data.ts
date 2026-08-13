@@ -49,6 +49,14 @@ export interface Look {
   // detail page (and anywhere the look is later saved/displayed). Undefined
   // for regular generations and for the static LOOKS array.
   inspiredBy?: string;
+  // "Why This Look Works" — 2–4 sentences of concrete styling logic composed
+  // from the look's REAL attributes (palette, silhouette, footwear, occasion).
+  // Never generic filler. Set by the engine on every generated look; optional
+  // because the hand-curated static LOOKS array predates the feature.
+  whyItWorks?: string;
+  // One practical finishing tip (how to wear the jacket, whether to tuck,
+  // jewelry guidance…). Derived from the pieces actually in the look.
+  stylistTip?: string;
   // Hex color swatches the AI stylist composed this look around — rendered
   // as a small swatch row on the look-detail page so users see the editorial
   // palette, not just its name. Only set for AI Stylist looks; values are

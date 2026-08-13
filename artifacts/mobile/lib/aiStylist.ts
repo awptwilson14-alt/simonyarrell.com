@@ -187,6 +187,7 @@ export async function generateAILooks(
   const usedAcross = resolveParams.tvInspiration ? new Set<string>() : undefined;
   const batchParams: ResolveAIPlanParams = {
     ...resolveParams,
+    occasion: resolveParams.occasion ?? req.occasion,
     allowMixedStyles: resolveParams.allowMixedStyles || wantsMixedStyles(req),
   };
   const maxAttempts = count * 4;

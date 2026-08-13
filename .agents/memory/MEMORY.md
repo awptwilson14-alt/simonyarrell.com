@@ -20,4 +20,5 @@
 - [Runway verified-archive honesty](runway-verified-archive.md) — Original Runway Looks come ONLY from lib/runwayArchive.ts (ships EMPTY; never invent/scrape runway data); AI output is always labeled a recreation.
 - [Style coherence gate](style-coherence-gate.md) — every gen path runs isStyleCoherent (formality span ≤2, ≤1 loud pattern, ≤2 accent families) BEFORE markShown; sneakerAlt re-gates the swap; no brand hard-coding.
 - [Affiliate link resolver](affiliate-link-resolver.md) — ALL buy links monetize via one resolver (Rakuten template → other network → sitewide → raw); never fabricate tracking links; already-tagged URLs are immutable.
+- [Locked-items generation contract](locked-items-generation.md) — lockedItems seed verbatim but final budget-cap + lock-integrity + gender gates run before markShown; closet ids are trusted, catalog ids re-gated.
 - [Mandatory season consistency](season-consistency.md) — no summer+winter mix in any look; `isSeasonallyConsistent` gate on ALL builders + AI resolver; name-based `hasSeasonConflict` catches accessory violations (tank+scarf) that inferItemSeasons misses; keep neutrals flexible.
