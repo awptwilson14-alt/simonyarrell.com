@@ -5,6 +5,7 @@
  * a normal generate. Returns a Look[] (currently 1 look per AI call).
  */
 import type { Look } from "@/constants/data";
+import { API_BASE } from "./apiBase";
 import {
   generateLookFromAIPlan,
   productKey,
@@ -12,23 +13,7 @@ import {
   type ResolveAIPlanParams,
 } from "./outfitEngine";
 
-const API_BASE = resolveApiBase();
 
-function resolveApiBase(): string {
-  // 1. Explicit override (CI/prod).
-  const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
-  // 2. Replit dev preview — the mobile dev script exports EXPO_PUBLIC_DOMAIN
-  //    (set to $REPLIT_DEV_DOMAIN). Use it for both web preview and native
-  //    Expo Go so the API base resolves automatically.
-  const dev =
-    process.env.EXPO_PUBLIC_DOMAIN ||
-    process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
-  if (dev && dev.length > 0) return `https://${dev}`;
-  // 3. Last-resort relative — works on web same-origin; native will surface
-  //    a clear network error via AIStylistError.
-  return "";
-}
 
 export interface AIStylistRequest {
   gender: "Women" | "Men" | "Unisex";

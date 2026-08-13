@@ -1,19 +1,10 @@
+import { API_BASE } from "./apiBase";
 /**
  * Newsletter client — calls POST /api/newsletter/subscribe so the
  * "Stay Ahead of Luxury Fashion" signup actually persists subscriber emails.
  */
 
-const API_BASE = resolveApiBase();
 
-function resolveApiBase(): string {
-  const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
-  const dev =
-    process.env.EXPO_PUBLIC_DOMAIN ||
-    process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
-  if (dev && dev.length > 0) return `https://${dev}`;
-  return "";
-}
 
 export async function subscribeToNewsletter(
   email: string,

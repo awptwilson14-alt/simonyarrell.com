@@ -7,16 +7,8 @@
  * reported by the network) revenue. Server side: POST /api/affiliate/clicks.
  */
 import { effectiveRuntimeConfig } from "./affiliateSettings";
+import { API_BASE } from "./apiBase";
 
-function resolveApiBase(): string {
-  const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
-  const dev =
-    process.env.EXPO_PUBLIC_DOMAIN || process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
-  if (dev && dev.length > 0) return `https://${dev}`;
-  return "";
-}
-const API_BASE = resolveApiBase();
 
 /** Absolute API URL for a server path (shared by affiliate modules). */
 export function apiUrl(path: string): string {

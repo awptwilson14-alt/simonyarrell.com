@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE } from "./apiBase";
 import { AppState } from "react-native";
 import { LOOKS } from "@/constants/data";
 
@@ -20,17 +21,7 @@ const KEY = "shownLookFingerprints";
 // register everything we generate. All calls are best-effort — offline just
 // degrades to per-device dedup, never blocks generation.
 
-const API_BASE = resolveApiBase();
 
-function resolveApiBase(): string {
-  const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
-  const dev =
-    process.env.EXPO_PUBLIC_DOMAIN ||
-    process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
-  if (dev && dev.length > 0) return `https://${dev}`;
-  return "";
-}
 
 // Fingerprints generated locally but not yet confirmed by the server.
 // Mirrored to AsyncStorage (PENDING_KEY) so an abrupt kill before the POST

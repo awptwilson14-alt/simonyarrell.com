@@ -10,6 +10,7 @@
  * fallback used by `promoSettings.ts` after the offline built-in codes miss.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE } from "./apiBase";
 
 import type { TierId } from "./tiers";
 
@@ -55,16 +56,7 @@ export class PromoAdminError extends Error {
   }
 }
 
-function resolveApiBase(): string {
-  const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
-  const dev =
-    process.env.EXPO_PUBLIC_DOMAIN || process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
-  if (dev && dev.length > 0) return `https://${dev}`;
-  return "";
-}
 
-const API_BASE = resolveApiBase();
 const ADMIN_KEY_STORAGE = "promoAdminKey.v1";
 
 let cachedKey: string | null = null;

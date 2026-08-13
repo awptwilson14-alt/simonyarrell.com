@@ -1,19 +1,11 @@
+import { API_BASE } from "./apiBase";
 /**
  * Virtual try-on client — calls POST /api/tryon/compose, which composites the
  * user's photo with the garment images of a look via Gemini image generation
  * and returns a photorealistic image of the user wearing the outfit.
  */
 
-const API_BASE = resolveApiBase();
 
-function resolveApiBase(): string {
-  const explicit = process.env.EXPO_PUBLIC_API_URL;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/+$/, "");
-  const dev =
-    process.env.EXPO_PUBLIC_DOMAIN || process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN;
-  if (dev && dev.length > 0) return `https://${dev}`;
-  return "";
-}
 
 export type PersonMimeType = "image/jpeg" | "image/png" | "image/webp";
 
