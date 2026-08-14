@@ -47,6 +47,13 @@ export default function LookDetailScreen() {
   const router = useRouter();
   const { isLookSaved, saveLook, unsaveLook, saveProduct, isProductSaved, findLook, userProfile, savedLooks, registerGeneratedLooks, loveLook, rejectLook, lookFeedbackGiven } = useApp();
   const [panel, setPanel] = useState<PanelView>("details");
+  // Runtime-resolved image URI per piece (keyed by piece.id / "sneakerAlt").
+  // ResilientImage reports what it is ACTUALLY showing (real photo can fail
+  // → AI product shot at runtime); the zoom lightbox must enlarge the same
+  // image, not the original failed URL.
+  const [runtimeImageUris, setRuntimeImageUris] = useState<Record<string, string | undefined>>({});
+  const reportRuntimeUri = (key: string) => (uri: string | undefined) =>
+    setRuntimeImageUris((prev) => (prev[key] === uri ? prev : { ...prev, [key]: uri }));
   // Remix This Look — which action is generating, and the last soft failure.
   const [remixing, setRemixing] = useState<RemixAction | null>(null);
   const [remixError, setRemixError] = useState<string | null>(null);
@@ -509,7 +516,10 @@ export default function LookDetailScreen() {
                     piece.localImage
                       ? piece.localImage
                       : (() => {
-                          const eff = resolveEffectiveImageUri(piece.imageUrl, piece.brand, piece.name, piece.category, piece.color);
+                          const eff =
+                            piece.id in runtimeImageUris
+                              ? runtimeImageUris[piece.id]
+                              : resolveEffectiveImageUri(piece.imageUrl, piece.brand, piece.name, piece.category, piece.color);
                           return eff ? { uri: eff } : null;
                         })()
                   }
@@ -525,6 +535,7 @@ export default function LookDetailScreen() {
                       name={piece.name}
                       category={piece.category}
                       color={piece.color}
+                      onEffectiveUriChange={reportRuntimeUri(piece.id)}
                     />
                   </View>
                 </ZoomableImage>
@@ -652,7 +663,10 @@ export default function LookDetailScreen() {
                       look.sneakerAlt.localImage
                         ? look.sneakerAlt.localImage
                         : (() => {
-                            const eff = resolveEffectiveImageUri(look.sneakerAlt.imageUrl, look.sneakerAlt.brand, look.sneakerAlt.name, "shoes", look.sneakerAlt.color);
+                            const eff =
+                              "sneakerAlt" in runtimeImageUris
+                                ? runtimeImageUris["sneakerAlt"]
+                                : resolveEffectiveImageUri(look.sneakerAlt.imageUrl, look.sneakerAlt.brand, look.sneakerAlt.name, "shoes", look.sneakerAlt.color);
                             return eff ? { uri: eff } : null;
                           })()
                     }
@@ -668,6 +682,7 @@ export default function LookDetailScreen() {
                         name={look.sneakerAlt.name}
                         category="shoes"
                         color={look.sneakerAlt.color}
+                        onEffectiveUriChange={reportRuntimeUri("sneakerAlt")}
                       />
                     </View>
                   </ZoomableImage>

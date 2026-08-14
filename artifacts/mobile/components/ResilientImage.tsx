@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { isBadUnsId } from "@/constants/badImageIds";
@@ -108,6 +108,12 @@ export interface ResilientImageProps {
   name?: string;
   /** Scale the monogram + icon for larger tiles (e.g. ProductCard hero). */
   size?: "sm" | "md" | "lg";
+  /** Notifies the parent whenever the RUNTIME-resolved image URI changes
+   *  (e.g. real retailer photo failed → switched to the AI product shot).
+   *  Zoom/lightbox wrappers should use this so they enlarge exactly what
+   *  the thumbnail is showing. Reports undefined when only the monogram
+   *  fallback is visible. */
+  onEffectiveUriChange?: (uri: string | undefined) => void;
 }
 
 /** Absolute URL of the AI-generated product photo for an item. Exported so
@@ -155,8 +161,19 @@ export function ResilientImage({
   color,
   name,
   size = "sm",
+  onEffectiveUriChange,
 }: ResilientImageProps) {
   const [failed, setFailed] = useState(false);
+  // When the REAL retailer image errors, we don't give up — we fall through
+  // to the server-side AI-generated product shot (owner rule: every piece
+  // shows a clothing photo; the monogram tile is a loading state only).
+  const [realUriFailed, setRealUriFailed] = useState(false);
+  // Bounded retry of the generated-image endpoint: the server 404s while
+  // generation is rate-limited/in-flight or when a paid generation fails,
+  // so retrying with backoff usually succeeds a few seconds later. The
+  // `retry` counter is appended as a cache-buster so the image layer
+  // re-fetches instead of replaying the cached 404.
+  const [retry, setRetry] = useState(0);
   // `loaded` flips true only when expo-image actually reports a successful
   // load (not just onLoadEnd, which fires on errors too). Until then the
   // editorial fallback tile underneath stays visible — fixes the case where
@@ -164,7 +181,35 @@ export function ResilientImage({
   // / blank response that never triggers onError, leaving the thumbnail
   // permanently empty. See batch 133.
   const [loaded, setLoaded] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(true);
+  const clearRetryTimer = () => {
+    if (retryTimer.current) {
+      clearTimeout(retryTimer.current);
+      retryTimer.current = null;
+    }
+  };
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearRetryTimer();
+    };
+  }, []);
 
+  // Reset ALL failure/retry state when the item identity changes — list rows
+  // are recycled, and stale `failed`/`realUriFailed`/`retry` from a previous
+  // product must never suppress the new product's image.
+  const identity = `${uri ?? ""}|${localSource ?? ""}|${brand ?? ""}|${name ?? ""}|${category ?? ""}|${color ?? ""}`;
+  const prevIdentity = useRef(identity);
+  if (prevIdentity.current !== identity) {
+    prevIdentity.current = identity;
+    clearRetryTimer();
+    setFailed(false);
+    setRealUriFailed(false);
+    setRetry(0);
+    setLoaded(false);
+  }
   // Render-time visual-denylist check — see header comment. Stale AsyncStorage
   // saves (e.g. savedProducts captured before an ID joined the denylist) still
   // ship the decayed URL to this component; pulling the ID out of the URI and
@@ -179,14 +224,67 @@ export function ResilientImage({
   // product photo (generated once per unique item, cached forever). The
   // monogram tile still renders underneath while it loads and remains the
   // final fallback if the endpoint 404s (generation failed / server down).
-  const effectiveUri = localSource
+  const generatedUri = generatedItemImageUri(brand, name, category, color);
+  const resolvedUri = localSource
     ? uri
     : resolveEffectiveImageUri(uri, brand, name, category, color);
+  // Real retailer URI failed to load? Fall through to the AI product shot.
+  const usingGenerated =
+    !localSource &&
+    !!generatedUri &&
+    (resolvedUri === generatedUri || (realUriFailed && !!resolvedUri));
+  const baseUri = usingGenerated ? generatedUri : resolvedUri;
+  // Cache-bust generated-image retries so a previously cached 404 response
+  // isn't replayed by the image layer.
+  const effectiveUri =
+    usingGenerated && retry > 0
+      ? `${baseUri}${baseUri!.includes("?") ? "&" : "?"}r=${retry}`
+      : baseUri;
+
+  const MAX_GENERATED_RETRIES = 6;
+  const handleError = () => {
+    if (localSource) {
+      setFailed(true);
+      return;
+    }
+    // A real product photo failed → switch to the generated shot (if any).
+    if (!usingGenerated && generatedUri) {
+      setLoaded(false);
+      setRealUriFailed(true);
+      return;
+    }
+    // Generated shot failed → retry with backoff; the server may just be
+    // rate-limited or mid-generation. Give up (monogram) only after the cap.
+    if (usingGenerated && retry < MAX_GENERATED_RETRIES) {
+      // Single pending timer at most: a burst of error events must not stack
+      // callbacks (that would blow past the retry cap and leak timers).
+      if (retryTimer.current) return;
+      const delay = Math.min(2000 * 2 ** retry, 15000);
+      retryTimer.current = setTimeout(() => {
+        retryTimer.current = null;
+        if (mounted.current) setRetry((r) => r + 1);
+      }, delay);
+      return;
+    }
+    setFailed(true);
+  };
 
   // effectiveUri already excludes denylisted URIs (they were swapped for the
   // generated photo or undefined above), so no further denylist check here.
   const hasImage = !!(localSource || effectiveUri);
   const showOverlay = hasImage && !failed;
+
+  // Keep zoom/lightbox owners in sync with the RUNTIME-resolved image (which
+  // can change after mount when a real photo fails → generated shot). Report
+  // the stable base URI (no cache-buster); undefined when only the monogram
+  // renders. localSource callers pass their own asset, so skip them.
+  const reportedUri = failed || localSource ? undefined : baseUri;
+  useEffect(() => {
+    onEffectiveUriChange?.(reportedUri);
+    // Intentionally NOT keyed on the callback identity — parents pass inline
+    // lambdas; re-notifying on every parent render would loop their state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportedUri]);
 
   const monoSize = size === "lg" ? 44 : size === "md" ? 28 : 20;
   const iconSize = size === "lg" ? 18 : size === "md" ? 12 : 9;
@@ -270,7 +368,7 @@ export function ResilientImage({
         contentFit="cover"
         transition={transition}
         onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
+        onError={handleError}
       />
     </View>
   );
