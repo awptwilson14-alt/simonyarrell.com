@@ -1,0 +1,1075 @@
+============================================================
+SIMON YARRELL — COMPLETE REAL PRODUCT + ACTUAL IMAGE ENGINE
+============================================================
+
+PURPOSE:
+
+Simon Yarrell is a real-product AI fashion styling and shopping platform.
+
+Every shoppable outfit must be built from ACTUAL RETAIL PRODUCTS.
+
+Every visible product must display the ACTUAL IMAGE of the exact product being recommended.
+
+Never display stock photos, generic fashion images, AI-generated products, placeholders, brand logos, similar-looking items, or inspiration images in place of the exact product.
+
+============================================================
+GLOBAL HARD SETTINGS
+============================================================
+
+const REAL_PRODUCTS_ONLY = true;
+const REAL_PRODUCT_IMAGE_REQUIRED = true;
+const ALLOW_STOCK_IMAGES = false;
+const ALLOW_PLACEHOLDERS = false;
+const ALLOW_BRAND_LOGO_AS_PRODUCT_IMAGE = false;
+const ALLOW_AI_PRODUCT_IMAGES = false;
+const ALLOW_GENERIC_IMAGES = false;
+const ALLOW_SIMILAR_PRODUCT_IMAGES = false;
+const REQUIRE_VALID_PRODUCT_URL = true;
+const REQUIRE_IMAGE_PRODUCT_MATCH = true;
+const REQUIRE_RETAILER_VERIFICATION = true;
+const REQUIRE_EXACT_PRODUCT = true;
+const DIRECT_RETAILER_LINKS_ENABLED = true;
+const AFFILIATE_LINKS_REQUIRED = false;
+
+============================================================
+CORE RULE
+============================================================
+
+NO VERIFIED PRODUCT
+=
+NO PRODUCT CARD
+
+NO VERIFIED IMAGE
+=
+NO PRODUCT CARD
+
+NO VALID PRODUCT URL
+=
+NO PRODUCT CARD
+
+IMAGE DOES NOT MATCH PRODUCT
+=
+NO PRODUCT CARD
+
+ONE INVALID ITEM
+=
+REPLACE THAT ITEM BEFORE DISPLAYING THE LOOK
+
+============================================================
+1. REAL PRODUCTS ONLY
+============================================================
+
+Every item must be a real product sold by a legitimate retailer or brand.
+
+This applies to:
+
+- Dresses
+- Tops
+- Shirts
+- T-shirts
+- Sweaters
+- Hoodies
+- Jackets
+- Coats
+- Pants
+- Jeans
+- Skirts
+- Shorts
+- Suits
+- Shoes
+- Sneakers
+- Boots
+- Loafers
+- Heels
+- Sandals
+- Bags
+- Handbags
+- Backpacks
+- Jewelry
+- Watches
+- Sunglasses
+- Belts
+- Hats
+- Accessories
+
+The AI must NEVER invent:
+
+- Product names
+- SKUs
+- Prices
+- Retailers
+- URLs
+- Images
+- Colorways
+- Availability
+- Designer collaborations
+- Product descriptions
+
+If a product cannot be verified:
+
+REJECT PRODUCT
+
+and find another real product.
+
+============================================================
+2. PRODUCT-FIRST, NEVER IMAGE-FIRST
+============================================================
+
+NEVER DO:
+
+Find attractive fashion image
+→ guess what product it resembles
+→ add approximate product name
+→ attach shopping link
+
+ALWAYS DO:
+
+Determine garment needed
+→ search real retailer products
+→ retrieve exact product
+→ retrieve exact product image
+→ verify product
+→ verify image
+→ verify URL
+→ add to look
+→ display exact product image
+
+THE PRODUCT RECORD IS THE SOURCE OF TRUTH.
+
+============================================================
+3. REQUIRED PRODUCT DATA MODEL
+============================================================
+
+Every product object must contain:
+
+{
+  "product_id": "",
+  "sku": null,
+  "brand": "",
+  "product_name": "",
+  "category": "",
+  "subcategory": "",
+  "gender": "",
+  "color": "",
+  "season": "",
+  "price": null,
+  "currency": "USD",
+  "retailer": "",
+  "image_url": "",
+  "canonical_product_url": "",
+  "affiliate_url": null,
+  "affiliate_available": false,
+  "availability": "",
+  "image_verified": false,
+  "product_verified": false,
+  "last_verified": ""
+}
+
+Required fields before rendering:
+
+product_id
+brand
+product_name
+category
+retailer
+image_url
+canonical_product_url
+image_verified
+product_verified
+
+Do not use AI to fabricate missing fields.
+
+============================================================
+4. ACTUAL PRODUCT IMAGE REQUIRED
+============================================================
+
+The image shown must belong to the exact product being recommended.
+
+Maintain this relationship:
+
+PRODUCT ID
+→ BRAND
+→ PRODUCT NAME
+→ COLOR
+→ PRODUCT IMAGE
+→ PRICE
+→ RETAILER
+→ PRODUCT URL
+
+All values must refer to the SAME PRODUCT.
+
+Never mix:
+
+Gucci image
++
+Prada description
++
+Nordstrom link
++
+different price
+
+That card is INVALID.
+
+============================================================
+5. NEVER USE BRAND LOGOS AS PRODUCT IMAGES
+============================================================
+
+This is INVALID:
+
+Versace
+[VERSACE LOGO]
+Platform Mule
+$680
+
+This is REQUIRED:
+
+Versace
+[ACTUAL PHOTO OF THE EXACT PLATFORM MULE]
+Platform Mule
+$680
+
+If the actual shoe image cannot be retrieved:
+
+REJECT PRODUCT
+
+and find another real shoe.
+
+============================================================
+6. FORBIDDEN IMAGE SOURCES
+============================================================
+
+DO NOT USE:
+
+- Stock photos
+- AI-generated images
+- Pinterest
+- Instagram
+- TikTok screenshots
+- Celebrity photos
+- Editorial photos as shopping images
+- Generic category images
+- Brand logos
+- Placeholder graphics
+- Default fashion images
+- Mood boards
+- Unsplash
+- Pexels
+- Search-engine thumbnails
+- Similar-looking products
+- Runway photos unless the exact runway item is the product
+
+============================================================
+7. PRODUCT IMAGE VALIDATION
+============================================================
+
+Use logic equivalent to:
+
+function validateProductImage(product) {
+
+  if (!product.image_url)
+    return false;
+
+  if (!product.product_id)
+    return false;
+
+  if (!product.canonical_product_url)
+    return false;
+
+  if (product.image_type === "logo")
+    return false;
+
+  if (product.image_type === "placeholder")
+    return false;
+
+  if (product.image_type === "stock")
+    return false;
+
+  if (product.image_type === "ai_generated")
+    return false;
+
+  if (product.image_type === "generic")
+    return false;
+
+  if (product.image_verified !== true)
+    return false;
+
+  if (product.product_verified !== true)
+    return false;
+
+  return true;
+}
+
+============================================================
+8. COMPLETE PRODUCT VALIDATION
+============================================================
+
+function verifyProduct(product) {
+
+  if (!product.product_id)
+    return "REJECT_PRODUCT";
+
+  if (!product.brand)
+    return "REJECT_PRODUCT";
+
+  if (!product.product_name)
+    return "REJECT_PRODUCT";
+
+  if (!product.category)
+    return "REJECT_PRODUCT";
+
+  if (!product.retailer)
+    return "REJECT_PRODUCT";
+
+  if (!product.image_url)
+    return "REJECT_PRODUCT";
+
+  if (!product.canonical_product_url)
+    return "REJECT_PRODUCT";
+
+  if (product.image_verified !== true)
+    return "REJECT_PRODUCT";
+
+  if (product.product_verified !== true)
+    return "REJECT_PRODUCT";
+
+  if (imageIsStockPhoto(product.image_url))
+    return "REJECT_PRODUCT";
+
+  if (imageIsAIgenerated(product.image_url))
+    return "REJECT_PRODUCT";
+
+  if (imageIsPlaceholder(product.image_url))
+    return "REJECT_PRODUCT";
+
+  if (imageIsBrandLogo(product.image_url))
+    return "REJECT_PRODUCT";
+
+  if (!imageMatchesProduct(product))
+    return "REJECT_PRODUCT";
+
+  if (!urlMatchesProduct(product))
+    return "REJECT_PRODUCT";
+
+  return "VERIFIED_PRODUCT";
+}
+
+============================================================
+9. PRODUCT RENDER RULE
+============================================================
+
+const canRenderProduct =
+  product.product_id &&
+  product.brand &&
+  product.product_name &&
+  product.retailer &&
+  product.image_url &&
+  product.canonical_product_url &&
+  product.image_verified === true &&
+  product.product_verified === true;
+
+if (!canRenderProduct) {
+  rejectProduct(product);
+  return findReplacementProduct(product.category);
+}
+
+============================================================
+10. REMOVE ALL IMAGE FALLBACK LOGIC
+============================================================
+
+REMOVE CODE LIKE:
+
+imageUrl ||
+brandLogo ||
+placeholderImage ||
+defaultFashionImage
+
+REMOVE:
+
+product.image_url
+  ? product.image_url
+  : brandLogo
+
+REMOVE:
+
+product.image_url || placeholder
+
+REPLACE WITH:
+
+if (!product.image_url) {
+  rejectProduct(product);
+  return findReplacementProduct(product.category);
+}
+
+NEVER visually hide missing image data with a placeholder.
+
+============================================================
+11. UI IMAGE COMPONENT
+============================================================
+
+Use:
+
+{product.image_url ? (
+  <Image
+    source={{ uri: product.image_url }}
+    resizeMode="contain"
+    style={styles.productImage}
+    onError={() => handleBrokenProductImage(product)}
+  />
+) : null}
+
+Do NOT use:
+
+<Image
+  source={
+    product.image_url
+      ? { uri: product.image_url }
+      : brandLogo
+  }
+/>
+
+============================================================
+12. BROKEN IMAGE HANDLING
+============================================================
+
+function handleBrokenProductImage(product) {
+
+  markProductInvalid(product.product_id);
+
+  return fetchReplacementProduct(
+    product.category,
+    product.gender,
+    product.color
+  );
+}
+
+Do not show:
+
+- Logo
+- Blank card
+- Placeholder
+- Generic garment
+
+Replace the PRODUCT.
+
+============================================================
+13. VALID PRODUCT URL
+============================================================
+
+Before display, validate the product URL.
+
+Reject if the URL:
+
+- Returns 404
+- Redirects to retailer homepage
+- Redirects to generic category page
+- Opens unrelated product
+- Opens different color/product
+- Has been removed
+- Is broken
+
+If invalid:
+
+REJECT PRODUCT
+
+and search for another product.
+
+============================================================
+14. IMAGE + URL MUST MATCH
+============================================================
+
+The exact image must match the product page.
+
+Check:
+
+BRAND MATCH
+PRODUCT NAME MATCH
+CATEGORY MATCH
+COLOR MATCH
+VARIANT MATCH
+RETAILER MATCH
+
+If there is a mismatch:
+
+REJECT PRODUCT
+
+============================================================
+15. DIRECT RETAILER LINKS FOR NOW
+============================================================
+
+Simon Yarrell does NOT currently require affiliate links.
+
+Use normal retailer product URLs.
+
+Current logic:
+
+if (
+  product.affiliate_available === true &&
+  product.affiliate_url
+) {
+  shopUrl = product.affiliate_url;
+} else {
+  shopUrl = product.canonical_product_url;
+}
+
+Current default:
+
+affiliate_available = false
+
+SHOP ITEM
+→ canonical_product_url
+
+Later:
+
+affiliate_available = true
+
+SHOP ITEM
+→ affiliate_url
+
+Do not rebuild products when affiliate links are added later.
+
+============================================================
+16. PRODUCT CARD FORMAT
+============================================================
+
+Every product card must display:
+
+[ACTUAL PRODUCT IMAGE]
+
+BRAND
+
+PRODUCT NAME
+
+COLOR
+
+PRICE
+
+RETAILER
+
+[SHOP ITEM]
+
+Optional:
+
+[COMPARE PRICES]
+[SAVE]
+[ADD TO CLOSET]
+[SIMILAR ITEMS]
+
+============================================================
+17. OUTFIT GENERATION
+============================================================
+
+Every look must be created using VERIFIED products.
+
+Example:
+
+LOOK
+
+TOP
+→ verified actual product
+
+JACKET
+→ verified actual product
+
+PANTS
+→ verified actual product
+
+SHOES
+→ verified actual product
+
+SNEAKER ALTERNATIVE
+→ verified actual product
+
+BAG
+→ verified actual product
+
+ACCESSORY
+→ verified actual product
+
+Every visible product must have an actual product image.
+
+============================================================
+18. ENTIRE LOOK VALIDATION
+============================================================
+
+function validateLook(products) {
+
+  return products.every(product =>
+    product.product_id &&
+    product.brand &&
+    product.product_name &&
+    product.product_url !== null &&
+    product.image_url &&
+    product.image_verified === true &&
+    product.product_verified === true
+  );
+}
+
+If:
+
+validateLook(products) === false
+
+DO NOT DISPLAY LOOK
+
+Instead:
+
+replaceInvalidProducts();
+validateLook(products);
+
+Continue until every item passes.
+
+============================================================
+19. IMAGE COUNT MUST EQUAL PRODUCT COUNT
+============================================================
+
+If a look contains:
+
+3 products
+
+then it must have:
+
+3 real product images
+
+If a look contains:
+
+7 products
+
+then it must have:
+
+7 real product images
+
+No exceptions.
+
+============================================================
+20. NO PARTIAL LOOK DISPLAY
+============================================================
+
+Never show:
+
+Dress = real image
+Shoes = logo
+Bag = real image
+
+That look is INVALID.
+
+Replace the invalid shoe first.
+
+Only display the final look after every item has a verified image.
+
+============================================================
+21. FASHION COHESION
+============================================================
+
+Real products must still look good together.
+
+Evaluate:
+
+- Occasion
+- Season
+- Color harmony
+- Pattern harmony
+- Silhouette
+- Material
+- Formality
+- Gender
+- Aesthetic
+- User preferences
+- Overall visual flow
+
+Do not randomly combine real products.
+
+============================================================
+22. COLOR ENGINE
+============================================================
+
+For each look, determine:
+
+PRIMARY COLOR
+SECONDARY COLOR
+ACCENT COLOR
+NEUTRALS
+PATTERNS
+TEXTURES
+METALS
+SHOE COLOR
+ACCESSORY COLOR
+
+Reject combinations that clash unless intentional and stylistically valid.
+
+============================================================
+23. PATTERN RULE
+============================================================
+
+Patterns must coordinate.
+
+Avoid random combinations of:
+
+- Plaid
+- Stripes
+- Floral
+- Graphic prints
+- Monograms
+- Animal prints
+- Geometric patterns
+
+unless the combination is intentionally styled and cohesive.
+
+============================================================
+24. SEASON RULE
+============================================================
+
+Unless specifically requested:
+
+Do not mix incompatible seasons.
+
+INVALID:
+
+heavy winter coat
++
+linen summer shorts
+
+============================================================
+25. FORMALITY RULE
+============================================================
+
+Products must match the intended formality.
+
+Do not automatically combine:
+
+tailored formal suit
++
+rugby shirt
+
+Use a more appropriate:
+
+- Dress shirt
+- Button-up
+- T-shirt
+- Polo
+- Sweater
+- Hoodie
+
+only when it fits the aesthetic.
+
+============================================================
+26. STYLE SCORE
+============================================================
+
+Score every outfit internally from 0–100.
+
+Color Harmony = 20
+Silhouette = 20
+Occasion Match = 20
+Season Match = 15
+Material Compatibility = 10
+Pattern Compatibility = 10
+Accessories = 5
+
+Minimum:
+
+STYLE_SCORE >= 85
+
+If score < 85:
+
+replace weakest product
+
+then recalculate.
+
+Do not display until acceptable.
+
+============================================================
+27. DUPLICATE PREVENTION
+============================================================
+
+Create an outfit signature:
+
+OUTFIT_SIGNATURE =
+top_product_id +
+jacket_product_id +
+pants_product_id +
+shoe_product_id +
+bag_product_id +
+accessory_product_id
+
+Before display:
+
+if (displayedOutfits.includes(OUTFIT_SIGNATURE)) {
+  rejectOutfit();
+  generateNewCombination();
+}
+
+Also reduce repeated use of individual products.
+
+============================================================
+28. FASHION REMIX
+============================================================
+
+Every applicable Fashion Remix look must include:
+
+PRIMARY SHOE
+
+and
+
+SNEAKER ALTERNATIVE
+
+Both must be:
+
+- Real
+- Verified
+- Actual retail products
+- Actual product images
+- Coordinated with the same outfit
+
+============================================================
+29. RUNWAY LOOKS
+============================================================
+
+If showing actual runway content:
+
+Label:
+
+RUNWAY ORIGINAL
+
+Only claim it is a runway product when verified.
+
+If recreating a runway aesthetic using purchasable items:
+
+Label:
+
+SHOP THE RUNWAY-INSPIRED LOOK
+
+Do not falsely claim substitutes appeared on the runway.
+
+============================================================
+30. REPLACEMENT ENGINE
+============================================================
+
+If an item fails verification:
+
+function replaceInvalidProduct(product) {
+
+  const replacement = findReplacementProduct({
+    category: product.category,
+    gender: product.gender,
+    color: product.color,
+    season: product.season
+  });
+
+  if (!replacement)
+    return findAnotherReplacement();
+
+  if (verifyProduct(replacement) !== "VERIFIED_PRODUCT")
+    return replaceInvalidProduct(replacement);
+
+  return replacement;
+}
+
+============================================================
+31. FINAL VALIDATION GATE
+============================================================
+
+Before displaying any look:
+
+CHECK:
+
+REAL PRODUCT?
+YES
+
+REAL BRAND?
+YES
+
+EXACT PRODUCT NAME?
+YES
+
+REAL RETAILER?
+YES
+
+ACTUAL PRODUCT IMAGE?
+YES
+
+IMAGE VERIFIED?
+YES
+
+IMAGE MATCHES PRODUCT?
+YES
+
+VALID PRODUCT URL?
+YES
+
+URL MATCHES PRODUCT?
+YES
+
+COLOR MATCH?
+YES
+
+PRICE VERIFIED WHEN AVAILABLE?
+YES
+
+SEASON MATCH?
+YES
+
+OCCASION MATCH?
+YES
+
+COLOR COHESION?
+YES
+
+PATTERN COHESION?
+YES
+
+SILHOUETTE COHESION?
+YES
+
+STYLE SCORE >= 85?
+YES
+
+STOCK PHOTO?
+NO
+
+PLACEHOLDER?
+NO
+
+BRAND LOGO AS IMAGE?
+NO
+
+AI-GENERATED PRODUCT IMAGE?
+NO
+
+DUPLICATE OUTFIT?
+NO
+
+If any mandatory requirement fails:
+
+DO NOT DISPLAY.
+
+REPLACE INVALID PRODUCT.
+
+VALIDATE AGAIN.
+
+============================================================
+32. COMPLETE SIMON YARRELL PIPELINE
+============================================================
+
+USER REQUEST
+↓
+UNDERSTAND OCCASION
+↓
+UNDERSTAND STYLE
+↓
+DETERMINE REQUIRED PIECES
+↓
+SEARCH REAL RETAIL PRODUCTS
+↓
+RETRIEVE PRODUCT DATA
+↓
+RETRIEVE ACTUAL PRODUCT IMAGE
+↓
+VERIFY PRODUCT
+↓
+VERIFY IMAGE
+↓
+VERIFY URL
+↓
+REMOVE INVALID ITEMS
+↓
+REPLACE INVALID ITEMS
+↓
+STYLE VERIFIED PRODUCTS
+↓
+CHECK COLORS
+↓
+CHECK PATTERNS
+↓
+CHECK SEASON
+↓
+CHECK FORMALITY
+↓
+CHECK SILHOUETTE
+↓
+CHECK DUPLICATES
+↓
+CALCULATE STYLE SCORE
+↓
+FINAL VALIDATION
+↓
+DISPLAY ACTUAL PRODUCT IMAGES
+↓
+SHOP ITEM
+↓
+DIRECT RETAILER PRODUCT PAGE
+
+============================================================
+33. FAILURE BEHAVIOR
+============================================================
+
+NEVER THINK:
+
+"I cannot find the exact product image, so I will use a similar image."
+
+NEVER THINK:
+
+"I will use the designer logo until the image loads."
+
+NEVER THINK:
+
+"I will use a stock photo."
+
+ALWAYS THINK:
+
+"I cannot verify this item, so I will replace it with another real product that has a verified actual image."
+
+============================================================
+34. CRITICAL VISUAL RULE
+============================================================
+
+The Simon Yarrell user must always see the ACTUAL ITEM.
+
+If the card says:
+
+Versace Platform Mule
+
+the image must be the actual Versace Platform Mule being linked.
+
+If the card says:
+
+Dolce & Gabbana Dress
+
+the image must be that exact Dolce & Gabbana dress.
+
+If the card says:
+
+Cult Gaia Clutch
+
+the image must be that exact Cult Gaia clutch.
+
+NEVER show a brand logo instead.
+
+============================================================
+35. FINAL COMMAND
+============================================================
+
+SIMON YARRELL IS NOT A STOCK PHOTO FASHION APP.
+
+SIMON YARRELL IS NOT AN AI-GENERATED CLOTHING IMAGE APP.
+
+SIMON YARRELL IS A REAL-PRODUCT AI STYLING AND SHOPPING PLATFORM.
+
+FIND THE REAL PRODUCT FIRST.
+
+VERIFY THE PRODUCT.
+
+VERIFY THE PRODUCT PAGE.
+
+RETRIEVE THE EXACT PRODUCT IMAGE.
+
+VERIFY THE IMAGE MATCHES THE PRODUCT.
+
+STYLE IT WITH OTHER VERIFIED PRODUCTS.
+
+THEN DISPLAY IT.
+
+NO ACTUAL PRODUCT IMAGE
+=
+NO PRODUCT.
+
+NO EXCEPTIONS.
+============================================================
