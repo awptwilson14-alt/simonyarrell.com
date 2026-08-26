@@ -9,11 +9,9 @@
 import type { Look, OutfitPiece } from "@/constants/data";
 import { TRENDS } from "@/constants/data";
 import { isBadUnsId } from "@/constants/badImageIds";
-import { CATALOG_EXTRAS } from "./catalogExtras";
 import { isStyleCoherent } from "./outfitCoherence";
 import { SHOPIFY_FEED } from "./catalogFeed";
 import { sanitizeFeedCatalog, isSwimName } from "./feedSanitize";
-import { LOCAL_PRODUCT_ASSETS } from "../assets/images/catalog/_index";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,9 +39,13 @@ export interface CatalogItem {
   //   buttons link straight to it instead of a brand-site search.
   productImageUrl?: string;
   directProductUrl?: string;
-  /** Local bundled asset (output of `require("...png")`). Highest priority
-   *  in the piece-image fallback chain — used for items with AI-generated
-   *  product photos shipped in the app bundle (e.g. d001 Column Gown). */
+  /** True only when source ingestion verified that this is the exact product
+   * image and exact retailer PDP. Unverified rows are rejected before they
+   * can enter any generation pool. */
+  imageVerified?: boolean;
+  productVerified?: boolean;
+  /** Legacy field retained for type compatibility only. Strict real-product
+   * validation never admits rows that depend on a generated local asset. */
   localProductImage?: number;
 }
 
@@ -1779,7 +1781,7 @@ export function getSignatureBrands(style: string, limit = 4): readonly string[] 
 
 // ─── Massive Catalog — 200+ items, 80+ brands ────────────────────────────────
 
-export const CATALOG: CatalogItem[] = [
+const RAW_CATALOG: CatalogItem[] = [
   // ── TOPS — Women ──────────────────────────────────────────────────────────
   { id: "t001", name: "Silk Charmeuse Blouse", brand: "Loro Piana", price: 980, category: "top", styles: ["Old Money", "Business", "Clean Minimal"], occasions: ["Work", "Casual", "Date Night", "Event"], genders: ["women"], colors: ["Ivory", "Champagne"], imageUrl: uns("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.loropiana.com" },
   { id: "t002", name: "Fitted Cashmere Turtleneck", brand: "Brunello Cucinelli", price: 890, category: "top", styles: ["Old Money", "Clean Minimal"], occasions: ["Work", "Casual", "Date Night"], genders: ["women"], colors: ["Camel", "Ivory", "Black"], imageUrl: uns("1503342217505-b0a15ec3261c"), purchaseUrl: "https://www.brunellocucinelli.com" },
@@ -2043,33 +2045,45 @@ export const CATALOG: CatalogItem[] = [
   { id: "j003", name: "Bold Chain Necklace", brand: "ASOS", price: 22, category: "jewelry", styles: ["Y2K Revival", "Luxury Streetwear"], occasions: ["Party", "Date Night", "Casual"], genders: ["women", "men"], colors: ["Gold", "Silver"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.asos.com" },
   { id: "j004", name: "Pearl Drop Earrings", brand: "Mikimoto", price: 2400, category: "jewelry", styles: ["Old Money", "Evening", "Business"], occasions: ["Event", "Work", "Date Night"], genders: ["women"], colors: ["White Pearl/Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.mikimoto.com" },
   { id: "j005", name: "Cuff Bracelet", brand: "Bottega Veneta", price: 980, category: "jewelry", styles: ["Clean Minimal", "Old Money", "Evening"], occasions: ["Event", "Date Night", "Work"], genders: ["women"], colors: ["Silver", "Gold"], imageUrl: uns("1599643477877-530eb83abc8e"), purchaseUrl: "https://www.bottegaveneta.com" },
-  // ── Verified extras with real PDP images + direct purchase URLs ─────────────
-  ...CATALOG_EXTRAS,
   // ── Shopify-sourced real product feed (2,940 items across 21 brand stores) ─
   // Every item has a real CDN image, real $/products/<handle>$ PDP, real price.
   // Source pipeline + brand list documented in catalogFeed.ts header.
   ...SHOPIFY_FEED,
 ];
 
-// ─── Local product asset autopatch ──────────────────────────────────────────
-//
-// Walks the merged CATALOG once at module load and stamps `localProductImage`
-// onto every item that has a bundled AI-generated photo registered in
-// `LOCAL_PRODUCT_ASSETS`. This avoids 170+ inline `require()` calls in the
-// catalog literal and keeps the asset registry in a single file. Items with
-// no local asset are left untouched — they fall back to `productImageUrl` or
-// the placeholder pool as before.
-for (const item of CATALOG) {
-  const localAsset = LOCAL_PRODUCT_ASSETS[item.id];
-  if (localAsset && !item.localProductImage) {
-    item.localProductImage = localAsset;
-  }
-}
-
 // ─── Feed sanitation (categories, genders, swim) ────────────────────────────
 // See lib/feedSanitize.ts for the full contract. Runs once at module load on
 // feed rows (id prefix "sf_") only; hand-curated rows are trusted as authored.
-sanitizeFeedCatalog(CATALOG);
+sanitizeFeedCatalog(RAW_CATALOG);
+
+/**
+ * Absolute real-product rule:
+ *
+ * if (!product.image_url || product.image_verified !== true) {
+ *   rejectProduct(product);
+ *   return findReplacementProduct(product.category);
+ * }
+ *
+ * Replacement happens naturally in the outfit builder because rejected rows
+ * never enter CATALOG/category pools. The Shopify feed is the only current
+ * source whose ingestion contract preserves one exact product, CDN image,
+ * price, colour and /products/<handle> retailer PDP together. Legacy curated
+ * rows, Unsplash placeholders, brand-homepage URLs and generated local assets
+ * are deliberately excluded.
+ */
+function verifyRealProduct(item: CatalogItem): boolean {
+  const isVerifiedFeedRow = item.id.startsWith("sf_");
+  const imageUrl = item.productImageUrl?.trim();
+  const productUrl = item.directProductUrl?.trim();
+  const hasExactPdp = !!productUrl && /\/products\/[^/?#]+/i.test(productUrl);
+  const hasRetailImage = !!imageUrl && /^https:\/\//i.test(imageUrl);
+
+  item.imageVerified = isVerifiedFeedRow && hasRetailImage;
+  item.productVerified = isVerifiedFeedRow && hasExactPdp;
+  return item.imageVerified === true && item.productVerified === true;
+}
+
+export const CATALOG: CatalogItem[] = RAW_CATALOG.filter(verifyRealProduct);
 
 // ─── Occasion Normalization ───────────────────────────────────────────────────
 

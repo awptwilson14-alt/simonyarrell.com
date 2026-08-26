@@ -1,17 +1,16 @@
 ---
-name: Generated item photos
-description: Every look piece must show a photo — AI-generated product shots fill catalog image gaps via a cached server endpoint
+name: Verified real-product images
+description: Shoppable looks require exact retailer product images; invalid products are rejected and replaced before rendering
 ---
 
-# Generated item photos
+# Verified real-product images
 
-**Rule:** Every piece in every look must render a product photo. When a catalog item has no usable image (no localImage/imageUrl, or a denylisted URL), the client loads a server-side AI-generated studio product shot; the brand-monogram tile is only a loading state / last-resort fallback, never the intended presentation.
+**Rule:** Every shoppable piece must be a real retailer product with its exact product image and exact product-detail URL. If its image is absent or not explicitly verified, reject the product and select another product in that category before rendering the look.
 
-**Why:** Owner request (Aug 2026, screenshot of look details showing "DG"/"V" monogram tiles): "Every combination has to generate a photo of the item."
+**Why:** The owner replaced the earlier generated-image requirement with the complete real-product shopping specification: no AI-generated, stock, editorial, generic, similar-product, brand-logo, monogram, or placeholder substitutes—no verified image means no product card.
 
 **How to apply:**
-- One photo per unique item (normalized brand|name|color key), generated once and cached forever server-side — new combinations reusing a piece must reuse its photo, never regenerate.
-- Client and any zoom/lightbox must resolve the SAME effective image (real → generated → fallback) via the shared resolver in the resilient-image component; don't hand-roll the fallback chain per screen.
-- Generation is a paid call: cache misses are per-IP rate-limited and globally concurrency-capped; over-limit or failed generation returns 404 so the client degrades to the monogram silently.
-- Prompt style: single item, dark charcoal studio background, gold rim light, no person/text/watermark — matches the app's luxury dark-gold visual language.
-- Known accepted tradeoff: images stored as base64 rows in Postgres (~1MB each). Fine for a finite catalog; move to object storage if the catalog becomes unbounded.
+- Preserve product identity as one inseparable record: ID, brand, exact name, color/variant, price, retailer, image URL, and canonical PDP URL.
+- Only verified source-ingestion rows may enter outfit pools; legacy invented catalog rows, brand-homepage links, Unsplash images, local AI assets, and generated-image fallbacks are never valid.
+- Image/PDP failure means replace that item and revalidate the complete look; do not render a visual substitute.
+- Direct retailer links are valid and preferred when no legitimate affiliate link is available.
