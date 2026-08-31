@@ -156,7 +156,12 @@ export const CELEB_GENDERS: Record<string, "men" | "women"> = {
   lewis: "men", sga: "men", nas: "men",
   rihanna: "women", zendaya: "women", audrey: "women", marilyn: "women",
   ladygaga: "women", chloe: "women", kim: "women", maryjblige: "women",
-  taylor: "women",
+  taylor: "women", "cardi-b": "women", "kate-hudson": "women",
+  "keke-palmer": "women", "katy-perry": "women", "kylie-jenner": "women",
+  "dakota-johnson": "women", "mila-kunis": "women", "demi-moore": "women",
+  sza: "women", "heidi-klum": "women", "savannah-james": "women",
+  "lori-harvey": "women",
+  future: "men", "michael-b-jordan": "men",
 };
 
 export function filterCelebsByGender<T extends { id: string }>(celebs: T[], gender: string): T[] {
