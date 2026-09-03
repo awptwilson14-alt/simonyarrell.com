@@ -153,16 +153,16 @@ const TESTIMONIALS = [
 const FOOTER_LINKS: { label: string; route?: string }[] = [
   { label: "About", route: "/about" },
   { label: "Style Journal", route: "/journal" },
-  { label: "Contact" },
-  { label: "Careers" },
+  { label: "Contact", route: "/contact" },
+  { label: "Careers", route: "/careers" },
   { label: "Privacy Policy", route: "/privacy" },
-  { label: "Terms of Service" },
-  { label: "Cookie Policy" },
+  { label: "Terms of Service", route: "/terms" },
+  { label: "Cookie Policy", route: "/cookies" },
   { label: "Affiliate Disclosure", route: "/partners" },
-  { label: "Accessibility" },
+  { label: "Accessibility", route: "/accessibility" },
   { label: "Press", route: "/partners" },
-  { label: "Support" },
-  { label: "FAQ" },
+  { label: "Support", route: "/support" },
+  { label: "FAQ", route: "/faq" },
 ];
 
 const TRUST_SIGNALS: { icon: keyof typeof Feather.glyphMap; label: string }[] = [

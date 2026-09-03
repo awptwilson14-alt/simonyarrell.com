@@ -125,6 +125,13 @@ function RootLayoutNav() {
       <Stack.Screen name="about" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="privacy" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="partners" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="contact" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="careers" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="terms" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="cookies" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="accessibility" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="support" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="faq" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
 }
