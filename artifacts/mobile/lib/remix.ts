@@ -171,7 +171,7 @@ export function changeItem(
   base: Look,
   pieceId: string,
   mode: ChangeItemMode,
-  opts?: { favoriteStyles?: string[] },
+  opts?: { favoriteStyles?: string[]; season?: string },
 ): Look | undefined {
   const target = base.pieces.find((p) => p.id === pieceId);
   if (!target) return undefined;
@@ -189,6 +189,7 @@ export function changeItem(
       : baseOccasion(base),
     budget,
     favoriteStyles: opts?.favoriteStyles ?? [],
+    season: opts?.season,
     count: 1,
     lockedItems: locked,
     avoidBrands: mode === "Different Designer" ? [target.brand] : undefined,
@@ -220,7 +221,28 @@ export function changeItem(
       (p) => p.category === target.category && !locked.some((l) => l.id === p.id),
     );
     if (!repl || !accepts(repl)) continue;
-    return { ...look, name: base.name, inspiredBy: base.inspiredBy };
+
+    // Hard postcondition: a one-item swap may not silently alter, drop, or
+    // reorder anything else. Build the result directly from the original
+    // piece order and replace only the selected slot.
+    const enginePreservedEveryLock = locked.every((original) => {
+      const candidate = look.pieces.find((p) => p.id === original.id);
+      return !!candidate &&
+        candidate.brand === original.brand &&
+        candidate.name === original.name &&
+        candidate.color === original.color &&
+        candidate.price === original.price;
+    });
+    if (!enginePreservedEveryLock) continue;
+
+    const pieces = base.pieces.map((piece) => piece.id === pieceId ? repl : piece);
+    return {
+      ...look,
+      name: base.name,
+      inspiredBy: base.inspiredBy,
+      pieces,
+      estimatedPrice: pieces.reduce((sum, piece) => sum + piece.price, 0),
+    };
   }
   return undefined;
 }

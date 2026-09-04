@@ -180,7 +180,10 @@ export default function LookDetailScreen() {
     setChanging(mode);
     setTimeout(() => {
       try {
-        const updated = changeItem(look, pieceId, mode, { favoriteStyles: userProfile.favoriteStyles });
+        const updated = changeItem(look, pieceId, mode, {
+          favoriteStyles: userProfile.favoriteStyles,
+          season: userProfile.season,
+        });
         if (!updated) {
           setRemixError("No piece in the catalog satisfies that swap right now — try a different direction.");
           return;
@@ -585,7 +588,8 @@ export default function LookDetailScreen() {
                         color={lockedIds.has(piece.id) ? colors.gold : colors.mutedForeground}
                       />
                     </Pressable>
-                    {/* Change This Item */}
+                    {/* Change This Item — explicit label so this core action
+                        is discoverable without guessing the refresh icon. */}
                     <Pressable
                       hitSlop={8}
                       onPress={() => {
@@ -593,12 +597,22 @@ export default function LookDetailScreen() {
                         setChangeTarget((cur) => (cur === piece.id ? null : piece.id));
                       }}
                       accessibilityLabel="Change this item"
+                      style={[
+                        styles.swapItemButton,
+                        {
+                          borderColor: changeTarget === piece.id ? colors.gold : colors.border,
+                          backgroundColor: changeTarget === piece.id ? `${colors.gold}18` : "transparent",
+                        },
+                      ]}
                     >
                       <Feather
                         name="refresh-cw"
-                        size={14}
+                        size={12}
                         color={changeTarget === piece.id ? colors.gold : colors.mutedForeground}
                       />
+                      <Text style={[styles.swapItemLabel, { color: changeTarget === piece.id ? colors.gold : colors.mutedForeground }]}>
+                        {changeTarget === piece.id ? "CANCEL" : "SWAP ITEM"}
+                      </Text>
                     </Pressable>
                   </View>
                 </View>
@@ -608,7 +622,12 @@ export default function LookDetailScreen() {
             {/* Change This Item — swap options for the selected piece. */}
             {changeTarget && look.pieces.some((p) => p.id === changeTarget) ? (
               <View style={{ paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
-                <Text style={[styles.altHeader, { color: colors.gold }]}>CHANGE THIS ITEM</Text>
+                <Text style={[styles.altHeader, { color: colors.gold }]}>
+                  SWAP {look.pieces.find((p) => p.id === changeTarget)?.name.toUpperCase()}
+                </Text>
+                <Text style={[styles.swapHelp, { color: colors.mutedForeground }]}>
+                  Choose a direction. Every other item in this look will stay exactly the same.
+                </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                   {CHANGE_ITEM_MODES.map((mode) => (
                     <Pressable
@@ -1177,6 +1196,17 @@ const styles = StyleSheet.create({
   pieceName: { fontSize: 13, fontFamily: "Inter_500Medium", lineHeight: 19 },
   pieceCategory: { fontSize: 11, fontFamily: "Inter_400Regular" },
   piecePrice: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  swapItemButton: {
+    minHeight: 28,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  swapItemLabel: { fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 1 },
+  swapHelp: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16, marginTop: 6 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 16, paddingBottom: 20, borderTopWidth: 0.5, marginTop: 4 },
   totalLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", letterSpacing: 2 },
   totalPrice: { fontSize: 24, fontFamily: "PlayfairDisplay_700Bold" },
